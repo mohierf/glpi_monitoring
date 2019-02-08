@@ -1,31 +1,32 @@
 <?php
-/*
- * @version $Id: dropdownValue.php 15573 2011-09-01 10:10:06Z moyo $
- -------------------------------------------------------------------------
- GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2003-2015 by the INDEPNET Development Team.
-
- http://indepnet.net/   http://glpi-project.org
- -------------------------------------------------------------------------
-
- LICENSE
-
- This file is part of GLPI.
-
- GLPI is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
- (at your option) any later version.
-
- GLPI is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with GLPI; if not, write to the Free Software Foundation, Inc.,
- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- --------------------------------------------------------------------------
+/**
+ *    ------------------------------------------------------------------------
+ *    Copyright notice:
+ *    ------------------------------------------------------------------------
+ *    Plugin Monitoring for GLPI
+ *    Copyright (C) 2011-2016 by the Plugin Monitoring for GLPI Development Team.
+ *    Copyright (C) 2019 by the Alignak Development Team.
+ *    ------------------------------------------------------------------------
+ *
+ *    LICENSE
+ *
+ *    This file is part of Plugin Monitoring project.
+ *
+ *    Plugin Monitoring for GLPI is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU Affero General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    Plugin Monitoring for GLPI is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *    GNU Affero General Public License for more details.
+ *
+ *    You should have received a copy of the GNU Affero General Public License
+ *    along with Monitoring. If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    ------------------------------------------------------------------------
+ *
  */
 
 // ----------------------------------------------------------------------

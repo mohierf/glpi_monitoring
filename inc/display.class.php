@@ -1,43 +1,33 @@
 <?php
 
-/*
-   ------------------------------------------------------------------------
-   Plugin Monitoring for GLPI
-   Copyright (C) 2011-2016 by the Plugin Monitoring for GLPI Development Team.
-
-   https://forge.indepnet.net/projects/monitoring/
-   ------------------------------------------------------------------------
-
-   LICENSE
-
-   This file is part of Plugin Monitoring project.
-
-   Plugin Monitoring for GLPI is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Affero General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   Plugin Monitoring for GLPI is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-   GNU Affero General Public License for more details.
-
-   You should have received a copy of the GNU Affero General Public License
-   along with Monitoring. If not, see <http://www.gnu.org/licenses/>.
-
-   ------------------------------------------------------------------------
-
-   @package   Plugin Monitoring for GLPI
-   @author    David Durieux
-   @co-author
-   @comment
-   @copyright Copyright (c) 2011-2016 Plugin Monitoring for GLPI team
-   @license   AGPL License 3.0 or (at your option) any later version
-              http://www.gnu.org/licenses/agpl-3.0-standalone.html
-   @link      https://forge.indepnet.net/projects/monitoring/
-   @since     2011
-
-   ------------------------------------------------------------------------
+/**
+ *    ------------------------------------------------------------------------
+ *    Copyright notice:
+ *    ------------------------------------------------------------------------
+ *    Plugin Monitoring for GLPI
+ *    Copyright (C) 2011-2016 by the Plugin Monitoring for GLPI Development Team.
+ *    Copyright (C) 2019 by the Alignak Development Team.
+ *    ------------------------------------------------------------------------
+ *
+ *    LICENSE
+ *
+ *    This file is part of Plugin Monitoring project.
+ *
+ *    Plugin Monitoring for GLPI is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU Affero General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    Plugin Monitoring for GLPI is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *    GNU Affero General Public License for more details.
+ *
+ *    You should have received a copy of the GNU Affero General Public License
+ *    along with Monitoring. If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    ------------------------------------------------------------------------
+ *
  */
 
 if (!defined('GLPI_ROOT')) {
@@ -58,6 +48,8 @@ class PluginMonitoringDisplay extends CommonDBTM
         echo "<table class='tab_cadre_fixe' width='950'>";
         echo "<tr class='tab_bg_3'>";
         echo "<td>";
+
+        $this->restartShinken();
 
         if (Session::haveRight("plugin_monitoring_systemstatus", PluginMonitoringSystem::DASHBOARD)
             || Session::haveRight("plugin_monitoring_hoststatus", PluginMonitoringHost::DASHBOARD)
@@ -2468,6 +2460,65 @@ EOF;
             }
             if ($display == 1) {
                 echo "<img src='" . $CFG_GLPI['root_doc'] . "/pics/right.png' /> ";
+            }
+        }
+    }
+
+
+    /**
+     * Restart Shinken buttons :
+     * - on main Monitoring plugin page
+     * - one button per each declared Shinken tag
+     * - one button to restart all Shinken instances
+     *
+     * @global $CFG_GLPI
+     */
+    static function restartShinken() {
+        global $CFG_GLPI;
+
+        if (Session::haveRight("plugin_monitoring_restartshinken", CREATE)) {
+            $pmTag = new PluginMonitoringTag();
+            $a_tagsBrut = $pmTag->find();
+
+            $a_tags = array();
+            foreach ($a_tagsBrut as $data) {
+                if (!isset($a_tags[$data['ip'].':'.$data['port']])) {
+                    $a_tags[$data['ip'].':'.$data['port']] = $data;
+                }
+            }
+
+            if (count($a_tags) > 0) {
+                $shinken_commands = array(
+                    'reload'    => array(
+                        'command' => 'reload',
+                        'title'   => __('Reload Shinken configuration from Glpi database', 'monitoring'),
+                        'button'  => __('Reload Shinken config', 'monitoring'),
+                    ),
+                    'restart'   => array(
+                        'command' => 'restart',
+                        'title'   => __('Restart all Shinken daemons', 'monitoring'),
+                        'button'  => __('Restart Shinken', 'monitoring'),
+                    ),
+                );
+
+                foreach ($shinken_commands as $command) {
+                    echo "<table class='tab_cadre_fixe' width='950'>";
+                    echo "<tr class='tab_bg_1'>";
+                    echo "<th width='400'>";
+                    echo $command['title'].' : ';
+                    echo '</th>';
+                    echo '<td> | ';
+                    echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/restartshinken.form.php?action=".$command['command']."&tag=0'>".__('All instances', 'monitoring')."</a> | ";
+                    if (count($a_tags) > 1) {
+                        foreach ($a_tags as $taginfo=>$data) {
+                            echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/restartshinken.form.php?action=".$command['command']."&tag=". $data['id'] ."'>".$taginfo."</a> | ";
+                        }
+                    }
+                    echo '</td>';
+                    echo '</tr>';
+                    echo '</table>';
+                }
+                echo '<br/>';
             }
         }
     }

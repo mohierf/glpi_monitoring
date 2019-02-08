@@ -1,43 +1,33 @@
 <?php
 
-/*
-   ------------------------------------------------------------------------
-   Plugin Monitoring for GLPI
-   Copyright (C) 2011-2016 by the Plugin Monitoring for GLPI Development Team.
-
-   https://forge.indepnet.net/projects/monitoring/
-   ------------------------------------------------------------------------
-
-   LICENSE
-
-   This file is part of Plugin Monitoring project.
-
-   Plugin Monitoring for GLPI is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Affero General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   Plugin Monitoring for GLPI is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-   GNU Affero General Public License for more details.
-
-   You should have received a copy of the GNU Affero General Public License
-   along with Monitoring. If not, see <http://www.gnu.org/licenses/>.
-
-   ------------------------------------------------------------------------
-
-   @package   Plugin Monitoring for GLPI
-   @author    David Durieux
-   @co-author
-   @comment
-   @copyright Copyright (c) 2011-2016 Plugin Monitoring for GLPI team
-   @license   AGPL License 3.0 or (at your option) any later version
-              http://www.gnu.org/licenses/agpl-3.0-standalone.html
-   @link      https://forge.indepnet.net/projects/monitoring/
-   @since     2011
-
-   ------------------------------------------------------------------------
+/**
+ *    ------------------------------------------------------------------------
+ *    Copyright notice:
+ *    ------------------------------------------------------------------------
+ *    Plugin Monitoring for GLPI
+ *    Copyright (C) 2011-2016 by the Plugin Monitoring for GLPI Development Team.
+ *    Copyright (C) 2019 by the Alignak Development Team.
+ *    ------------------------------------------------------------------------
+ *
+ *    LICENSE
+ *
+ *    This file is part of Plugin Monitoring project.
+ *
+ *    Plugin Monitoring for GLPI is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU Affero General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    Plugin Monitoring for GLPI is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *    GNU Affero General Public License for more details.
+ *
+ *    You should have received a copy of the GNU Affero General Public License
+ *    along with Monitoring. If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    ------------------------------------------------------------------------
+ *
  */
 
 if (!defined('GLPI_ROOT')) {
@@ -50,9 +40,10 @@ class PluginMonitoringComponent extends CommonDBTM
     static $rightname = 'plugin_monitoring_component';
 
 
-    static function getTypeName($nb = 0)
+    static function getTypeName($nb = 1)
     {
-        return _n('Component', 'Components', $nb, 'monitoring');
+        return __('Component', 'monitoring');
+//        return _n('Component', 'Components', $nb, 'monitoring');
     }
 
 
@@ -129,55 +120,177 @@ class PluginMonitoringComponent extends CommonDBTM
     }
 
 
-    function getSearchOptions()
+    /*
+     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
+     */
+    public function getSearchOptionsNew() {
+        return $this->rawSearchOptions();
+    }
+
+    function rawSearchOptions() {
+
+        $tab = [];
+
+        $tab[] = [
+            'id'                 => 'common',
+            'name'               => __('Components', 'monitoring')
+        ];
+
+        $tab[] = [
+            'id'                 => '1',
+            'table'              => $this->getTable(),
+            'field'              => 'name',
+            'name'               => __('Name'),
+        ];
+
+        $tab[] = [
+            'id'                 => '2',
+            'table'              => $this->getTable(),
+            'field'              => 'description',
+            'name'               => __('Comment'),
+        ];
+
+        $tab[] = [
+            'id'                 => '3',
+            'table'              => $this->getTable(),
+            'field'              => 'active_checks_enabled',
+            'datatype'           => 'bool',
+            'name'               => __('Active check', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id'                 => '4',
+            'table'              => $this->getTable(),
+            'field'              => 'passive_checks_enabled',
+            'datatype'           => 'bool',
+            'name'               => __('Passive check', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id'                 => '5',
+            'table'              => 'glpi_plugin_monitoring_commands',
+            'field'              => 'name',
+            'datatype'           => 'itemlink',
+            'linkfield'          => 'plugin_monitoring_commands_id',
+            'name'               => __('Related command', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id'                 => '6',
+            'table'              => 'glpi_plugin_monitoring_eventhandlers',
+            'field'              => 'name',
+            'datatype'           => 'itemlink',
+            'linkfield'          => 'plugin_monitoring_eventhandlers_id',
+            'name'               => __('Related event handler', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id'                 => '7',
+            'table'              => 'glpi_plugin_monitoring_checks',
+            'field'              => 'name',
+            'datatype'           => 'itemlink',
+            'linkfield'          => 'plugin_monitoring_checks_id',
+            'name'               => __('Related check frequency', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id'                 => '8',
+            'table'              => 'glpi_calendars',
+            'field'              => 'name',
+            'datatype'           => 'specific',
+//            'linkfield'          => 'calendars_id',
+            'name'               => __('Related check period', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id'                 => '9',
+            'table'              => $this->getTable(),
+            'field'              => 'business_priority',
+            'datatype'           => 'integer',
+            'name'               => __('Business impact', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id'                 => '11',
+            'table'              => $this->getTable(),
+            'field'              => 'freshness_type',
+            'datatype'           => 'specific',
+            'name'               => __('Freshness type', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id'                 => '10',
+            'table'              => $this->getTable(),
+            'field'              => 'freshness_count',
+            'datatype'           => 'integer',
+            'name'               => __('Freshness count', 'monitoring'),
+        ];
+
+        /*
+         * Include other fields here
+         */
+
+        $tab[] = [
+            'id'                 => '30',
+            'table'              => $this->getTable(),
+            'field'              => 'id',
+            'name'               => __('ID'),
+            'usehaving'          => true,
+            'searchtype'         => 'equals',
+        ];
+
+        return $tab;
+    }
+
+    function getSearchOptions_old()
     {
 
         $tab = array();
 
         $tab['common'] = __('Components', 'monitoring');
 
-        $tab[1]['table'] = $this->getTable();
-        $tab[1]['field'] = 'name';
-        $tab[1]['linkfield'] = 'name';
-        $tab[1]['name'] = __('Name');
-        $tab[1]['datatype'] = 'itemlink';
+//        $tab[1]['table'] = $this->getTable();
+//        $tab[1]['field'] = 'name';
+//        $tab[1]['linkfield'] = 'name';
+//        $tab[1]['name'] = __('Name');
+//        $tab[1]['datatype'] = 'itemlink';
 
-        $tab[2]['table'] = $this->getTable();
-        $tab[2]['field'] = 'id';
-        $tab[2]['name'] = __('ID');
-        $tab[2]['massiveaction'] = false; // implicit field is id
+//        $tab[2]['table'] = $this->getTable();
+//        $tab[2]['field'] = 'id';
+//        $tab[2]['name'] = __('ID');
+//        $tab[2]['massiveaction'] = false; // implicit field is id
 
-        $tab[3]['table'] = $this->getTable();
-        $tab[3]['field'] = 'description';
-        $tab[3]['name'] = __('Alias (Shinken service_description)', 'monitoring');
+//        $tab[3]['table'] = $this->getTable();
+//        $tab[3]['field'] = 'description';
+//        $tab[3]['name'] = __('Alias (Shinken service_description)', 'monitoring');
 
-        $tab[4]['table'] = $this->getTable();
-        $tab[4]['field'] = 'active_checks_enabled';
-        $tab[4]['name'] = __('Active check', 'monitoring');
-        $tab[4]['datatype'] = 'bool';
+//        $tab[4]['table'] = $this->getTable();
+//        $tab[4]['field'] = 'active_checks_enabled';
+//        $tab[4]['name'] = __('Active check', 'monitoring');
+//        $tab[4]['datatype'] = 'bool';
+//
+//        $tab[5]['table'] = $this->getTable();
+//        $tab[5]['field'] = 'passive_checks_enabled';
+//        $tab[5]['name'] = __('Passive check', 'monitoring');
+//        $tab[5]['datatype'] = 'bool';
 
-        $tab[5]['table'] = $this->getTable();
-        $tab[5]['field'] = 'passive_checks_enabled';
-        $tab[5]['name'] = __('Passive check', 'monitoring');
-        $tab[5]['datatype'] = 'bool';
-
-        $tab[6]['table'] = $this->getTable();
-        $tab[6]['field'] = 'calendars_id';
-        $tab[6]['name'] = __('Check period', 'monitoring');
-        $tab[6]['datatype'] = 'specific';
-
-        $tab[7]['table'] = $this->getTable();
-        $tab[7]['field'] = 'freshness_count';
-        $tab[7]['name'] = __('Freshness count', 'monitoring');
-
-        $tab[8]['table'] = $this->getTable();
-        $tab[8]['field'] = 'freshness_type';
-        $tab[8]['name'] = __('Freshness type', 'monitoring');
-        $tab[8]['datatype'] = 'specific';
-
-        $tab[9]['table'] = $this->getTable();
-        $tab[9]['field'] = 'business_priority';
-        $tab[9]['name'] = __('Business priority', 'monitoring');
+//        $tab[6]['table'] = $this->getTable();
+//        $tab[6]['field'] = 'calendars_id';
+//        $tab[6]['name'] = __('Check period', 'monitoring');
+//        $tab[6]['datatype'] = 'specific';
+//
+//        $tab[7]['table'] = $this->getTable();
+//        $tab[7]['field'] = 'freshness_count';
+//        $tab[7]['name'] = __('Freshness count', 'monitoring');
+//
+//        $tab[8]['table'] = $this->getTable();
+//        $tab[8]['field'] = 'freshness_type';
+//        $tab[8]['name'] = __('Freshness type', 'monitoring');
+//        $tab[8]['datatype'] = 'specific';
+//
+//        $tab[9]['table'] = $this->getTable();
+//        $tab[9]['field'] = 'business_priority';
+//        $tab[9]['name'] = __('Business priority', 'monitoring');
 
         return $tab;
     }
@@ -344,9 +457,7 @@ class PluginMonitoringComponent extends CommonDBTM
         $a_time['hours'] = __('Hour(s)', 'monitoring');
         $a_time['days'] = __('Day(s)', 'monitoring');
 
-        Dropdown::showFromArray("freshness_type",
-            $a_time,
-            array('value' => $this->fields['freshness_type']));
+        Dropdown::showFromArray("freshness_type", $a_time, array('value' => $this->fields['freshness_type']));
         echo "</td>";
         echo "</tr>";
 
@@ -698,5 +809,3 @@ class PluginMonitoringComponent extends CommonDBTM
         return $myPerfdata;
     }
 }
-
-?>
