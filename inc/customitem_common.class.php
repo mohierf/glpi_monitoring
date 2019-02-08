@@ -113,5 +113,3 @@ class PluginMonitoringCustomitem_Common {
    }
 
 }
-
-?>

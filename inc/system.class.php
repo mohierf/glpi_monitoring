@@ -91,12 +91,13 @@ class PluginMonitoringSystem extends CommonDBTM {
    }
 
 
-
-   /**
-    * @since version 0.85
-    *
-    * @see commonDBTM::getRights()
-    **/
+    /**
+     * @since version 0.85
+     *
+     * @see commonDBTM::getRights()
+     * @param string $interface
+     * @return array
+     */
    function getRights($interface='central') {
 
       $values = array();
@@ -109,4 +110,3 @@ class PluginMonitoringSystem extends CommonDBTM {
 
 }
 
-?>

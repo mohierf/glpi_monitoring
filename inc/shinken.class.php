@@ -528,7 +528,7 @@ class PluginMonitoringShinken extends CommonDBTM {
          $class = new $classname;
          if (! $class->getFromDB($data['items_id'])) {
             Toolbox::logDebug('[Monitoring] Host item not found: '.print_r($data, true));
-            return;
+            return false;
          }
 
          $pmHost->getFromDBByQuery("WHERE `glpi_plugin_monitoring_hosts`.`itemtype` = '" . $data['itemtype'] . "' AND `glpi_plugin_monitoring_hosts`.`items_id` = '" . $data['items_id'] . "' LIMIT 1");
@@ -670,7 +670,7 @@ class PluginMonitoringShinken extends CommonDBTM {
 
          // use host IP of container if activated
          if ($data['itemtype'] == 'Computer') {
-            if ($pmConfig->fields['nrpe_prefix_contener'] == 1) {
+            if ($pmConfig->fields['nrpe_prefix_container'] == 1) {
                if (isset($conteners[$class->fields['computertypes_id']])) {
                   // get Host of contener/VM
                   $where = "LOWER(`uuid`)".  ComputerVirtualMachine::getUUIDRestrictRequest($class->fields['uuid']);
@@ -1809,7 +1809,7 @@ class PluginMonitoringShinken extends CommonDBTM {
                      $alias_command = str_replace("[[IP]]", $ip, $alias_command);
                   }
                   if (current($a_hostname_type) == 'Computer') {
-                     if ($pmConfig->fields['nrpe_prefix_contener'] == 1) {
+                     if ($pmConfig->fields['nrpe_prefix_container'] == 1) {
                         if (isset($conteners[$computerTypes_id])) {
                            // get Host of contener/VM
                            $where = "LOWER(`uuid`)".  ComputerVirtualMachine::getUUIDRestrictRequest($item->fields['uuid']);
@@ -2332,7 +2332,7 @@ class PluginMonitoringShinken extends CommonDBTM {
                   $elements = array(
                      'notification_period'          => "24x7",
                      'notification_options'         => 'w,u,c,r,f,s',
-                     'active_checks_enabled'        => 1,
+//                     'active_checks_enabled'        => 1,
                      'process_perf_data'            => 1,
                      'active_checks_enabled'        => 1,
                      'passive_checks_enabled'       => 1,
@@ -2524,7 +2524,7 @@ class PluginMonitoringShinken extends CommonDBTM {
                   $elements = array(
                      'notification_period'          => "24x7",
                      'notification_options'         => 'w,u,c,r,f,s',
-                     'active_checks_enabled'        => 1,
+//                     'active_checks_enabled'        => 1,
                      'process_perf_data'            => 1,
                      'active_checks_enabled'        => 1,
                      'passive_checks_enabled'       => 1,
@@ -3472,7 +3472,7 @@ Nagios configuration file :
                $beginEnd = explode('-', $hourMinute);
                // ** Begin **
                $split = explode(':', $beginEnd[0]);
-               $split[0] += $timeperiodsuffix;
+               $split[0] .= $timeperiodsuffix;
                if ($split[0] > 24) {
                   //$reportHours = $split[0] - 24;
                   unset($splitDay[$num]);
@@ -3485,7 +3485,7 @@ Nagios configuration file :
                   $beginEnd[0] = sprintf("%02s", $split[0]).':'.$split[1];
                   // ** End **
                   $split = explode(':', $beginEnd[1]);
-                  $split[0] += $timeperiodsuffix;
+                  $split[0] .= $timeperiodsuffix;
                   if ($split[0] < 0) {
                      if ($numday-1 == -1) {
                         $saturday .= ",".sprintf("%02s", $previous_begin).":00-".sprintf("%02s", (24 + $split[0])).":00";
@@ -3723,7 +3723,7 @@ Nagios configuration file :
                $beginEnd = explode('-', $hourMinute);
                // ** Begin **
                $split = explode(':', $beginEnd[0]);
-               $split[0] += $timeperiodsuffix;
+               $split[0] .= $timeperiodsuffix;
                if ($split[0] > 24) {
                   //$reportHours = $split[0] - 24;
                   unset($splitDay[$num]);
@@ -3736,7 +3736,7 @@ Nagios configuration file :
                   $beginEnd[0] = sprintf("%02s", $split[0]).':'.$split[1];
                   // ** End **
                   $split = explode(':', $beginEnd[1]);
-                  $split[0] += $timeperiodsuffix;
+                  $split[0] .= $timeperiodsuffix;
                   if ($split[0] < 0) {
                      if ($numday-1 == -1) {
                         $saturday .= ",".sprintf("%02s", $previous_begin).":00-".sprintf("%02s", (24 + $split[0])).":00";
@@ -3820,10 +3820,13 @@ Nagios configuration file :
    }
 
 
-
-   /**
-    * Add value with the right type (str, int, bool, float)
-    */
+    /**
+     * Add value with the right type (str, int, bool, float)
+     * @param $val
+     * @param $key
+     * @param $data
+     * @return array
+     */
    function add_value_type($val, $key, $data) {
       global $PM_EXPORTFOMAT;
 
@@ -3896,7 +3899,6 @@ Nagios configuration file :
             case "min_business_impact":
             case "notification_interval":
             case "retry_interval":
-            case "notification_interval":
             case "snapshot_interval":
             case "timeout":
             case "time_to_orphanage":
@@ -3973,4 +3975,3 @@ Nagios configuration file :
    }
 }
 
-?>

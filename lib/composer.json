@@ -1,5 +1,8 @@
 {
     "require": {
-        "nikic/fast-route": "^1.0"
+        "nikic/fast-route": "^1.0",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*"
     }
 }

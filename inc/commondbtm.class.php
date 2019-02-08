@@ -54,8 +54,6 @@ class PluginMonitoringCommonDBTM extends CommonDBTM {
     * @param $options   array
    **/
    function display($options=array()) {
-      global $CFG_GLPI;
-
       if (PLUGIN_MONITORING_SYSTEM == 'shinken') {
          parent::display($options);
       } else {
@@ -86,4 +84,3 @@ class PluginMonitoringCommonDBTM extends CommonDBTM {
 
 }
 
-?>

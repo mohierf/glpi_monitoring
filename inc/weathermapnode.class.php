@@ -41,27 +41,29 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringWeathermapnode extends CommonDBTM {
+class PluginMonitoringWeathermapnode extends CommonDBTM
+{
 
-   static $rightname = 'plugin_monitoring_weathermap';
+    static $rightname = 'plugin_monitoring_weathermap';
 
-   function getNodeName($nodes_id) {
+    function getNodeName($nodes_id)
+    {
 
-      $this->getFromDB($nodes_id);
+        $this->getFromDB($nodes_id);
 
-      $itemtype = $this->fields['itemtype'];
-      $item = new $itemtype();
-      $item->getFromDB($this->fields['items_id']);
-      $name = $this->fields['name'];
-      if ($name == '') {
-         $name = $item->getName();
-      }
-      return $name;
-   }
+        /* @var CommonDBTM $item */
+        $itemtype = $this->fields['itemtype'];
+        $item = new $itemtype();
+        $item->getFromDB($this->fields['items_id']);
+        $name = $this->fields['name'];
+        if ($name == '') {
+            $name = $item->getName();
+        }
+        return $name;
+    }
 
 }
 
-?>

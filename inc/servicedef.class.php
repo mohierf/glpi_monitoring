@@ -49,12 +49,13 @@ class PluginMonitoringServicedef extends CommonDBTM {
 
    static $rightname = 'plugin_monitoring_service';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
 
       return "Service template";
@@ -145,8 +146,7 @@ class PluginMonitoringServicedef extends CommonDBTM {
       echo "</td>";
       echo "<td>";
       echo "<input type='hidden' name='is_template' value='1' />";
-      $objectName = autoName($this->fields["name"], "name", 1,
-                             $this->getType());
+      $objectName = autoName($this->fields["name"], "name", true, $this->getType());
       Html::autocompletionTextField($this, 'name', array('value' => $objectName));
       echo "</td>";
 
@@ -332,4 +332,3 @@ class PluginMonitoringServicedef extends CommonDBTM {
    }
 }
 
-?>

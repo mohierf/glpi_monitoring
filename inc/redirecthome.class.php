@@ -52,26 +52,26 @@ class PluginMonitoringRedirecthome extends CommonDBTM {
 
    static $rightname = 'search_config';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return __('Monitoring redirect', 'monitoring');
    }
 
 
-
-   /**
-    * Display tab
-    *
-    * @param CommonGLPI $item
-    * @param integer $withtemplate
-    *
-    * @return varchar name of the tab(s) to display
-    */
+    /**
+     * Display tab
+     *
+     * @param CommonGLPI $item
+     * @param integer $withtemplate
+     *
+     * @return array name of the tab(s) to display
+     */
    function getTabNameForItem(CommonGLPI $item, $withtemplate=0) {
 
       $profile = new Profile();
@@ -88,16 +88,15 @@ class PluginMonitoringRedirecthome extends CommonDBTM {
    }
 
 
-
-   /**
-    * Display content of tab
-    *
-    * @param CommonGLPI $item
-    * @param integer $tabnum
-    * @param interger $withtemplate
-    *
-    * @return boolean true
-    */
+    /**
+     * Display content of tab
+     *
+     * @param CommonGLPI $item
+     * @param integer $tabnum
+     * @param int $withtemplate
+     *
+     * @return void true
+     */
    static function displayTabContentForItem(CommonGLPI $item, $tabnum=1, $withtemplate=0) {
       $rh = new PluginMonitoringRedirecthome();
       $rh->showForm($item->getID());
@@ -155,4 +154,3 @@ class PluginMonitoringRedirecthome extends CommonDBTM {
    }
 }
 
-?>

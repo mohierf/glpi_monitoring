@@ -621,6 +621,7 @@ class PluginMonitoringServiceevent extends CommonDBTM {
 
       $a_convert = array();
       $a_ref = array();
+      // TODO: why returning?
       return array($a_ref, $a_convert);
 
       $a_perfg = PluginMonitoringPerfdata::getArrayPerfdata($perfdatas_id);
@@ -648,4 +649,4 @@ class PluginMonitoringServiceevent extends CommonDBTM {
    }
 }
 
-?>
+

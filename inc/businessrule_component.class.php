@@ -147,5 +147,3 @@ class PluginMonitoringBusinessrule_component extends CommonDBTM {
       }
    }
 }
-
-?>

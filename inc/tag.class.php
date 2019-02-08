@@ -49,23 +49,25 @@ class PluginMonitoringTag extends CommonDBTM {
 
    static $rightname = 'plugin_monitoring_tag';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return __('Tag', 'monitoring');
    }
 
 
-
-   /**
-    * @since version 0.85
-    *
-    * @see commonDBTM::getRights()
-    **/
+    /**
+     * @since version 0.85
+     *
+     * @see commonDBTM::getRights()
+     * @param string $interface
+     * @return array
+     */
    function getRights($interface='central') {
 
       $values = parent::getRights();
@@ -122,19 +124,17 @@ class PluginMonitoringTag extends CommonDBTM {
    }
 
 
-
-   /**
-   * Display form for agent configuration
-   *
-   * @param $items_id integer ID
-   * @param $options array
-   *
-   *@return bool true if form is ok
-   *
-   **/
+    /**
+     * Display form for agent configuration
+     *
+     * @param $items_id integer ID
+     * @param $options array
+     *
+     * @param array $copy
+     * @return bool true if form is ok
+     *
+     */
    function showForm($items_id, $options=array(), $copy=array()) {
-      global $DB,$CFG_GLPI;
-
       $this->initForm($items_id, $options);
       $this->showFormHeader($options);
 
@@ -349,4 +349,3 @@ class PluginMonitoringTag extends CommonDBTM {
    }
 }
 
-?>

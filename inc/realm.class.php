@@ -72,4 +72,3 @@ class PluginMonitoringRealm extends CommonDropdown {
 
 }
 
-?>

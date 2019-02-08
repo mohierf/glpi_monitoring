@@ -48,12 +48,13 @@ class PluginMonitoringDashboard extends CommonGLPI {
 
    static $rightname = 'plugin_monitoring_dashboard';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return 'Monitoring';
    }
@@ -135,5 +136,3 @@ class PluginMonitoringDashboard extends CommonGLPI {
    }
 
 }
-
-?>

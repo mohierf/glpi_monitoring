@@ -51,10 +51,7 @@ class PluginMonitoringHostconfig extends CommonDBTM {
    function initConfig() {
       global $DB;
 
-      $query = "SELECT * FROM `".$this->getTable()."`
-         WHERE `items_id`='0'
-            AND `itemtype`='Entity'
-         LIMIT 1";
+      $query = "SELECT * FROM `". $this->getTable(). "`WHERE `items_id`='0' AND `itemtype`='Entity' LIMIT 1";
 
       $result = $DB->query($query);
       if ($DB->numrows($result) == '0') {
@@ -62,8 +59,7 @@ class PluginMonitoringHostconfig extends CommonDBTM {
          $input['itemtype'] = 'Entity';
          $input['items_id'] = 0;
 
-         $query2 = "SELECT * FROM `glpi_plugin_monitoring_realms`
-            LIMIT 1";
+         $query2 = "SELECT * FROM `glpi_plugin_monitoring_realms` LIMIT 1";
          $result2 = $DB->query($query2);
          if ($DB->numrows($result2) == '1') {
             $data = $DB->fetch_assoc($result2);
@@ -76,27 +72,27 @@ class PluginMonitoringHostconfig extends CommonDBTM {
    }
 
 
-
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return __('Host configuration', 'monitoring');
    }
 
 
-
-   /**
-   *
-   * @param $items_id integer ID
-   * @param $options array
-   *
-   *@return bool true if form is ok
-   *
-   **/
+    /**
+     *
+     * @param $items_id integer ID
+     * @param $itemtype
+     * @param $options array
+     *
+     * @return bool true if form is ok
+     *
+     */
    function showForm($items_id, $itemtype, $options=array()) {
       global $DB,$CFG_GLPI;
 
@@ -339,8 +335,7 @@ class PluginMonitoringHostconfig extends CommonDBTM {
    function getValueAncestor($fieldname, $entities_id, $itemtype='', $items_id='') {
       global $DB;
 
-      if ($itemtype != ''
-              AND $items_id != '') {
+      if (! empty($itemtype) AND ! empty($items_id)) {
 
          $query = "SELECT * FROM `".$this->getTable()."`
             WHERE `items_id`='".$items_id."'
@@ -360,8 +355,6 @@ class PluginMonitoringHostconfig extends CommonDBTM {
             }
          }
       }
-
-
 
       $query = "SELECT * FROM `".$this->getTable()."`
          WHERE `items_id`='".$entities_id."'
@@ -424,7 +417,7 @@ class PluginMonitoringHostconfig extends CommonDBTM {
             }
          }
       }
+
+      return "";
    }
 }
-
-?>

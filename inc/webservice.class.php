@@ -41,491 +41,569 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringWebservice {
+class PluginMonitoringWebservice
+{
 
 
-   static function methodShinkenGetConffiles($params, $protocol) {
-      global $PM_EXPORTFOMAT;
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array|string
+     */
+    static function methodShinkenGetConffiles($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         "Starting methodShinkenGetConffiles ...\n"
-      );
+        PluginMonitoringToolbox::logIfExtradebug(
+            "Starting methodShinkenGetConffiles ...\n"
+        );
 
-      if (isset ($params['help'])) {
-         return array('file'  => 'config filename to get : commands.cfg, hosts.cfg, ... use all to get all files.',
-                      'help'  => 'bool,optional',
-                      'format' => 'boolean (true, false) or integer (0, 1). Default boolean');
-      }
+        if (isset ($params['help'])) {
+            return array('file' => 'config filename to get : commands.cfg, hosts.cfg, ... use all to get all files.',
+                'help' => 'bool,optional',
+                'format' => 'boolean (true, false) or integer (0, 1). Default boolean');
+        }
 
-      if (!isset($params['tag'])) {
-         $params['tag'] = '';
-      }
+        if (!isset($params['tag'])) {
+            $params['tag'] = '';
+        }
 
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
 
-      ini_set("max_execution_time", "0");
-      ini_set("memory_limit", "-1");
+        ini_set("max_execution_time", "0");
+        ini_set("memory_limit", "-1");
 
-      $pmShinken = new PluginMonitoringShinken();
-      switch ($params['file']) {
+        $pmShinken = new PluginMonitoringShinken();
+        switch ($params['file']) {
 
-         case 'commands.cfg':
-            $array = $pmShinken->generateCommandsCfg(1);
-            return array($array[0]=>$array[1]);
-            break;
+            case 'commands.cfg':
+                $array = $pmShinken->generateCommandsCfg(1);
+                return array($array[0] => $array[1]);
+                break;
 
-         case 'hosts.cfg':
-            $array = $pmShinken->generateHostsCfg(1, $params['tag']);
-            return array($array[0]=>$array[1]);
-            break;
+            case 'hosts.cfg':
+                $array = $pmShinken->generateHostsCfg(1, $params['tag']);
+                return array($array[0] => $array[1]);
+                break;
 
-         case 'hostgroups.cfg':
-            $array = $pmShinken->generateHostgroupsCfg(1, $params['tag']);
-            return array($array[0]=>$array[1]);
-            break;
+            case 'hostgroups.cfg':
+                $array = $pmShinken->generateHostgroupsCfg(1, $params['tag']);
+                return array($array[0] => $array[1]);
+                break;
 
-         case 'contacts.cfg':
-            $array = $pmShinken->generateContactsCfg(1, $params['tag']);
-            return array($array[0]=>$array[1]);
-            break;
+            case 'contacts.cfg':
+                $array = $pmShinken->generateContactsCfg(1, $params['tag']);
+                return array($array[0] => $array[1]);
+                break;
 
-         case 'timeperiods.cfg':
-            $array = $pmShinken->generateTimeperiodsCfg(1, $params['tag']);
-            return array($array[0]=>$array[1]);
-            break;
+            case 'timeperiods.cfg':
+                $array = $pmShinken->generateTimeperiodsCfg(1, $params['tag']);
+                return array($array[0] => $array[1]);
+                break;
 
-         case 'services.cfg':
-            $array = $pmShinken->generateServicesCfg(1, $params['tag']);
-            return array($array[0]=>$array[1]);
-            break;
+            case 'services.cfg':
+                $array = $pmShinken->generateServicesCfg(1, $params['tag']);
+                return array($array[0] => $array[1]);
+                break;
 
-         case 'templates.cfg':
-            $array = $pmShinken->generateTemplatesCfg(1, $params['tag']);
-            return array($array[0]=>$array[1]);
-            break;
+            case 'templates.cfg':
+                $array = $pmShinken->generateTemplatesCfg(1, $params['tag']);
+                return array($array[0] => $array[1]);
+                break;
 
-         case 'all':
-            $output = array();
-            $array = $pmShinken->generateCommandsCfg(1);
-            $output[$array[0]] = $array[1];
-            $array = $pmShinken->generateHostsCfg(1, $params['tag']);
-            $output[$array[0]] = $array[1];
-            $array = $pmShinken->generateHostgroupsCfg(1, $params['tag']);
-            $output[$array[0]] = $array[1];
-            $array = $pmShinken->generateContactsCfg(1, $params['tag']);
-            $output[$array[0]] = $array[1];
-            $array = $pmShinken->generateTemplatesCfg(1, $params['tag']);
-            $output[$array[0]] = $array[1];
-            $array = $pmShinken->generateServicesCfg(1, $params['tag']);
-            $output[$array[0]] = $array[1];
-            $array = $pmShinken->generateTimeperiodsCfg(1, $params['tag']);
-            $output[$array[0]] = $array[1];
-            return $output;
-            break;
+            case 'all':
+                $output = array();
+                $array = $pmShinken->generateCommandsCfg(1);
+                $output[$array[0]] = $array[1];
+                $array = $pmShinken->generateHostsCfg(1, $params['tag']);
+                $output[$array[0]] = $array[1];
+                $array = $pmShinken->generateHostgroupsCfg(1, $params['tag']);
+                $output[$array[0]] = $array[1];
+                $array = $pmShinken->generateContactsCfg(1, $params['tag']);
+                $output[$array[0]] = $array[1];
+                $array = $pmShinken->generateTemplatesCfg(1, $params['tag']);
+                $output[$array[0]] = $array[1];
+                $array = $pmShinken->generateServicesCfg(1, $params['tag']);
+                $output[$array[0]] = $array[1];
+                $array = $pmShinken->generateTimeperiodsCfg(1, $params['tag']);
+                $output[$array[0]] = $array[1];
+                return $output;
+                break;
+        }
+        return "";
+    }
 
-      }
-   }
 
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodShinkenTags($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
 
+        if (!isset($params['tag'])) {
+            return array();
+        }
 
-   static function methodShinkenTags($params, $protocol) {
-      global $PM_EXPORTFOMAT;
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
 
-      if (!isset($params['tag'])) {
-         return array();
-      }
+        $tag = $params['tag'];
+        PluginMonitoringToolbox::logIfExtradebug(
+            " - shinkenTags, get tags for: $tag\n"
+        );
 
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
+        $a_tags = array();
 
-      $tag = $params['tag'];
-      PluginMonitoringToolbox::logIfExtradebug(
-         " - shinkenTags, get tags for: $tag\n"
-      );
+        // Get list of entities tagged with the tag ...
+        $pmEntity = new PluginMonitoringEntity();
+        $Entity = new Entity();
+        $a_entities_allowed = $pmEntity->getEntitiesByTag($tag);
+        if (!isset($a_entities_allowed['-1'])) {
+            $a_entities_list = array();
+            foreach ($a_entities_allowed as $idEntity) {
+                PluginMonitoringToolbox::logIfExtradebug(
+                    " - shinkenTags, found entity: $idEntity\n"
+                );
 
-      $a_tags = array();
-
-      // Get list of entities tagged with the tag ...
-      $pmEntity = new PluginMonitoringEntity();
-      $Entity = new Entity();
-      $a_entities_allowed = $pmEntity->getEntitiesByTag($tag);
-      if (! isset($a_entities_allowed['-1'])) {
-         $a_entities_list = array();
-         foreach ($a_entities_allowed as $idEntity) {
-            PluginMonitoringToolbox::logIfExtradebug(
-               " - shinkenTags, found entity: $idEntity\n"
-            );
-
-            foreach ($Entity->find("entities_id='$idEntity'") as $son) {
-               PluginMonitoringToolbox::logIfExtradebug(
-                  " - shinkenTags, found son entity: {$son['id']}\n"
-               );
-               $a_entities_list[] = $son['id'];
+                foreach ($Entity->find("entities_id='$idEntity'") as $son) {
+                    PluginMonitoringToolbox::logIfExtradebug(
+                        " - shinkenTags, found son entity: {$son['id']}\n"
+                    );
+                    $a_entities_list[] = $son['id'];
+                }
             }
-         }
-         foreach ($a_entities_list as $idEntity) {
-            PluginMonitoringToolbox::logIfExtradebug(
-               " - shinkenTags, search tags for entity: $idEntity\n"
-            );
+            foreach ($a_entities_list as $idEntity) {
+                PluginMonitoringToolbox::logIfExtradebug(
+                    " - shinkenTags, search tags for entity: $idEntity\n"
+                );
 
-            $tag = $pmEntity->getTagByEntities($idEntity);
-            if (! empty($tag)) {
-               $a_tags[] = $tag;
+                $tag = $pmEntity->getTagByEntities($idEntity);
+                if (!empty($tag)) {
+                    $a_tags[] = $tag;
+                }
             }
-         }
-      }
+        }
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         " - shinkenTags, tags: ".serialize($a_tags)."\n"
-      );
+        PluginMonitoringToolbox::logIfExtradebug(
+            " - shinkenTags, tags: " . serialize($a_tags) . "\n"
+        );
 
-      return $a_tags;
-   }
-
+        return $a_tags;
+    }
 
 
-   static function methodShinkenCommands($params, $protocol) {
-      global $PM_EXPORTFOMAT;
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodShinkenCommands($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
 
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
 
-      $pmShinken = new PluginMonitoringShinken();
-      $array = $pmShinken->generateCommandsCfg();
-      return $array;
-   }
-
-
-
-   static function methodShinkenHosts($params, $protocol) {
-      global $PM_EXPORTFOMAT;
-
-      if (!isset($params['tag'])) {
-         $params['tag'] = '';
-      }
-
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
-
-      // Update ip with Tag
-      if (isset($_SERVER['REMOTE_ADDR'])) {
-         $pmTag = new PluginMonitoringTag();
-         $pmTag->setIP($params['tag'], $_SERVER['REMOTE_ADDR']);
-      }
-
-      $pmShinken = new PluginMonitoringShinken();
-      $array = $pmShinken->generateHostsCfg(0, $params['tag']);
-      return $array;
-   }
+        $pmShinken = new PluginMonitoringShinken();
+        $array = $pmShinken->generateCommandsCfg();
+        return $array;
+    }
 
 
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodShinkenHosts($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
 
-   static function methodShinkenHostgroups($params, $protocol) {
-      global $PM_EXPORTFOMAT;
+        if (!isset($params['tag'])) {
+            $params['tag'] = '';
+        }
 
-      if (!isset($params['tag'])) {
-         $params['tag'] = '';
-      }
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
 
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
+        // Update ip with Tag
+        if (isset($_SERVER['REMOTE_ADDR'])) {
+            $pmTag = new PluginMonitoringTag();
+            $pmTag->setIP($params['tag'], $_SERVER['REMOTE_ADDR']);
+        }
 
-      $pmShinken = new PluginMonitoringShinken();
-      $array = $pmShinken->generateHostgroupsCfg(0, $params['tag']);
-      return $array;
-   }
-
-
-
-   static function methodShinkenServices($params, $protocol) {
-      global $PM_EXPORTFOMAT;
-
-      if (!isset($params['tag'])) {
-         $params['tag'] = '';
-      }
-
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
-
-      $pmShinken = new PluginMonitoringShinken();
-      $array = $pmShinken->generateServicesCfg(0, $params['tag']);
-      return $array;
-   }
+        $pmShinken = new PluginMonitoringShinken();
+        $array = $pmShinken->generateHostsCfg(0, $params['tag']);
+        return $array;
+    }
 
 
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodShinkenHostgroups($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
 
-   static function methodShinkenTemplates($params, $protocol) {
-      global $PM_EXPORTFOMAT;
+        if (!isset($params['tag'])) {
+            $params['tag'] = '';
+        }
 
-      if (!isset($params['tag'])) {
-         $params['tag'] = '';
-      }
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
 
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
-
-      $pmShinken = new PluginMonitoringShinken();
-      $array = $pmShinken->generateTemplatesCfg(0, $params['tag']);
-      return $array;
-   }
-
-
-
-   static function methodShinkenContacts($params, $protocol) {
-      global $PM_EXPORTFOMAT;
-
-      if (!isset($params['tag'])) {
-         $params['tag'] = '';
-      }
-
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
-
-      $pmShinken = new PluginMonitoringShinken();
-      $array = $pmShinken->generateContactsCfg(0, $params['tag']);
-      return $array;
-   }
+        $pmShinken = new PluginMonitoringShinken();
+        $array = $pmShinken->generateHostgroupsCfg(0, $params['tag']);
+        return $array;
+    }
 
 
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodShinkenServices($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
 
-   static function methodShinkenTimeperiods($params, $protocol) {
-      global $PM_EXPORTFOMAT;
+        if (!isset($params['tag'])) {
+            $params['tag'] = '';
+        }
 
-      if (!isset($params['tag'])) {
-         $params['tag'] = '';
-      }
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
 
-      if (isset($params['format']) && $params['format'] == 'integer') {
-         $PM_EXPORTFOMAT = 'integer';
-      } else {
-         $PM_EXPORTFOMAT = 'boolean';
-      }
-
-      $pmShinken = new PluginMonitoringShinken();
-      $array = $pmShinken->generateTimeperiodsCfg(0, $params['tag']);
-      return $array;
-   }
-
-
-
-   static function methodDashboard($params, $protocol) {
-      $response = array();
-
-      if (!isset($params['view'])) {
-         return $response;
-      }
-
-      $pm = new PluginMonitoringDisplay();
-      if ($params['view'] == 'Hosts') {
-         return $pm->displayHostsCounters(0);
-      } else {
-         return $pm->displayCounters($params['view'], 0);
-      }
-   }
+        $pmShinken = new PluginMonitoringShinken();
+        $array = $pmShinken->generateServicesCfg(0, $params['tag']);
+        return $array;
+    }
 
 
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodShinkenTemplates($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
 
-   static function methodGetServicesList($params, $protocol) {
-      $array = PluginMonitoringWebservice::getServicesList($params['statetype'], $params['view']);
+        if (!isset($params['tag'])) {
+            $params['tag'] = '';
+        }
 
-      return $array;
-   }
-   static function getServicesList($statetype, $view) {
-      global $DB;
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
 
-      $services = array();
+        $pmShinken = new PluginMonitoringShinken();
+        $array = $pmShinken->generateTemplatesCfg(0, $params['tag']);
+        return $array;
+    }
 
-      if ($view == 'Ressources') {
 
-         switch ($statetype) {
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodShinkenContacts($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
 
-            case "ok":
-               $query = "SELECT * FROM `glpi_plugin_monitoring_services`
+        if (!isset($params['tag'])) {
+            $params['tag'] = '';
+        }
+
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
+
+        $pmShinken = new PluginMonitoringShinken();
+        $array = $pmShinken->generateContactsCfg(0, $params['tag']);
+        return $array;
+    }
+
+
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodShinkenTimeperiods($params, $protocol)
+    {
+        global $PM_EXPORTFOMAT;
+
+        if (!isset($params['tag'])) {
+            $params['tag'] = '';
+        }
+
+        if (isset($params['format']) && $params['format'] == 'integer') {
+            $PM_EXPORTFOMAT = 'integer';
+        } else {
+            $PM_EXPORTFOMAT = 'boolean';
+        }
+
+        $pmShinken = new PluginMonitoringShinken();
+        $array = $pmShinken->generateTimeperiodsCfg(0, $params['tag']);
+        return $array;
+    }
+
+
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodDashboard($params, $protocol)
+    {
+        $response = array();
+
+        if (!isset($params['view'])) {
+            return $response;
+        }
+
+        $pm = new PluginMonitoringDisplay();
+        if ($params['view'] == 'Hosts') {
+            return $pm->displayHostsCounters(0);
+        } else {
+            return $pm->displayCounters($params['view'], 0);
+        }
+    }
+
+
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodGetServicesList($params, $protocol)
+    {
+        $array = PluginMonitoringWebservice::getServicesList($params['statetype'], $params['view']);
+
+        return $array;
+    }
+
+
+    /**
+     * @param $statetype
+     * @param $view
+     * @return array
+     */
+    static function getServicesList($statetype, $view)
+    {
+        global $DB;
+
+        $services = array();
+
+        if ($view == 'Ressources') {
+
+            switch ($statetype) {
+
+                case "ok":
+                    $query = "SELECT * FROM `glpi_plugin_monitoring_services`
                   LEFT JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
                      ON `plugin_monitoring_componentscatalogs_hosts_id`=
                         `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
                   WHERE (`state`='OK' OR `state`='UP') AND `state_type`='HARD'";
-               $result = $DB->query($query);
-               while ($data=$DB->fetch_array($result)) {
-                  $itemtype = $data['itemtype'];
-                  $item = new $itemtype();
-                  $item->getFromDB($data['items_id']);
+                    $result = $DB->query($query);
+                    while ($data = $DB->fetch_array($result)) {
+                        /* @var CommonDBTM $item */
+                        $itemtype = $data['itemtype'];
+                        $item = new $itemtype();
+                        $item->getFromDB($data['items_id']);
 
-                  $services[] = "(".$itemtype.") ".$item->getName()."\n=> ".$data['name'];
-               }
-               break;
+                        $services[] = "(" . $itemtype . ") " . $item->getName() . "\n=> " . $data['name'];
+                    }
+                    break;
 
-            case "warning":
-               $query = "SELECT * FROM `glpi_plugin_monitoring_services`
+                case "warning":
+                    $query = "SELECT * FROM `glpi_plugin_monitoring_services`
                   LEFT JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
                      ON `plugin_monitoring_componentscatalogs_hosts_id`=
                         `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
                   WHERE (`state`='WARNING' OR `state`='UNKNOWN' OR `state`='RECOVERY' OR `state`='FLAPPING' OR `state` IS NULL)
                     AND `state_type`='HARD'";
-               $result = $DB->query($query);
-               while ($data=$DB->fetch_array($result)) {
-                  $itemtype = $data['itemtype'];
-                  $item = new $itemtype();
-                  $item->getFromDB($data['items_id']);
+                    $result = $DB->query($query);
+                    while ($data = $DB->fetch_array($result)) {
+                        $itemtype = $data['itemtype'];
+                        $item = new $itemtype();
+                        $item->getFromDB($data['items_id']);
 
-                  $services[] = "(".$itemtype.") ".$item->getName()."\n=> ".$data['name'];
-               }
-               break;
+                        $services[] = "(" . $itemtype . ") " . $item->getName() . "\n=> " . $data['name'];
+                    }
+                    break;
 
-            case "critical":
-               $query = "SELECT * FROM `glpi_plugin_monitoring_services`
+                case "critical":
+                    $query = "SELECT * FROM `glpi_plugin_monitoring_services`
                   LEFT JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
                      ON `plugin_monitoring_componentscatalogs_hosts_id`=
                         `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
                   WHERE (`state`='DOWN' OR `state`='UNREACHABLE' OR `state`='CRITICAL' OR `state`='DOWNTIME')
                     AND `state_type`='HARD'";
-               $result = $DB->query($query);
-               while ($data=$DB->fetch_array($result)) {
-                  $itemtype = $data['itemtype'];
-                  $item = new $itemtype();
-                  $item->getFromDB($data['items_id']);
+                    $result = $DB->query($query);
+                    while ($data = $DB->fetch_array($result)) {
+                        /* @var CommonDBTM $item */
+                        $itemtype = $data['itemtype'];
+                        $item = new $itemtype();
+                        $item->getFromDB($data['items_id']);
 
-                  $services[] = "(".$itemtype.") ".$item->getName()."\n=> ".$data['name'];
-               }
-               break;
-         }
-
-      } else if ($view == 'Componentscatalog') {
-         $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
-         $queryCat = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs`";
-         $resultCat = $DB->query($queryCat);
-         while ($data=$DB->fetch_array($resultCat)) {
-
-            $query = "SELECT * FROM `".$pmComponentscatalog_Host->getTable()."`
-               WHERE `plugin_monitoring_componentscalalog_id`='".$data['id']."'";
-            $result = $DB->query($query);
-            $state = array();
-            $state['ok'] = 0;
-            $state['warning'] = 0;
-            $state['critical'] = 0;
-            while ($dataComponentscatalog_Host=$DB->fetch_array($result)) {
-
-               $state['ok'] += countElementsInTable("glpi_plugin_monitoring_services",
-                       "(`state`='OK' OR `state`='UP') AND `state_type`='HARD'
-                          AND `plugin_monitoring_componentscatalogs_hosts_id`='".$dataComponentscatalog_Host['id']."'");
-
-
-               $state['warning'] += countElementsInTable("glpi_plugin_monitoring_services",
-                       "(`state`='WARNING' OR `state`='UNKNOWN' OR `state`='RECOVERY' OR `state`='FLAPPING' OR `state` IS NULL)
-                          AND `state_type`='HARD'
-                          AND `plugin_monitoring_componentscatalogs_hosts_id`='".$dataComponentscatalog_Host['id']."'");
-
-               $state['critical'] += countElementsInTable("glpi_plugin_monitoring_services",
-                       "(`state`='DOWN' OR `state`='UNREACHABLE' OR `state`='CRITICAL' OR `state`='DOWNTIME')
-                          AND `state_type`='HARD'
-                          AND `plugin_monitoring_componentscatalogs_hosts_id`='".$dataComponentscatalog_Host['id']."'");
-
+                        $services[] = "(" . $itemtype . ") " . $item->getName() . "\n=> " . $data['name'];
+                    }
+                    break;
             }
-            if ($state['critical'] > 0) {
-               if ($statetype == 'critical') {
-                  $services[] = "(Catalog) ".$data['name'];
-               }
-            } else if ($state['warning'] > 0) {
-               if ($statetype == 'warning') {
-                  $services[] = "(Catalog) ".$data['name'];
-               }
-            } else if ($state['ok'] > 0) {
-               if ($statetype == 'ok') {
-                  $services[] = "(Catalog) ".$data['name'];
-               }
+
+        } else if ($view == 'Componentscatalog') {
+            $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
+            $queryCat = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs`";
+            $resultCat = $DB->query($queryCat);
+            while ($data = $DB->fetch_array($resultCat)) {
+
+                $query = "SELECT * FROM `" . $pmComponentscatalog_Host->getTable() . "`
+               WHERE `plugin_monitoring_componentscalalog_id`='" . $data['id'] . "'";
+                $result = $DB->query($query);
+                $state = array();
+                $state['ok'] = 0;
+                $state['warning'] = 0;
+                $state['critical'] = 0;
+                while ($dataComponentscatalog_Host = $DB->fetch_array($result)) {
+
+                    $state['ok'] += countElementsInTable("glpi_plugin_monitoring_services",
+                        "(`state`='OK' OR `state`='UP') AND `state_type`='HARD'
+                          AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $dataComponentscatalog_Host['id'] . "'");
+
+
+                    $state['warning'] += countElementsInTable("glpi_plugin_monitoring_services",
+                        "(`state`='WARNING' OR `state`='UNKNOWN' OR `state`='RECOVERY' OR `state`='FLAPPING' OR `state` IS NULL)
+                          AND `state_type`='HARD'
+                          AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $dataComponentscatalog_Host['id'] . "'");
+
+                    $state['critical'] += countElementsInTable("glpi_plugin_monitoring_services",
+                        "(`state`='DOWN' OR `state`='UNREACHABLE' OR `state`='CRITICAL' OR `state`='DOWNTIME')
+                          AND `state_type`='HARD'
+                          AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $dataComponentscatalog_Host['id'] . "'");
+
+                }
+                if ($state['critical'] > 0) {
+                    if ($statetype == 'critical') {
+                        $services[] = "(Catalog) " . $data['name'];
+                    }
+                } else if ($state['warning'] > 0) {
+                    if ($statetype == 'warning') {
+                        $services[] = "(Catalog) " . $data['name'];
+                    }
+                } else if ($state['ok'] > 0) {
+                    if ($statetype == 'ok') {
+                        $services[] = "(Catalog) " . $data['name'];
+                    }
+                }
             }
-         }
-      } else if ($view == 'Businessrules') {
-
-      }
-      return $services;
-   }
+        }
+        return $services;
+    }
 
 
-   static function methodGetHostsStates($params, $protocol) {
-      return PluginMonitoringWebservice::getHostsStates($params);
-   }
-   static function getHostsStates($params) {
-      global $DB, $CFG_GLPI;
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodGetHostsStates($params, $protocol)
+    {
+        return PluginMonitoringWebservice::getHostsStates($params);
+    }
 
-      $where = $join = $fields = '';
-      $join .= "
+
+    /**
+     * @param $params
+     * @return array
+     */
+    static function getHostsStates($params)
+    {
+        global $DB, $CFG_GLPI;
+
+        $where = $join = $fields = '';
+        $join .= "
          INNER JOIN `glpi_computers`
             ON `glpi_plugin_monitoring_hosts`.`items_id` = `glpi_computers`.`id` AND `glpi_plugin_monitoring_hosts`.`itemtype`='Computer'
          INNER JOIN `glpi_entities`
             ON `glpi_computers`.`entities_id` = `glpi_entities`.`id`
          ";
 
-      // Start / limit
-      $start = 0;
-      $limit = $CFG_GLPI["list_limit_max"];
-      if (isset($params['limit']) && is_numeric($params['limit'])) {
-         $limit = $params['limit'];
-      }
-      if (isset($params['start']) && is_numeric($params['start'])) {
-         $start = $params['start'];
-      }
+        // Start / limit
+        $start = 0;
+        $limit = $CFG_GLPI["list_limit_max"];
+        if (isset($params['limit']) && is_numeric($params['limit'])) {
+            $limit = $params['limit'];
+        }
+        if (isset($params['start']) && is_numeric($params['start'])) {
+            $start = $params['start'];
+        }
 
-      // Entities
-      if (isset($params['entitiesList'])) {
-         if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
-            return self::Error($protocol, WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
-         }
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
-                     $where;
-      } else {
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_computers") .
-                     $where;
-      }
+        // Entities
+        if (isset($params['entitiesList'])) {
+            if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
+                return self::Error(WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
+            }
+            $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
+                $where;
+        } else {
+            $where = getEntitiesRestrictRequest("WHERE", "glpi_computers") .
+                $where;
+        }
 
-      // Hosts filter
-      if (isset($params['hostsFilter'])) {
-         if (is_array($params['hostsFilter'])) {
-            $where .= " AND `glpi_computers`.`name` IN ('" . implode("','",$params['hostsFilter']) . "')";
-         } else {
-            $where .= " AND `glpi_computers`.`name` = " . $params['hostsFilter'];
-         }
-      }
+        // Hosts filter
+        if (isset($params['hostsFilter'])) {
+            if (is_array($params['hostsFilter'])) {
+                $where .= " AND `glpi_computers`.`name` IN ('" . implode("','", $params['hostsFilter']) . "')";
+            } else {
+                $where .= " AND `glpi_computers`.`name` = " . $params['hostsFilter'];
+            }
+        }
 
-      // Filter
-      if (isset($params['filter']) && ! empty($params['filter'])) {
-         $where .= " AND " . $params['filter'];
-      }
-      // Order
-      $order = "FIELD(`glpi_plugin_monitoring_hosts`.`state`,'DOWN','PENDING','UNKNOWN','UNREACHABLE','UP'), entity_name ASC";
-      if (isset($params['order'])) {
-         $order = $params['order'];
-      }
+        // Filter
+        if (isset($params['filter']) && !empty($params['filter'])) {
+            $where .= " AND " . $params['filter'];
+        }
+        // Order
+        $order = "FIELD(`glpi_plugin_monitoring_hosts`.`state`,'DOWN','PENDING','UNKNOWN','UNREACHABLE','UP'), entity_name ASC";
+        if (isset($params['order'])) {
+            $order = $params['order'];
+        }
 
-      $query = "
+        $query = "
          SELECT
             `glpi_entities`.`name` AS entity_name,
             `glpi_computers`.`id`,
@@ -543,31 +621,44 @@ class PluginMonitoringWebservice {
          ORDER BY $order
          LIMIT $start,$limit;
       ";
-      // Toolbox::logInFile("pm-ws", "getHostsStates, query : $query\n");
-      $rows = array();
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
-         $row = array();
-         foreach ($data as $key=>$value) {
-            if (is_string($key)) {
-               $row[$key] = $value;
+        // Toolbox::logInFile("pm-ws", "getHostsStates, query : $query\n");
+        $rows = array();
+        $result = $DB->query($query);
+        while ($data = $DB->fetch_array($result)) {
+            $row = array();
+            foreach ($data as $key => $value) {
+                if (is_string($key)) {
+                    $row[$key] = $value;
+                }
             }
-         }
-         $rows[] = $row;
-      }
+            $rows[] = $row;
+        }
 
-      return $rows;
-   }
+        return $rows;
+    }
 
 
-   static function methodGetHostsLocations($params, $protocol) {
-      return PluginMonitoringWebservice::getHostsLocations($params);
-   }
-   static function getHostsLocations($params) {
-      global $DB, $CFG_GLPI;
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodGetHostsLocations($params, $protocol)
+    {
+        return PluginMonitoringWebservice::getHostsLocations($params);
+    }
 
-      $where = $join = $fields = '';
-      $join .= "
+
+    /**
+     * @param $params
+     * @return array
+     */
+    static function getHostsLocations($params)
+    {
+        global $DB, $CFG_GLPI;
+
+        $where = $join = $fields = '';
+        $join .= "
          LEFT JOIN `glpi_plugin_monitoring_hosts`
             ON `glpi_plugin_monitoring_hosts`.`items_id` = `glpi_computers`.`id` AND `glpi_plugin_monitoring_hosts`.`itemtype`='Computer'
          LEFT JOIN `glpi_entities`
@@ -576,49 +667,49 @@ class PluginMonitoringWebservice {
             ON `glpi_locations`.`id` = `glpi_computers`.`locations_id`
          ";
 
-      // Start / limit
-      $start = 0;
-      $limit = $CFG_GLPI["list_limit_max"];
-      if (isset($params['limit']) && is_numeric($params['limit'])) {
-         $limit = $params['limit'];
-      }
-      if (isset($params['start']) && is_numeric($params['start'])) {
-         $start = $params['start'];
-      }
+        // Start / limit
+        $start = 0;
+        $limit = $CFG_GLPI["list_limit_max"];
+        if (isset($params['limit']) && is_numeric($params['limit'])) {
+            $limit = $params['limit'];
+        }
+        if (isset($params['start']) && is_numeric($params['start'])) {
+            $start = $params['start'];
+        }
 
-      // Entities
-      if (isset($params['entitiesList'])) {
-         if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
-            return self::Error($protocol, WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
-         }
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
-                     $where;
-      } else {
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_computers") .
-                     $where;
-      }
+        // Entities
+        if (isset($params['entitiesList'])) {
+            if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
+                return self::Error(WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
+            }
+            $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
+                $where;
+        } else {
+            $where = getEntitiesRestrictRequest("WHERE", "glpi_computers") .
+                $where;
+        }
 
-      // Hosts filter
-      if (isset($params['hostsFilter'])) {
-         if (is_array($params['hostsFilter'])) {
-            $where .= " AND `glpi_computers`.`name` IN ('" . implode("','",$params['hostsFilter']) . "')";
-         } else {
-            $where .= " AND `glpi_computers`.`name` = '" . $params['hostsFilter'] . "'";
-         }
-      }
+        // Hosts filter
+        if (isset($params['hostsFilter'])) {
+            if (is_array($params['hostsFilter'])) {
+                $where .= " AND `glpi_computers`.`name` IN ('" . implode("','", $params['hostsFilter']) . "')";
+            } else {
+                $where .= " AND `glpi_computers`.`name` = '" . $params['hostsFilter'] . "'";
+            }
+        }
 
-      // Filter
-      if (isset($params['filter'])) {
-         $where .= " AND " . $params['filter'];
-      }
+        // Filter
+        if (isset($params['filter'])) {
+            $where .= " AND " . $params['filter'];
+        }
 
-      // Order
-      $order = "entity_name ASC, location ASC, FIELD(`glpi_plugin_monitoring_hosts`.`state`,'DOWN','PENDING','UNKNOWN','UNREACHABLE','UP')";
-      if (isset($params['order'])) {
-         $order = $params['order'];
-      }
+        // Order
+        $order = "entity_name ASC, location ASC, FIELD(`glpi_plugin_monitoring_hosts`.`state`,'DOWN','PENDING','UNKNOWN','UNREACHABLE','UP')";
+        if (isset($params['order'])) {
+            $order = $params['order'];
+        }
 
-      $query = "
+        $query = "
          SELECT
             `glpi_computers`.`id` AS id,
             `glpi_computers`.`name` AS name,
@@ -646,65 +737,73 @@ class PluginMonitoringWebservice {
          ORDER BY $order
          LIMIT $start,$limit;
       ";
-      // Toolbox::logInFile("pm-ws", "getHostsLocations, query : $query\n");
-      $rows = array();
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
-         $row = array();
-         foreach ($data as $key=>$value) {
-            if (is_string($key)) {
-               $row[$key] = $value;
+        // Toolbox::logInFile("pm-ws", "getHostsLocations, query : $query\n");
+        $rows = array();
+        $result = $DB->query($query);
+        while ($data = $DB->fetch_array($result)) {
+            $row = array();
+            foreach ($data as $key => $value) {
+                if (is_string($key)) {
+                    $row[$key] = $value;
+                }
             }
-         }
-         // Default GPS coordinates ...
-         $row['lat'] = 45.054485;
-         $row['lng'] = 5.081413;
-         if (! empty($row['gps'])) {
-            $split = explode(',', $row['gps']);
-            if (count($split) > 1) {
-               // At least 2 elements, let us consider as GPS coordinates ...
-               $row['lat'] = $split[0];
-               $row['lng'] = $split[1];
+            // Default GPS coordinates ...
+            $row['lat'] = 45.054485;
+            $row['lng'] = 5.081413;
+            if (!empty($row['gps'])) {
+                $split = explode(',', $row['gps']);
+                if (count($split) > 1) {
+                    // At least 2 elements, let us consider as GPS coordinates ...
+                    $row['lat'] = $split[0];
+                    $row['lng'] = $split[1];
+                }
+                unset ($row['gps']);
             }
-            unset ($row['gps']);
-         }
 
-         // Fetch host services
-         $services = PluginMonitoringWebservice::getServicesStates(
-            array(
-               'start'           => 0,
-               'limit'           => 100,
-               'entity'          => isset($params['entity']) ? $params['entity'] : null,
-               'filter'          => "glpi_computers.name='".$row['name']."'",
-               'servicesFilter'  => isset($params['servicesFilter']) ? $params['servicesFilter'] : '',
-               'order'           => "`glpi_plugin_monitoring_components`.`name` ASC"
-            )
-         );
-         $row['services'] = $services;
-         $rows[] = $row;
-      }
+            // Fetch host services
+            $services = PluginMonitoringWebservice::getServicesStates(
+                array(
+                    'start' => 0,
+                    'limit' => 100,
+                    'entity' => isset($params['entity']) ? $params['entity'] : null,
+                    'filter' => "glpi_computers.name='" . $row['name'] . "'",
+                    'servicesFilter' => isset($params['servicesFilter']) ? $params['servicesFilter'] : '',
+                    'order' => "`glpi_plugin_monitoring_components`.`name` ASC"
+                )
+            );
+            $row['services'] = $services;
+            $rows[] = $row;
+        }
 
-      return $rows;
-   }
+        return $rows;
+    }
 
 
-   static function methodGetServicesStates($params, $protocol) {
-      return PluginMonitoringWebservice::getServicesStates($params);
-   }
-   /*
-    * Request statistics on table with parameters
-    * - start / limit
-    * - filter
-    * - entity
-    * - order:
-         'hostname' : sort by hostname
-         'day' : sort by day
-    */
-   static function getServicesStates($params) {
-      global $DB, $CFG_GLPI;
+    /**
+     * @param $params
+     * @param $protocol
+     * @return array
+     */
+    static function methodGetServicesStates($params, $protocol)
+    {
+        return PluginMonitoringWebservice::getServicesStates($params);
+    }
 
-      $where = $join = $fields = '';
-      $join .= "
+    /**
+     * Request statistics on table with parameters
+     * - start / limit
+     * - filter
+     * - entity
+     * - order:
+          'hostname' : sort by hostname
+          'day' : sort by day
+     */
+    static function getServicesStates($params)
+    {
+        global $DB, $CFG_GLPI;
+
+        $where = $join = $fields = '';
+        $join .= "
          INNER JOIN `glpi_plugin_monitoring_services`
             ON (`glpi_plugin_monitoring_services`.`plugin_monitoring_componentscatalogs_hosts_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`)
          INNER JOIN `glpi_plugin_monitoring_hosts`
@@ -721,48 +820,48 @@ class PluginMonitoringWebservice {
             ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_networkequipments`.`id` AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='NetworkEquipment'
          ";
 
-      // Start / limit
-      $start = 0;
-      $limit = $CFG_GLPI["list_limit_max"];
-      if (isset($params['limit']) && is_numeric($params['limit'])) {
-         $limit = $params['limit'];
-      }
-      if (isset($params['start']) && is_numeric($params['start'])) {
-         $start = $params['start'];
-      }
+        // Start / limit
+        $start = 0;
+        $limit = $CFG_GLPI["list_limit_max"];
+        if (isset($params['limit']) && is_numeric($params['limit'])) {
+            $limit = $params['limit'];
+        }
+        if (isset($params['start']) && is_numeric($params['start'])) {
+            $start = $params['start'];
+        }
 
-      // Entities
-      if (isset($params['entitiesList'])) {
-         if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
-            return self::Error($protocol, WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
-         }
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
-                     $where;
-      } else {
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_computers") .
-                     $where;
-      }
+        // Entities
+        if (isset($params['entitiesList'])) {
+            if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
+                return self::Error(WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
+            }
+            $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
+                $where;
+        } else {
+            $where = getEntitiesRestrictRequest("WHERE", "glpi_computers") .
+                $where;
+        }
 
-      // Services filter
-      if (isset($params['servicesFilter']) && ! empty($params['servicesFilter'])) {
-         if (is_array($params['servicesFilter'])) {
-            $where .= " AND `glpi_plugin_monitoring_components`.`name` IN ('" . implode("','",$params['servicesFilter']) . "')";
-         } else {
-            $where .= " AND `glpi_plugin_monitoring_components`.`name` = '" . $params['servicesFilter'] . "'";
-         }
-      }
+        // Services filter
+        if (isset($params['servicesFilter']) && !empty($params['servicesFilter'])) {
+            if (is_array($params['servicesFilter'])) {
+                $where .= " AND `glpi_plugin_monitoring_components`.`name` IN ('" . implode("','", $params['servicesFilter']) . "')";
+            } else {
+                $where .= " AND `glpi_plugin_monitoring_components`.`name` = '" . $params['servicesFilter'] . "'";
+            }
+        }
 
-      // Filter
-      if (isset($params['filter']) && ! empty($params['filter'])) {
-         $where .= " AND " . $params['filter'];
-      }
-      // Order
-      $order = "FIELD(`glpi_plugin_monitoring_services`.`state`, 'CRITICAL','PENDING','UNKNOWN','WARNING','OK')";
-      if (isset($params['order'])) {
-         $order = $params['order'];
-      }
+        // Filter
+        if (isset($params['filter']) && !empty($params['filter'])) {
+            $where .= " AND " . $params['filter'];
+        }
+        // Order
+        $order = "FIELD(`glpi_plugin_monitoring_services`.`state`, 'CRITICAL','PENDING','UNKNOWN','WARNING','OK')";
+        if (isset($params['order'])) {
+            $order = $params['order'];
+        }
 
-      $query = "
+        $query = "
          SELECT
             CONCAT_WS('', `glpi_computers`.`name`, `glpi_printers`.`name`, `glpi_networkequipments`.`name`) AS host_name,
             `glpi_plugin_monitoring_components`.`name`,
@@ -779,65 +878,70 @@ class PluginMonitoringWebservice {
          ORDER BY $order
          LIMIT $start,$limit;
       ";
-      // Toolbox::logInFile("pm-ws", "getServicesStates, query : $query\n");
-      $rows = array();
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
-         $row = array();
-         foreach ($data as $key=>$value) {
-            if (is_string($key)) {
-               $row[$key] = $value;
+        // Toolbox::logInFile("pm-ws", "getServicesStates, query : $query\n");
+        $rows = array();
+        $result = $DB->query($query);
+        while ($data = $DB->fetch_array($result)) {
+            $row = array();
+            foreach ($data as $key => $value) {
+                if (is_string($key)) {
+                    $row[$key] = $value;
+                }
             }
-         }
-         $rows[] = $row;
-      }
+            $rows[] = $row;
+        }
 
-      return $rows;
-   }
-
+        return $rows;
+    }
 
 
-   static function methodGetUnavailabilities($params, $protocol) {
-     global $DB;
+    /**
+     * @param $params
+     * @param $protocol
+     * @return false|string
+     */
+    static function methodGetUnavailabilities($params, $protocol)
+    {
+        global $DB;
 
-     if (isset($params['help'])) {
-       return array (
-           'heures' => 'bool,optional',
-           'from' => 'date,mandatory',
-           'to'    => 'date,mandatory',
-           'help' => 'bool,optional'
-           );
-     }
-     if (!Session::getLoginUserID()) {
-       return self::Error($protocol,WEBSERVICES_ERROR_NOTAUTHENTICATED);
-     }
-     if (!isset($params['from'])) {
-       return self::Error($protocol,WEBSERVICES_ERROR_MISSINGPARAMETER, '', 'profile');
-     }
-     if (!isset($params['to'])) {
-       return self::Error($protocol,WEBSERVICES_ERROR_MISSINGPARAMETER, '', 'profile');
-     }
+        if (isset($params['help'])) {
+            return array(
+                'heures' => 'bool,optional',
+                'from' => 'date,mandatory',
+                'to' => 'date,mandatory',
+                'help' => 'bool,optional'
+            );
+        }
+        if (!Session::getLoginUserID()) {
+            return self::Error($protocol, WEBSERVICES_ERROR_NOTAUTHENTICATED);
+        }
+        if (!isset($params['from'])) {
+            return self::Error($protocol, WEBSERVICES_ERROR_MISSINGPARAMETER, '', 'profile');
+        }
+        if (!isset($params['to'])) {
+            return self::Error($protocol, WEBSERVICES_ERROR_MISSINGPARAMETER, '', 'profile');
+        }
 
-     if (isset($params['heure'])) {
-       $heure_begin = "08";
-       $heure_end = "17";
-     } else {
-       $heure_begin = "00";
-       $heure_end = "23";
-     }
+        if (isset($params['heure'])) {
+            $heure_begin = "08";
+            $heure_end = "17";
+        } else {
+            $heure_begin = "00";
+            $heure_end = "23";
+        }
 
-     // Voir pour le format de dates
-     list($month, $day, $year) = explode('/', $_GET['from']);
-     $from = "$year-$month-$day";
-     $qbegin = strtotime("$from $heure_begin:00:00");
+        // Voir pour le format de dates
+        list($month, $day, $year) = explode('/', $_GET['from']);
+        $from = "$year-$month-$day";
+        $qbegin = strtotime("$from $heure_begin:00:00");
 
-     list($month, $day, $year) = explode('/', $_GET['to']);
-     $to = "$year-$month-$day";
-     $qend   = strtotime("$to $heure_end:59:59");
+        list($month, $day, $year) = explode('/', $_GET['to']);
+        $to = "$year-$month-$day";
+        $qend = strtotime("$to $heure_end:59:59");
 
-     $diff = $qend - $qbegin;
+        $diff = $qend - $qbegin;
 
-     $query = "SELECT
+        $query = "SELECT
 `e`.`name` as 'entity',
 `c`.`name` as 'name',
 `u`.`begin_date` as 'begin_date',
@@ -867,108 +971,112 @@ OR
 ORDER BY `c`.`name`
 ";
 
-     $result = $DB->query($query);
+        $result = $DB->query($query);
 
-     $indispo = array();
+        $indispo = array();
 
-     while($data=$DB->fetch_array($result)) {
-       $begin = strtotime($data['begin_date']);
-       $end   = strtotime($data['end_date']);
+        while ($data = $DB->fetch_array($result)) {
+            $begin = strtotime($data['begin_date']);
+            $end = strtotime($data['end_date']);
 
-       if ($begin < $qbegin) {
-	 $begin = $qbegin;
-       }
-       if ($end > $qend) {
-	 $end = $qend;
-       }
-       $indispo[$data['name']]['entity'] = $data['entity'];
-       $indispo[$data['name']]['name'] = $data['name'];
-       $indispo[$data['name']]['indispo'][] = array (
-						     'begin' => $begin,
-						     'end'   => $end,
-						     'duration' => ($end-$begin)
-						     );
-     }
+            if ($begin < $qbegin) {
+                $begin = $qbegin;
+            }
+            if ($end > $qend) {
+                $end = $qend;
+            }
+            $indispo[$data['name']]['entity'] = $data['entity'];
+            $indispo[$data['name']]['name'] = $data['name'];
+            $indispo[$data['name']]['indispo'][] = array(
+                'begin' => $begin,
+                'end' => $end,
+                'duration' => ($end - $begin)
+            );
+        }
 
-     foreach ($indispo as &$borne) {
-       $borne['indispo'] = PluginMonitoringWebservice::checkLimits($borne['indispo']);
-     }
+        foreach ($indispo as &$borne) {
+            $borne['indispo'] = PluginMonitoringWebservice::checkLimits($borne['indispo']);
+        }
 
-     $indispo_result = array();
-     $i =  0;
-     foreach($indispo as $value) {
-       $indispo_result[$i]['name'] = $value['name'];
-       $indispo_result[$i]['entity'] = $value['entity'];
-       $duration = 0;
-       foreach ($value['indispo'] as $indispo_begin_end) {
-	 $duration += $indispo_begin_end['end']-$indispo_begin_end['begin'];
-       }
-       $indispo_result[$i]['duration'] = $duration;
-       $indispo_result[$i]['percent'] = round ((($diff - $duration)/$diff)*100, 2);
-       $i++;
-     }
-     return(json_encode($indispo_result));
-   }
+        $indispo_result = array();
+        $i = 0;
+        foreach ($indispo as $value) {
+            $indispo_result[$i]['name'] = $value['name'];
+            $indispo_result[$i]['entity'] = $value['entity'];
+            $duration = 0;
+            foreach ($value['indispo'] as $indispo_begin_end) {
+                $duration += $indispo_begin_end['end'] - $indispo_begin_end['begin'];
+            }
+            $indispo_result[$i]['duration'] = $duration;
+            $indispo_result[$i]['percent'] = round((($diff - $duration) / $diff) * 100, 2);
+            $i++;
+        }
+        return (json_encode($indispo_result));
+    }
 
-   private function checkLimits($bornes) {
-     $new_indispos = array();
-     $i = 0;
-     $recheck = 0;
-     foreach ($bornes as $datas) {
-       $begin = $datas['begin'];
-       $end = $datas['end'];
 
-       if (count($new_indispos) == 0) {
-	 $new_indispos[0]['begin'] = $begin;
-	 $new_indispos[0]['end'] = $end;
-	 $new_indispos[0]['duration'] = $end-$begin;
-       } else {
+    /**
+     * @param $bornes
+     * @return array
+     */
+    private function checkLimits($bornes, $read=true)
+    {
+        $new_indispos = array();
+        $i = 0;
+        $recheck = 0;
+        foreach ($bornes as $datas) {
+            $begin = $datas['begin'];
+            $end = $datas['end'];
 
-	 $found = 0;
-	 foreach ($new_indispos as &$begin_end) {
-	   if ( ($begin_end['begin'] > $begin) && ($begin_end['end'] < $end) ) {
-	     echo ($read ? "$begin - $end -> zone plus grande\n": '');
-	     $begin_end['begin'] = $begin;
-	     $begin_end['end'] = $end;
-	     $begin_end['duration'] = $begin_end['end']-$begin_end['begin'];
-	     $found = 1;
-	     $recheck = 1;
-	     break;
-	   } elseif ( ($begin_end['begin'] < $begin) && ($begin_end['end'] > $begin) && ($begin_end['end'] < $end) ) {
-	     echo ($read ? "$begin - $end -> fin apres\n": '');
-	     $begin_end['end'] = $end;
-	     $begin_end['duration'] = $begin_end['end']-$begin_end['begin'];
-	     $found = 1;
-	     $recheck = 1;
-	     break;
-	   } elseif ( ($begin_end['begin'] > $begin) && ($begin_end['begin'] < $end) && ($begin_end['end'] > $end) ) {
-	     echo ($read ? "$begin - $end -> debut avant \n": '');
-	     $begin_end['begin'] = $begin;
-	     $begin_end['duration'] = $begin_end['end']-$begin_end['begin'];
-	     $found = 1;
-	     $recheck = 1;
-	     break;
-	   } elseif ( ($begin_end['begin'] <= $begin) && ($begin_end['end'] >= $end) ) {
-	     echo ($read ? "$begin - $end -> dans la zone\n": '');
-	     $found = 1;
-	     break;
-	   }
-	 }
-	 if (!$found) {
-	   $new_indispos[] = array (
-				    'begin' => $begin,
-				    'end'   => $end,
-				    'duration' => ($end-$begin)
-				    );
-	 }
-       }
-     }
+            if (count($new_indispos) == 0) {
+                $new_indispos[0]['begin'] = $begin;
+                $new_indispos[0]['end'] = $end;
+                $new_indispos[0]['duration'] = $end - $begin;
+            } else {
 
-     if ($recheck) {
-       $new_indispos = PluginMonitoringWebservice::checkLimits($new_indispos);
-     }
-     return $new_indispos;
-   }
+                $found = 0;
+                foreach ($new_indispos as &$begin_end) {
+                    if (($begin_end['begin'] > $begin) && ($begin_end['end'] < $end)) {
+                        echo($read ? "$begin - $end -> zone plus grande\n" : '');
+                        $begin_end['begin'] = $begin;
+                        $begin_end['end'] = $end;
+                        $begin_end['duration'] = $begin_end['end'] - $begin_end['begin'];
+                        $found = 1;
+                        $recheck = 1;
+                        break;
+                    } elseif (($begin_end['begin'] < $begin) && ($begin_end['end'] > $begin) && ($begin_end['end'] < $end)) {
+                        echo($read ? "$begin - $end -> fin apres\n" : '');
+                        $begin_end['end'] = $end;
+                        $begin_end['duration'] = $begin_end['end'] - $begin_end['begin'];
+                        $found = 1;
+                        $recheck = 1;
+                        break;
+                    } elseif (($begin_end['begin'] > $begin) && ($begin_end['begin'] < $end) && ($begin_end['end'] > $end)) {
+                        echo($read ? "$begin - $end -> debut avant \n" : '');
+                        $begin_end['begin'] = $begin;
+                        $begin_end['duration'] = $begin_end['end'] - $begin_end['begin'];
+                        $found = 1;
+                        $recheck = 1;
+                        break;
+                    } elseif (($begin_end['begin'] <= $begin) && ($begin_end['end'] >= $end)) {
+                        echo($read ? "$begin - $end -> dans la zone\n" : '');
+                        $found = 1;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    $new_indispos[] = array(
+                        'begin' => $begin,
+                        'end' => $end,
+                        'duration' => ($end - $begin)
+                    );
+                }
+            }
+        }
+
+        if ($recheck) {
+            $new_indispos = PluginMonitoringWebservice::checkLimits($new_indispos);
+        }
+        return $new_indispos;
+    }
 }
-
-?>

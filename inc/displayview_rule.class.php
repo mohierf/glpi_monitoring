@@ -49,12 +49,13 @@ class PluginMonitoringDisplayview_rule extends CommonDBTM {
 
    static $rightname = 'plugin_monitoring_displayview';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return _n('Rule', 'Rules', $nb);
    }
@@ -385,5 +386,3 @@ class PluginMonitoringDisplayview_rule extends CommonDBTM {
    }
 
 }
-
-?>

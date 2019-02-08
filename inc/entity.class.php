@@ -49,12 +49,13 @@ class PluginMonitoringEntity extends CommonDBTM {
 
    static $rightname = 'entity';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return "entity";
    }
@@ -174,8 +175,8 @@ class PluginMonitoringEntity extends CommonDBTM {
       while ($data=$DB->fetch_array($result)) {
          return $data['tag'];
       }
+
+      return "";
    }
 
 }
-
-?>

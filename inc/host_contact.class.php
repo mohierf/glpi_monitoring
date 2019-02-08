@@ -115,5 +115,3 @@ class PluginMonitoringHost_Contact extends CommonDBRelation {
       Html::closeForm();
    }
 }
-
-?>

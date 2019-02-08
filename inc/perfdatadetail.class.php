@@ -224,4 +224,3 @@ class PluginMonitoringPerfdataDetail extends CommonDBTM {
       }
    }
 }
-?>

@@ -49,12 +49,13 @@ class PluginMonitoringCustomitem_Gauge extends CommonDBTM {
 
    static $rightname = 'plugin_monitoring_displayview';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return __('Custom item', 'monitoring')." - ".__('Gauge', 'monitoring');
    }
@@ -84,18 +85,18 @@ class PluginMonitoringCustomitem_Gauge extends CommonDBTM {
    }
 
 
-
-   /**
-   * Display form for agent configuration
-   *
-   * @param $items_id integer ID
-   * @param $options array
-   *
-   *@return bool true if form is ok
-   *
-   **/
+    /**
+     * Display form for agent configuration
+     *
+     * @param $items_id integer ID
+     * @param $options array
+     *
+     * @param array $copy
+     * @return bool true if form is ok
+     *
+     */
    function showForm($items_id, $options=array(), $copy=array()) {
-      global $DB,$CFG_GLPI;
+      global $CFG_GLPI;
 
       if ($items_id!='') {
          $this->getFromDB($items_id);
@@ -136,7 +137,7 @@ class PluginMonitoringCustomitem_Gauge extends CommonDBTM {
       $this->showFormButtons($options);
 
       if ($items_id == 0) {
-         return;
+         return "";
       }
 
       echo "<form name='form' method='post' action='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/customitem_gauge.form.php'>";
@@ -165,9 +166,7 @@ class PluginMonitoringCustomitem_Gauge extends CommonDBTM {
           'to_update'  => "add_selectcomponent",
           'url'        => $CFG_GLPI["root_doc"]."/plugins/monitoring/ajax/gaugeComponents.php"
       );
-      Dropdown::show(
-              'PluginMonitoringComponentscatalog',
-              array('toupdate' => $toupdate));
+      Dropdown::show('PluginMonitoringComponentscatalog', array('toupdate' => $toupdate));
       echo "</td>";
       echo "<td id='add_selectcomponent'>";
 
@@ -188,6 +187,7 @@ class PluginMonitoringCustomitem_Gauge extends CommonDBTM {
       echo "<table class='tab_cadre_fixe'>";
       foreach ($array as $itemtype=>$data1) {
          foreach ($data1 as $items_id1=>$data2) {
+             /* @var CommonDBTM $item1 */
             $item1 = new $itemtype();
             $item1->getFromDB(str_replace('id', '', $items_id1));
             echo "<tr class='tab_bg_3'>";
@@ -206,6 +206,7 @@ class PluginMonitoringCustomitem_Gauge extends CommonDBTM {
                      echo $item1->getLink();
                      echo "</td>";
                   }
+                   /* @var CommonDBTM $item2 */
                   $item2 = new $itemtype2();
                   $item2->getFromDB(str_replace('id', '', $items_id2));
                   echo "<td>";
@@ -570,13 +571,13 @@ class PluginMonitoringCustomitem_Gauge extends CommonDBTM {
          } else if ($type == 'median') {
             sort($a_val);
             $count = count($a_val); //total numbers in array
-            $middleval = floor(($count-1)/2); // find the middle value, or the lowest middle value
+            $middleval = (int)floor(($count - 1) / 2); // find the middle value, or the lowest middle value
             if($count % 2) { // odd number, middle is the median
                $median = $a_val[$middleval];
             } else { // even number, calculate avg of 2 medians
-               $low = $arr[$middleval];
-               $high = $arr[$middleval+1];
-               $median = (($low+$high)/2);
+               $low = $a_val[$middleval];
+               $high = $a_val[$middleval + 1];
+               $median = (($low + $high) / 2);
             }
             $val = $median;
          }
@@ -830,5 +831,3 @@ class PluginMonitoringCustomitem_Gauge extends CommonDBTM {
       $this->update($input);
    }
 }
-
-?>

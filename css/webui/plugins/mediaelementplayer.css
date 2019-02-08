@@ -11,7 +11,7 @@
 .mejs-container {
 	position: relative;
 	background: #000;
-	font-family: Helvetica, Arial;
+    font-family: Helvetica, Arial, serif;
 	text-align: left;
 	vertical-align: top;
 	text-indent: 0;
@@ -88,7 +88,6 @@
 .mejs-poster img {
 	border: 0;
 	padding: 0;
-	border: 0;
 }
 
 .mejs-overlay {
@@ -169,7 +168,7 @@
 	height: 26px;
 	font-size: 11px;
 	line-height: 11px;
-	font-family: Helvetica, Arial;
+	font-family: Helvetica, Arial, serif;
 	border: 0;
 }
 
@@ -185,11 +184,11 @@
 	height: 16px;
 	width: 16px;
 	border: 0;
-	background: transparent url(../../img/controls.svg) no-repeat;
+	background: transparent url('../../img/controls.svg') no-repeat;
 }
 
 .no-svg .mejs-controls .mejs-button button {
-	background-image: url((../../img/controls.png);
+	background-image: url('../../img/controls.png');
 }
 
 	/* :focus for accessibility */
@@ -345,7 +344,7 @@
 	width: 0;
 	height: 0;
 	line-height: 0;
-	border: solid 5px #eee;
+	border: solid 5px;
 	border-color: #eee transparent transparent transparent;
 	-webkit-border-radius: 0;
 	-moz-border-radius: 0;
@@ -584,7 +583,7 @@
 	float: left;
 	padding: 4px 0 0 0;
 	line-height: 15px;
-	font-family: helvetica, arial;
+	font-family: helvetica, arial, serif;
 	font-size: 10px;
 }
 
@@ -766,7 +765,7 @@
 }
 
 .mejs-contextmenu .mejs-contextmenu-item {
-	font-family: Helvetica, Arial;
+	font-family: Helvetica, Arial, serif;
 	font-size: 12px;
 	padding: 4px 6px;
 	cursor: pointer;
@@ -935,7 +934,7 @@ div.mejs-speed-button {
 	float: left;
 	padding: 4px 0 0 0;
 	line-height: 15px;
-	font-family: helvetica, arial;
+	font-family: helvetica, arial, serif;
 	font-size: 11.5px;
 	color: white;
 	margin-left: 5px;

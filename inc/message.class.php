@@ -48,8 +48,7 @@ class PluginMonitoringMessage extends CommonDBTM {
 
 
    static function getMessages() {
-      global $CFG_GLPI;
-
+      // TODO: check this!
       return;
       $pmMessage = new self();
 
@@ -231,4 +230,3 @@ class PluginMonitoringMessage extends CommonDBTM {
    }
 }
 
-?>

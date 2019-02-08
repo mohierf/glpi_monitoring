@@ -49,27 +49,28 @@ class PluginMonitoringHostaddress extends CommonDBTM {
 
    static $rightname = 'plugin_monitoring_hostconfig';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return "Host address";
    }
 
 
-
-   /**
-   *
-   *
-   * @param $items_id integer ID
-   * @param $options array
-   *
-   *@return bool true if form is ok
-   *
-   **/
+    /**
+     *
+     *
+     * @param $items_id integer ID
+     * @param $itemtype
+     * @param $options array
+     *
+     * @return bool true if form is ok
+     *
+     */
    function showForm($items_id, $itemtype, $options=array()) {
       global $DB,$CFG_GLPI;
 
@@ -276,5 +277,3 @@ class PluginMonitoringHostaddress extends CommonDBTM {
       return $networkPort;
    }
 }
-
-?>

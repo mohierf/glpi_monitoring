@@ -59,7 +59,7 @@ class PluginMonitoringDisplayview_User extends CommonDBRelation {
    /**
     * Get users for a reminder
     *
-    * @param $reminders_id ID of the reminder
+    * @param integer $reminders_id ID of the reminder
     *
     * @return array of users linked to a reminder
    **/
@@ -78,4 +78,3 @@ class PluginMonitoringDisplayview_User extends CommonDBRelation {
    }
 
 }
-?>

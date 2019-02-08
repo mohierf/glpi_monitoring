@@ -50,4 +50,3 @@ class PluginMonitoringWeathermaplink extends CommonDBTM {
 
 }
 
-?>

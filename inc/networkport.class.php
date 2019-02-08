@@ -48,12 +48,13 @@ class PluginMonitoringNetworkport extends CommonDBTM {
 
    static $rightname = 'plugin_monitoring_componentscatalog';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return __('Network ports of networking devices', 'monitoring');
    }
@@ -92,8 +93,6 @@ class PluginMonitoringNetworkport extends CommonDBTM {
 
 
    static function isMonitoredNetworkport($networkports_id) {
-      global $DB;
-
       $nb = countElementsInTable("glpi_plugin_monitoring_networkports",
               "`networkports_id` = '".$networkports_id."'");
       if ($nb > 0) {
@@ -153,4 +152,3 @@ class PluginMonitoringNetworkport extends CommonDBTM {
    }
 }
 
-?>

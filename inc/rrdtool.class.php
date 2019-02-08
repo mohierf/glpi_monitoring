@@ -136,19 +136,22 @@ class PluginMonitoringRrdtool extends CommonDBTM {
    }
 
 
-
-   /**
-    * Function used to generate gif of rrdtool graph
-    *
-    * @param type $itemtype
-    * @param type $items_id
-    * @param type $time
-    */
+    /**
+     * Function used to generate gif of rrdtool graph
+     *
+     * @param $rrdtool_template
+     * @param string $itemtype
+     * @param integer $items_id
+     * @param string $timezone
+     * @param string $time
+     * @param string $width
+     * @return boolean
+     */
    function displayGLPIGraph($rrdtool_template, $itemtype, $items_id, $timezone, $time='1d', $width='470') {
 
       $filename = GLPI_PLUGIN_DOC_DIR."/monitoring/templates/".$rrdtool_template."_graph.json";
-      if (!file_exists($filename)) {
-         return;
+      if (! file_exists($filename)) {
+         return false;
       }
       $a_json = json_decode(file_get_contents($filename));
 
@@ -328,4 +331,4 @@ class PluginMonitoringRrdtool extends CommonDBTM {
    }
 }
 
-?>
+

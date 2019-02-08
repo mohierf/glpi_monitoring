@@ -8,21 +8,21 @@ use GuzzleHttp\Psr7\Request;
 
 class Alignak_Backend_Client {
 
-    private $connected = false;
+//    private $connected = false;
     private $authenticated = false;
     private $processes = 1;
     private $BACKEND_PAGINATION_LIMIT = 50;
-    private $BACKEND_PAGINATION_DEFAULT = 25;
+//    private $BACKEND_PAGINATION_DEFAULT = 25;
     private $url_endpoint_root = '';
-    public $client = NULL;
-    public $token = NULL;
-    public $logger_debug = FALSE;
+    public $client = null;
+    public $token = null;
+    public $logger_debug = false;
 
     /**
      * Initiate configuration
      *
-     * @param type $endpoint root endpoint (API URL)
-     * @param type $processes Number of processes used by GET
+     * @param string $endpoint root endpoint (API URL)
+     * @param integer $processes Number of processes used by GET
      */
     public function __construct($endpoint, $processes=1) {
         $this->processes = $processes;
@@ -52,9 +52,12 @@ class Alignak_Backend_Client {
      *   In case of any error, raises a BackendException
      *
      *
-     * @param type $username login name
-     * @param type $password password
-     * @param type $generate Can have these values: enabled | force | disabled
+     * @param string $username login name
+     * @param string $password password
+     * @param string $generate Can have these values: enabled | force | disabled
+     *
+     * @return bool
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     function login($username, $password, $generate='enabled') {
         if ($this->logger_debug) {
@@ -81,7 +84,7 @@ class Alignak_Backend_Client {
             if ($this->logger_debug) {
                 error_log("authentication refused: ".$response->getBody()->getContents());
             }
-            return FALSE;
+            return false;
         }
 
         $body = $response->getBody();
@@ -98,7 +101,7 @@ class Alignak_Backend_Client {
         }
 
         if (isset($resp['_error'])) {
-            // Considering a problem occured is an _error field is present ...
+            // Considering a problem occured if an _error field is present ...
             $error = $resp['_error'];
             if ($this->logger_debug) {
                 error_log("authentication, error: ".$error['code'].", ".$error['message']);
@@ -111,7 +114,7 @@ class Alignak_Backend_Client {
                 if ($this->logger_debug) {
                     error_log("user authenticated: ".$username);
                 }
-                return TRUE;
+                return true;
             } else if ($generate == 'force') {
                 if ($this->logger_debug) {
                     error_log("Token generation required but none provided.");
@@ -121,14 +124,14 @@ class Alignak_Backend_Client {
                 if ($this->logger_debug) {
                     error_log("Token disabled ... to be implemented!");
                 }
-                return FALSE;
+                return false;
             } else if ($generate == 'enabled') {
                 if ($this->logger_debug) {
                     error_log("Token enabled, but none provided, require new token generation");
                 }
                 return $this->login($username, $password, 'force');
             }
-            return FALSE;
+            return false;
         }
     }
 
@@ -187,8 +190,12 @@ class Alignak_Backend_Client {
      *
      *  If an error occurs, a BackendException is raised.
      *
-     * @param type $endpoint endpoint (API URL) relative from root endpoint
-     * @param type $params list of parameters for the backend API
+     * @param string $endpoint endpoint (API URL) relative from root endpoint
+     * @param array $params list of parameters for the backend API
+     *
+     * @return mixed
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     function get($endpoint, $params=array()) {
         if (is_null($this->token)) {
@@ -259,7 +266,8 @@ class Alignak_Backend_Client {
      * @param string $endpoint endpoint (API URL) relative from root endpoint
      * @param array $params list of parameters for the backend API
      *
-     * @return list of properties when query item | list of items when get many items
+     * @return array list of properties when query item | list of items when get many items
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     function get_all($endpoint, $params=array()) {
         if (is_null($this->token)) {
@@ -359,9 +367,11 @@ class Alignak_Backend_Client {
     /**
      * Create a new item
      *
-     * @param type $endpoint endpoint (API URL)
-     * @param type $data properties of item to create
-     * @param type $headers headers (example: Content-Type)
+     * @param string $endpoint endpoint (API URL)
+     * @param array $data properties of item to create
+     * @param array $headers headers (example: Content-Type)
+     * @return mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     function post($endpoint, $data, $headers=array()) {
         if (is_null($this->token)) {
@@ -433,10 +443,12 @@ class Alignak_Backend_Client {
      *  - message: backend error message
      *  - response: JSON encoded backend response
      *
-     * @param type $endpoint endpoint (API URL)
-     * @param type $data properties of item to update
-     * @param type $headers headers (example: Content-Type). 'If-Match' required
-     * @param type $inception if true tries to get the last _etag
+     * @param string $endpoint endpoint (API URL)
+     * @param array $data properties of item to update
+     * @param array $headers headers (example: Content-Type). 'If-Match' required
+     * @param bool $inception if true tries to get the last _etag
+     * @return mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     function patch($endpoint, $data, $headers=array(), $inception=false) {
 
@@ -505,8 +517,10 @@ class Alignak_Backend_Client {
      *
      *  headers['If-Match'] must contain the _etag identifier of the element to delete
      *
-     * @param type $endpoint endpoint (API URL)
-     * @param type $headers headers (example: Content-Type)
+     * @param string $endpoint endpoint (API URL)
+     * @param array $headers headers (example: Content-Type)
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     function delete($endpoint, $headers=array()) {
         if (is_null($this->token)) {

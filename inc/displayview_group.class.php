@@ -60,7 +60,7 @@ class PluginMonitoringDisplayview_Group extends CommonDBRelation {
    /**
     * Get groups for a displayview
     *
-    * @param $pluginmonitoringdisplayviews_id ID of the displayview
+    * @param integer $pluginmonitoringdisplayviews_id ID of the displayview
     *
     * @return array of groups linked to a displayview
    **/
@@ -79,4 +79,3 @@ class PluginMonitoringDisplayview_Group extends CommonDBRelation {
    }
 
 }
-?>

@@ -51,22 +51,25 @@ class PluginMonitoringPerfdata extends CommonDBTM {
 
    static $rightname = 'plugin_monitoring_perfdata';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return __('Graph template', 'monitoring');
    }
 
 
-   /**
-    * @since version 0.85
-    *
-    * @see commonDBTM::getRights()
-    **/
+    /**
+     * @since version 0.85
+     *
+     * @see commonDBTM::getRights()
+     * @param string $interface
+     * @return array
+     */
    function getRights($interface='central') {
 
       $values = parent::getRights();
@@ -1234,4 +1237,3 @@ class PluginMonitoringPerfdata extends CommonDBTM {
       }
    }
 }
-?>

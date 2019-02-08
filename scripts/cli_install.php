@@ -89,14 +89,14 @@ class CliMigration extends Migration {
 
    function __construct($ver) {
 
-      $this->deb     = time();
+      $this->start     = time();
       $this->version = $ver;
    }
 
 
    function displayMessage ($msg) {
 
-      $msg .= " (".Html::timestampToString(time()-$this->deb).")";
+      $msg .= " (".Html::timestampToString(time()-$this->start).")";
       echo str_pad($msg, 100)."\r";
    }
 

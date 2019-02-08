@@ -49,12 +49,13 @@ class PluginMonitoringLog extends CommonDBTM {
 
    static $rightname = 'config';
 
-   /**
-   * Get name of this type
-   *
-   *@return text name of this type by language of the user connected
-   *
-   **/
+    /**
+     * Get name of this type
+     *
+     * @param int $nb
+     * @return string name of this type by language of the user connected
+     *
+     */
    static function getTypeName($nb=0) {
       return __('Logs', 'monitoring');
    }
@@ -93,9 +94,8 @@ class PluginMonitoringLog extends CommonDBTM {
       }
 
       $pmConfig->getFromDB(1);
-      $secs = $pmConfig->fields['logretention'] * DAY_TIMESTAMP;
-      $query = "DELETE FROM `".$pmLog->getTable()."`
-         WHERE UNIX_TIMESTAMP(date_mod) < UNIX_TIMESTAMP()-$secs";
+      $seconds = $pmConfig->fields['log_retention'] * DAY_TIMESTAMP;
+      $query = "DELETE FROM `".$pmLog->getTable()."` WHERE UNIX_TIMESTAMP(date_mod) < UNIX_TIMESTAMP() - $seconds";
       if (($id_restart > 0) || ($id_reload > 0)) {
          // Keep last reload or restart command
          $id_restart = max($id_restart, $id_reload);
@@ -105,7 +105,7 @@ class PluginMonitoringLog extends CommonDBTM {
 
       // TODO: Delete serviceevents table content ???
       $query = "DELETE FROM `glpi_plugin_monitoring_serviceevents`
-         WHERE UNIX_TIMESTAMP(date) < UNIX_TIMESTAMP()-$secs";
+         WHERE UNIX_TIMESTAMP(date) < UNIX_TIMESTAMP()-$seconds";
       $DB->query($query);
 
       return true;
@@ -135,4 +135,3 @@ class PluginMonitoringLog extends CommonDBTM {
 
 }
 
-?>

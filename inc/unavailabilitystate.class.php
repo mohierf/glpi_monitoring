@@ -41,58 +41,60 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringUnavailabilityState extends CommonDBTM {
-   private $currentid = 0;
+class PluginMonitoringUnavailabilityState extends CommonDBTM
+{
+    private $currentid = 0;
 
 
-   static function getTypeName($nb=0) {
-      return __CLASS__;
-   }
+    static function getTypeName($nb = 0)
+    {
+        return __CLASS__;
+    }
 
 
-   static function canCreate() {
-      return true;
-   }
+    static function canCreate()
+    {
+        return true;
+    }
 
 
-
-   static function canView() {
-      return true;
-   }
-
-
-
-   function getLastID($services_id) {
-
-      $datas = $this->find("`plugin_monitoring_services_id`='".$services_id."'",
-                                           "",
-                                           1);
-      if (count($datas) == 0) {
-         // Create a new line
-         $input = array(
-             'plugin_monitoring_services_id' => $services_id
-         );
-         $this->currentid = $this->add($input);
-         return 0;
-      } else {
-         $data = current($datas);
-         $this->currentid = $data['id'];
-         return $data['plugin_monitoring_serviceevents_id'];
-      }
-      return 0;
-   }
+    static function canView()
+    {
+        return true;
+    }
 
 
+    function getLastID($services_id)
+    {
 
-   function setLastID($services_id, $serviceevents_id) {
-      $input = array(
-          'id'                                 => $this->currentid,
-          'plugin_monitoring_serviceevents_id' => $serviceevents_id
-      );
-      $this->update($input);
-   }
+        $datas = $this->find("`plugin_monitoring_services_id`='" . $services_id . "'",
+            "",
+            1);
+        if (count($datas) == 0) {
+            // Create a new line
+            $input = array(
+                'plugin_monitoring_services_id' => $services_id
+            );
+            $this->currentid = $this->add($input);
+        } else {
+            $data = current($datas);
+            $this->currentid = $data['id'];
+            return $data['plugin_monitoring_serviceevents_id'];
+        }
+
+        return 0;
+    }
+
+
+    function setLastID($services_id, $serviceevents_id)
+    {
+        $input = array(
+            'id' => $this->currentid,
+            'plugin_monitoring_serviceevents_id' => $serviceevents_id
+        );
+        $this->update($input);
+    }
 }
-?>

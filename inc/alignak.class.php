@@ -41,119 +41,138 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringAlignak {
+//require_once '../lib/alignak-backend-php-client/src/Client.php';
+include_once "../lib/alignak-backend-php-client/src/Client.php";
 
-   private $server = 'http://127.0.0.1:90';
-   private $resource = '';
+class PluginMonitoringAlignak
+{
 
-   function __construct($resource) {
-      $this->resource = $resource;
-      $this->abc = new Alignak_Backend_Client($this->server);
-      if (isset($_SESSION['glpi_plugin_monitoring']['alignak_token'])) {
-         $this->abc->token = $_SESSION['glpi_plugin_monitoring']['alignak_token'];
-      } else {
-         $this->abc->login('admin', 'admin');
-         $_SESSION['glpi_plugin_monitoring']['alignak_token'] = $this->abc->token;
-      }
-   }
+    private $server = 'http://127.0.0.1:90';
+    private $resource = '';
+    public $abc = null;
+
+    function __construct($resource)
+    {
+        $this->resource = $resource;
+        $this->abc = new Alignak_Backend_Client($this->server);
+        if (isset($_SESSION['glpi_plugin_monitoring']['alignak_token'])) {
+            $this->abc->token = $_SESSION['glpi_plugin_monitoring']['alignak_token'];
+        } else {
+            try {
+                $this->abc->login('admin', 'admin');
+                $_SESSION['glpi_plugin_monitoring']['alignak_token'] = $this->abc->token;
+            } catch (Exception $exp) {
+                Toolbox::logInFile("pm", "PluginMonitoringAlignak, __construct, exception:". $exp->getMessage() ."\n");
+                if (isset($_SESSION['glpi_plugin_monitoring']['alignak_token'])) {
+                    unset($_SESSION['glpi_plugin_monitoring']['alignak_token']);
+                }
+            }
+        }
+    }
 
 
+    function showList()
+    {
+        $params = Search::manageParams('PluginMonitoringCommand', $_GET);
+        $data = Search::prepareDatasForSearch('PluginMonitoringCommand', $params);
+        $this->constructDatas($data);
 
-   function showList() {
-      $params = Search::manageParams('PluginMonitoringCommand', $_GET);
-      $data = Search::prepareDatasForSearch('PluginMonitoringCommand', $params);
-      $this->constructDatas($data);
-
-      // Get all data in the backend and convert data to compatible format for
-      // GLPI list
-      Search::displayDatas($data);
-   }
+        // Get all data in the backend and convert data to compatible format for
+        // GLPI list
+        Search::displayDatas($data);
+    }
 
 
+    function constructDatas(array &$data)
+    {
+        global $CFG_GLPI;
 
-   function constructDatas(array &$data) {
-      global $CFG_GLPI;
+        $options = array('max_results' => $data['search']['list_limit']);
+        // Manage paging
+        if ($data['search']['start'] > 0) {
+            $options['page'] = ceil($data['search']['start'] / $data['search']['list_limit']) + 1;
+        }
+        $searchopt = &Search::getOptions('PluginMonitoringCommand');
+        // Manage sort
+        $options['sort'] = $searchopt[$data['search']['sort']]["field"];
+        if ($data['search']['order'] == 'DESC') {
+            $options['sort'] = "-" . $options['sort'];
+        }
 
-      $options = array('max_results' => $data['search']['list_limit']);
-      // Manage paging
-      if ($data['search']['start'] > 0) {
-         $options['page'] = ceil($data['search']['start']/$data['search']['list_limit']) + 1;
-      }
-      $searchopt = &Search::getOptions('PluginMonitoringCommand');
-      // Manage sort
-      $options['sort'] = $searchopt[$data['search']['sort']]["field"];
-      if ($data['search']['order'] == 'DESC') {
-         $options['sort'] = "-".$options['sort'];
-      }
+        try {
+            $back_data = $this->abc->get($this->resource, $options);
+            $data['data']['totalcount'] = $back_data['_meta']['total'];
+            $data['data']['count'] = $back_data['_meta']['total'];
+            $data['data']['begin'] = 0;
+            $data['data']['end'] = 1;
+            $data['data']['cols'] = array();
+        } catch (Exception $exp) {
+            Toolbox::logInFile("pm", "PluginMonitoringAlignak, constructDatas, exception:". $exp->getMessage() ."\n");
+            return;
+        }
 
-      $back_data = $this->abc->get($this->resource, $options);
-      $data['data']['totalcount'] = $back_data['_meta']['total'];
-      $data['data']['count'] = $back_data['_meta']['total'];
-      $data['data']['begin'] = 0;
-      $data['data']['end'] = 1;
-      $data['data']['cols'] = array();
-      $num       = 0;
+        $num = 0;
+        foreach ($data['toview'] as $key => $val) {
+            $data['data']['cols'][$num] = array();
 
-      foreach ($data['toview'] as $key => $val) {
-         $data['data']['cols'][$num] = array();
+            $data['data']['cols'][$num]['itemtype'] = $data['itemtype'];
+            $data['data']['cols'][$num]['id'] = $val;
+            $data['data']['cols'][$num]['name'] = $searchopt[$val]["name"];
+            $data['data']['cols'][$num]['field'] = $searchopt[$val]["field"];
+            if (isset($searchopt[$val]["datatype"])) {
+                $data['data']['cols'][$num]['datatype'] = $searchopt[$val]["datatype"];
+            } else {
+                $data['data']['cols'][$num]['datatype'] = 'string';
+            }
+            $data['data']['cols'][$num]['meta'] = 0;
+            $data['data']['cols'][$num]['searchopt'] = $searchopt[$val];
+            $num++;
+        }
 
-         $data['data']['cols'][$num]['itemtype']  = $data['itemtype'];
-         $data['data']['cols'][$num]['id']        = $val;
-         $data['data']['cols'][$num]['name']      = $searchopt[$val]["name"];
-         $data['data']['cols'][$num]['field']     = $searchopt[$val]["field"];
-         if (isset($searchopt[$val]["datatype"])) {
-            $data['data']['cols'][$num]['datatype']  = $searchopt[$val]["datatype"];
-         } else {
-            $data['data']['cols'][$num]['datatype'] = 'string';
-         }
-         $data['data']['cols'][$num]['meta']      = 0;
-         $data['data']['cols'][$num]['searchopt'] = $searchopt[$val];
-         $num++;
-      }
-
-      $data['data']['rows'] = array();
-      $i = 0;
-      foreach ($back_data['_items'] as $values) {
-         $data['data']['rows'][$i] = array(
-             'raw' => array(),
-             'id'  => $values['_id']
-         );
-         foreach ($data['data']['cols'] as $num=>$vals) {
-            $data['data']['rows'][$i][$num] = array(
-                'count' => 1,
-                'displayname' => $values[$vals['field']]
+        $data['data']['rows'] = array();
+        $i = 0;
+        foreach ($back_data['_items'] as $values) {
+            $data['data']['rows'][$i] = array(
+                'raw' => array(),
+                'id' => $values['_id']
             );
-            if ($vals['field'] == 'name') {
-               $data['data']['rows'][$i][$num]['displayname'] = "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/command.form.php?id=".$values['_id']."'>".$values[$vals['field']]."</a>";
+            foreach ($data['data']['cols'] as $num => $vals) {
+                $data['data']['rows'][$i][$num] = array(
+                    'count' => 1,
+                    'displayname' => $values[$vals['field']]
+                );
+                if ($vals['field'] == 'name') {
+                    $data['data']['rows'][$i][$num]['displayname'] = '<a href="' . $CFG_GLPI['root_doc'] . '/plugins/monitoring/front/command.form.php?id=' . $values['_id'] . '">' . $values[$vals['field']] . '</a>';
+                }
+                if ($vals['datatype'] == 'bool') {
+                    $data['data']['rows'][$i][$num]['displayname'] = (int)$values[$vals['field']];
+                }
             }
-            if ($vals['datatype'] == 'bool') {
-               $data['data']['rows'][$i][$num]['displayname'] = (int)$values[$vals['field']];
-            }
-         }
-         $i++;
-      }
+            $i++;
+        }
 
-   }
+    }
 
 
+    function getID($id)
+    {
+        return $this->abc->get($this->resource . '/' . $id);
+    }
 
-   function getID($id) {
-      return $this->abc->get($this->resource.'/'.$id);
-   }
 
+    function addItem($data)
+    {
+        if (isset($data['add'])) {
+            unset($data['add']);
+        }
+        if (isset($data['_glpi_csrf_token'])) {
+            unset($data['_glpi_csrf_token']);
+        }
 
-   function addItem($data) {
-      if (isset($data['add'])) {
-         unset($data['add']);
-      }
-      if (isset($data['_glpi_csrf_token'])) {
-         unset($data['_glpi_csrf_token']);
-      }
-
-      //$fields = $this->abc->get('docs/spec.json');
+        //$fields = $this->abc->get('docs/spec.json');
 //      $thisdomain = $fields['domains'][$this->resource]['/'.$this->resource]['POST']['params'];
 //      foreach ($thisdomain as $values) {
 //         if (isset($values['ui'])
@@ -165,149 +184,154 @@ class PluginMonitoringAlignak {
 //         }
 //      }
 
-      $resp = $this->abc->post($this->resource, $data);
-      return $resp;
-   }
+        $resp = $this->abc->post($this->resource, $data);
+        return $resp;
+    }
 
 
-   function delItem($id, $etag) {
-      if ($id != '') {
-         $resp = $this->abc->delete($this->resource."/".$id, array('If-Match' => $etag));
-         print_r($resp);
-      }
-   }
+    function delItem($id, $etag)
+    {
+        if ($id != '') {
+            $resp = $this->abc->delete($this->resource . "/" . $id, array('If-Match' => $etag));
+            print_r($resp);
+        }
+    }
 
 
-   function showForm($itemtype, $items_id) {
-      global $CFG_GLPI;
+    function showForm($itemtype, $items_id)
+    {
+        global $CFG_GLPI;
 
-      // Get fields + information
-      $thisdomain = $this->getPropertiesDefinition();
-      foreach ($thisdomain as $values) {
-         if ($values['name'] == 'ui') {
-            $ui = $values;
-         }
-      }
-
-      $currentResource = array();
-      if ($items_id != '') {
-         $currentResource = $this->abc->get($this->resource."/".$items_id);
-      }
-
-      echo "<form name='form' method='post' action='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/command.form.php' enctype=\"multipart/form-data\">";
-      echo "<table class='tab_cadre_fixe' id='mainformtable'>";
-
-      echo "<tr class='headerRow'><th colspan='2'>";
-      printf($ui['ui']['page_title'], __('New item'));
-      echo "</th><th colspan='2'>";
-      echo "</th></tr>\n";
-
-      $col = 0;
-      foreach ($thisdomain as $values) {
-         if (isset($values['ui'])
-                 && $values['name'] != 'ui'
-                 && isset($values['ui']['visible'])
-                 && $values['ui']['visible']) {
-            if (isset($currentResource[$values['name']])) {
-               $values['default'] = $currentResource[$values['name']];
+        // Get fields + information
+        $thisdomain = $this->getPropertiesDefinition();
+        foreach ($thisdomain as $values) {
+            if ($values['name'] == 'ui') {
+                $ui = $values;
             }
-            if ($col == 0) {
-               echo "<tr class='tab_bg_1'>";
+        }
+
+        $currentResource = array();
+        if ($items_id != '') {
+            $currentResource = $this->abc->get($this->resource . "/" . $items_id);
+        }
+
+        echo "<form name='form' method='post' action='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/command.form.php' enctype=\"multipart/form-data\">";
+        echo "<table class='tab_cadre_fixe' id='mainformtable'>";
+
+        echo "<tr class='headerRow'><th colspan='2'>";
+        printf($ui['ui']['page_title'], __('New item'));
+        echo "</th><th colspan='2'>";
+        echo "</th></tr>\n";
+
+        $col = 0;
+        foreach ($thisdomain as $values) {
+            if (isset($values['ui'])
+                && $values['name'] != 'ui'
+                && isset($values['ui']['visible'])
+                && $values['ui']['visible']) {
+                if (isset($currentResource[$values['name']])) {
+                    $values['default'] = $currentResource[$values['name']];
+                }
+                if ($col == 0) {
+                    echo "<tr class='tab_bg_1'>";
+                }
+                echo "<td>";
+                $this->displayFieldForm($values);
+                echo "</td>";
+                $col++;
+                if ($col == 2) {
+                    echo "</tr>";
+                    $col = 0;
+                }
             }
-            echo "<td>";
-            $this->displayFieldForm($values);
+        }
+        if ($col == 1) {
+            echo "<td></td>";
+            echo "</tr>";
+        }
+        echo "<tr class='tab_bg_2'>";
+        echo "<td class='center' colspan='4'>\n";
+        if (isset($currentResource['_id'])) {
+            echo Html::hidden('_etag', array('value' => $currentResource['_etag']));
+            echo Html::hidden('_id', array('value' => $currentResource['_id']));
+            echo Html::submit(_x('button', 'Save'), array('name' => 'update'));
             echo "</td>";
-            $col++;
-            if ($col == 2) {
-               echo "</tr>";
-               $col = 0;
+            echo "</tr>";
+            echo "<tr class='tab_bg_2'>\n";
+            echo "<td class='right' colspan='4' >\n";
+            echo Html::submit(_x('button', 'Delete permanently'),
+                array('name' => 'purge',
+                    'confirm' => __('Confirm the final deletion?')));
+        } else {
+            echo Html::submit(_x('button', 'Add'), array('name' => 'add'));
+        }
+        echo "</td></tr>\n";
+        echo "</table>";
+        Html::closeForm();
+    }
+
+
+    function displayFieldForm($data)
+    {
+        echo $data['ui']['title'] . '</td><td>';
+        switch ($data['type']) {
+
+            case 'string':
+                if (!isset($data['default'])) {
+                    $data['default'] = '';
+                }
+                echo '<input type="text" name="' . $data['name'] . '" value="' . $data['default'] . '" />';
+                break;
+
+            case 'integer':
+                Dropdown::showNumber($data['name'], array('value' => $data['default']));
+                break;
+
+            case 'boolean':
+                Dropdown::showYesNo($data['name'], $data['default']);
+                break;
+
+            case "objectid":
+                // Get data of this object
+                $obj = $this->abc->get($data['data_relation']['resource']);
+                $elements = array();
+                foreach ($obj['_items'] as $obj_values) {
+                    $elements[$obj_values[$data['data_relation']['field']]] = $obj_values['name'];
+                }
+                Dropdown::showFromArray($data['name'], $elements);
+                break;
+
+            case "list":
+
+                break;
+
+        }
+    }
+
+
+    function getVisibleFields($data)
+    {
+        $return = array();
+        foreach ($data as $values) {
+            if (isset($values['ui'])
+                && $values['name'] != 'ui'
+                && isset($values['ui']['visible'])
+                && $values['ui']['visible']) {
+                $return[] = $values;
             }
-         }
-      }
-      if ($col == 1) {
-         echo "<td></td>";
-         echo "</tr>";
-      }
-      echo "<tr class='tab_bg_2'>";
-      echo "<td class='center' colspan='4'>\n";
-      if (isset($currentResource['_id'])) {
-         echo Html::hidden('_etag', array('value' => $currentResource['_etag']));
-         echo Html::hidden('_id', array('value' => $currentResource['_id']));
-         echo Html::submit(_x('button','Save'), array('name' => 'update'));
-         echo "</td>";
-         echo "</tr>";
-         echo "<tr class='tab_bg_2'>\n";
-         echo "<td class='right' colspan='4' >\n";
-         echo Html::submit(_x('button','Delete permanently'),
-                           array('name'    => 'purge',
-                                 'confirm' => __('Confirm the final deletion?')));
-      } else {
-         echo Html::submit(_x('button','Add'), array('name' => 'add'));
-      }
-      echo "</td></tr>\n";
-      echo "</table>";
-      Html::closeForm();
-   }
+        }
+        return $return;
+    }
 
 
-   function displayFieldForm($data) {
-      echo $data['ui']['title'].'</td><td>';
-      switch ($data['type']) {
-
-         case 'string':
-            if (!isset($data['default'])) {
-               $data['default'] = '';
-            }
-            echo '<input type="text" name="'.$data['name'].'" value="'.$data['default'].'" />';
-            break;
-
-         case 'integer':
-            Dropdown::showNumber($data['name'], array('value' => $data['default']));
-            break;
-
-         case 'boolean':
-            Dropdown::showYesNo($data['name'], $data['default']);
-            break;
-
-         case "objectid":
-            // Get data of this object
-            $obj = $this->abc->get($data['data_relation']['resource']);
-            $elements = array();
-            foreach ($obj['_items'] as $obj_values) {
-               $elements[$obj_values[$data['data_relation']['field']]] = $obj_values['name'];
-            }
-            Dropdown::showFromArray($data['name'], $elements);
-            break;
-
-         case "list":
-
-            break;
-
-      }
-   }
-
-   function getVisibleFields($data) {
-      $return = array();
-      foreach ($data as $values) {
-         if (isset($values['ui'])
-                 && $values['name'] != 'ui'
-                 && isset($values['ui']['visible'])
-                 && $values['ui']['visible']) {
-            $return[] = $values;
-         }
-      }
-      return $return;
-   }
-
-
-   function getPropertiesDefinition($visible='all') {
+    function getPropertiesDefinition($visible = 'all')
+    {
 //      $fields = $this->abc->get('docs/spec.json');
 //      $thisdomain = $fields['domains'][$this->resource]['/'.$this->resource]['POST']['params'];
 //      if ($visible == 'only') {
 //         $thisdomain = $this->getVisibleFields($thisdomain);
 //      }
 //      return $thisdomain;
-   }
+        return [];
+    }
 }
-
-?>

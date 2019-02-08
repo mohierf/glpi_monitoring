@@ -40,166 +40,383 @@
    ------------------------------------------------------------------------
  */
 
-function pluginMonitoringInstall($version) {
-   global $DB,$CFG_GLPI;
+class PluginMonitoringInstall
+{
+    /* @var Migration $migration */
+    protected $migration;
 
-   // ** Insert in DB
-   $DB_file = GLPI_ROOT ."/plugins/monitoring/install/mysql/plugin_monitoring-empty.sql";
-   $DBf_handle = fopen($DB_file, "rt");
-   $sql_query = fread($DBf_handle, filesize($DB_file));
-   fclose($DBf_handle);
-   foreach ( explode(";\n", "$sql_query") as $sql_line) {
-      if (get_magic_quotes_runtime()) $sql_line=Toolbox::stripslashes_deep($sql_line);
-      if (!empty($sql_line)) $DB->query($sql_line);
-   }
+    /**
+     * Install the plugin
+     * @param Migration $migration
+     *
+     * @return boolean
+     */
+    public function install(Migration $migration)
+    {
+        $this->migration = $migration;
+        $_SESSION['plugin_monitoring_installation'] = true;
 
-   require_once GLPI_ROOT . "/plugins/monitoring/inc/profile.class.php";
-   $pmProfile = new PluginMonitoringProfile();
-   $pmProfile->initProfile();
-//   require_once GLPI_ROOT . "/plugins/monitoring/inc/command.class.php";
-//   $pmCommand = new PluginMonitoringCommand();
-//   $pmCommand->initCommands();
-//   require_once GLPI_ROOT . "/plugins/monitoring/inc/notificationcommand.class.php";
-//   $pmNotificationcommand = new PluginMonitoringNotificationcommand();
-//   $pmNotificationcommand->initCommands();
-//   require_once GLPI_ROOT . "/plugins/monitoring/inc/check.class.php";
-//   $pmCheck = new PluginMonitoringCheck();
-//   $pmCheck->initChecks();
+        // Drop existing tables if some exist
+        $this->dropTables();
 
-//   require_once GLPI_ROOT . "/plugins/monitoring/inc/perfdata.class.php";
-//   require_once GLPI_ROOT . "/plugins/monitoring/inc/perfdatadetail.class.php";
-//   PluginMonitoringPerfdata::initDB();
+        $this->installSchema();
+        $this->migrateInnoDb();
 
-   require_once GLPI_ROOT . "/plugins/monitoring/inc/hostconfig.class.php";
-   $pmHostconfig = new PluginMonitoringHostconfig();
-   $pmHostconfig->initConfig();
+        $this->createProfile();
 
-   require_once GLPI_ROOT . "/plugins/monitoring/inc/config.class.php";
-   $pmConfig = new PluginMonitoringConfig();
-   $pmConfig->initConfig();
-   $query = "UPDATE `glpi_plugin_monitoring_configs`
-      SET `version`='".PLUGIN_MONITORING_VERSION."'
-         WHERE `id`='1'";
-   $DB->query($query);
+        $this->createFiles();
 
-   $query = "SELECT * FROM `glpi_calendars`
-      WHERE `name`='24x7'
-      LIMIT 1";
-   $result=$DB->query($query);
-   if ($DB->numrows($result) == 0) {
-      $calendar = new Calendar();
-      $input = array();
-      $input['name'] = '24x7';
-      $input['is_recursive'] = 1;
-      $calendars_id = $calendar->add($input);
+        $this->createItems();
 
-      $calendarSegment = new CalendarSegment();
-      $input = array();
-      $input['calendars_id'] = $calendars_id;
-      $input['is_recursive'] = 1;
-      $input['begin'] = '00:00:00';
-      $input['end'] = '24:00:00';
-      $input['day'] = '0';
-      $calendarSegment->add($input);
-      $input['day'] = '1';
-      $calendarSegment->add($input);
-      $input['day'] = '2';
-      $calendarSegment->add($input);
-      $input['day'] = '3';
-      $calendarSegment->add($input);
-      $input['day'] = '4';
-      $calendarSegment->add($input);
-      $input['day'] = '5';
-      $calendarSegment->add($input);
-      $input['day'] = '6';
-      $calendarSegment->add($input);
-   }
+        $this->createCronTasks();
 
-   // Fred
-   $query = "SELECT * FROM `glpi_calendars`
-      WHERE `name`='WorkingDays'
-      LIMIT 1";
-   $result=$DB->query($query);
-   if ($DB->numrows($result) == 0) {
-      $calendar = new Calendar();
-      $input = array();
-      $input['name'] = 'WorkingDays';
-      $input['is_recursive'] = 1;
-      $calendars_id = $calendar->add($input);
+        $this->createDefaultDisplayPreferences();
 
-      $calendarSegment = new CalendarSegment();
-      $input = array();
-      $input['calendars_id'] = $calendars_id;
-      $input['is_recursive'] = 1;
-      $input['begin'] = '08:00:00';
-      $input['end'] = '18:00:00';
-      $input['day'] = '0';
-      $calendarSegment->add($input);
-      $input['day'] = '1';
-      $calendarSegment->add($input);
-      $input['day'] = '2';
-      $calendarSegment->add($input);
-      $input['day'] = '3';
-      $calendarSegment->add($input);
-      $input['day'] = '4';
-      $calendarSegment->add($input);
-      $input['day'] = '5';
-      $calendarSegment->add($input);
-      $input['day'] = '6';
-      $calendarSegment->add($input);
-   }
+        Config::setConfigurationValues('monitoring', ['schema_version' => PLUGIN_MONITORING_VERSION]);
 
-   // Add user monitoring if not defined
-   if (!countElementsInTable('glpi_users', "`name`='monitoring'")) {
-      // Create
-      $input = array('name' => 'monitoring');
-      $user = new User();
-      $user->add($input);
-   }
+        unset($_SESSION['plugin_monitoring_installation']);
 
+        return true;
+    }
 
-   if (!is_dir(GLPI_PLUGIN_DOC_DIR.'/monitoring')) {
-      mkdir(GLPI_PLUGIN_DOC_DIR."/monitoring");
-   }
-   if (!is_dir(GLPI_PLUGIN_DOC_DIR.'/monitoring/templates')) {
-      mkdir(GLPI_PLUGIN_DOC_DIR."/monitoring/templates");
-   }
-   if (!is_dir(GLPI_PLUGIN_DOC_DIR.'/monitoring/weathermapbg')) {
-      mkdir(GLPI_PLUGIN_DOC_DIR."/monitoring/weathermapbg");
-   }
+    /**
+     * Upgrade the plugin
+     * @param Migration $migration
+     *
+     * @return boolean
+     */
+    public function upgrade(Migration $migration)
+    {
+        $this->migration = $migration;
+        $fromSchemaVersion = $this->getSchemaVersion();
 
-   CronTask::Register('PluginMonitoringLog', 'cleanlogs', '96400',
-                      array('mode' => 2, 'allowmode' => 3, 'logs_lifetime'=> 30));
-   CronTask::Register('PluginMonitoringUnavailability', 'unavailability', '300',
-                      array('mode' => 2, 'allowmode' => 3, 'logs_lifetime'=> 30));
-   CronTask::Register('PluginMonitoringDisplayview_rule', 'replayallviewrules', '1200',
-                      array('mode' => 2, 'allowmode' => 3, 'logs_lifetime'=> 30));
+        $_SESSION['plugin_monitoring_installation'] = true;
 
+        $this->installSchema();
+
+        // All cases are run starting from the one matching the current schema version
+        switch ($fromSchemaVersion) {
+            case '0.0':
+            case '1.0':
+                // Any schema version below or equal 1.0
+//                require_once(__DIR__ . '/update_0.0_1.0.php');
+//                plugin_alignak_update_1_0($this->migration);
+                break;
+
+            default:
+                // Must be the last case
+                if ($this->endsWith(PLUGIN_MONITORING_VERSION, "-dev")) {
+                    if (is_readable(__DIR__ . "/update_dev.php") && is_file(__DIR__ . "/update_dev.php")) {
+                        include_once __DIR__ . "/update_dev.php";
+                        $updateDevFunction = 'plugin_alignak_update_dev';
+                        if (function_exists($updateDevFunction)) {
+                            $updateDevFunction($this->migration);
+                        }
+                    }
+                }
+        }
+        $this->migration->executeMigration();
+
+        $this->createCronTasks();
+        Config::setConfigurationValues('monitoring', ['schema_version' => PLUGIN_MONITORING_VERSION]);
+
+        unset($_SESSION['plugin_monitoring_installation']);
+
+        return true;
+    }
+
+    /**
+     * Find the version of the plugin
+     *
+     * @return string|null
+     */
+    protected function getSchemaVersion()
+    {
+        if ($this->isPluginInstalled()) {
+            return $this->getSchemaVersionFromGlpiConfig();
+        }
+
+        return null;
+    }
+
+    /**
+     * Find version of the plugin in GLPI configuration
+     *
+     * @return string
+     */
+    protected function getSchemaVersionFromGlpiConfig()
+    {
+        $config = Config::getConfigurationValues('monitoring', ['schema_version']);
+        if (!isset($config['schema_version'])) {
+            // No schema version in GLPI config, then this is an old version...
+            return '0.0';
+        }
+
+        // Version found in GLPI config
+        return $config['schema_version'];
+    }
+
+    /**
+     * is the plugin already installed ?
+     *
+     * @return boolean
+     */
+    public function isPluginInstalled()
+    {
+        global $DB;
+
+        $result = $DB->query("SHOW TABLES LIKE 'glpi_plugin_monitoring_%'");
+        if ($result and $DB->numrows($result) > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Install the DB schea for the plugin
+     */
+    protected function installSchema()
+    {
+        global $DB;
+
+        $this->migration->displayMessage("Creating database schema");
+
+        $dbFile = __DIR__ . '/mysql/plugin_monitoring-empty.sql';
+        if (!$DB->runFile($dbFile)) {
+            $this->migration->displayWarning("Error creating tables : " . $DB->error(), true);
+            die('Giving up!');
+        }
+    }
+
+    /**
+     * http://stackoverflow.com/questions/834303/startswith-and-endswith-functions-in-php
+     * @param string $haystack
+     * @param string $needle
+     *
+     * @return boolean
+     */
+    protected function endsWith($haystack, $needle)
+    {
+        // search foreward starting from end minus needle length characters
+        return $needle === '' || (($temp = strlen($haystack) - strlen($needle)) >= 0 && strpos($haystack, $needle, $temp) !== false);
+    }
+
+    /**
+     * @param bool $drop_tables
+     */
+    public function uninstall($drop_tables = false)
+    {
+        $config = new Config();
+        $config->deleteByCriteria(['context' => 'alignak']);
+
+        // Clean display preferences
+        $pref = new DisplayPreference;
+        $pref->deleteByCriteria(['itemtype' => ['LIKE', 'PluginAlignak%']]);
+
+        $this->cleanProfile();
+
+        if ($drop_tables) {
+            $this->dropTables();
+        }
+    }
+
+    /**
+     * Drop all the plugin tables
+     */
+    protected function dropTables()
+    {
+        global $DB;
+
+        Toolbox::logInFile(PLUGIN_MONITORING_LOG, "Dropping the plugin tables:");
+
+        // Drop tables of the plugin if they exist
+        $result = $DB->query("SHOW TABLES LIKE 'glpi_plugin_monitoring_%'");
+        while ($data = $DB->fetch_array($result)) {
+            Toolbox::logInFile(PLUGIN_MONITORING_LOG, "- dropping: {$data[0]}");
+            $DB->query("DROP TABLE " . $data[0] . " ");
+        }
+    }
+
+    /**
+     * Create files and directories
+     */
+    protected function createFiles()
+    {
+        $this->migration->displayMessage("Creating directories and files");
+
+        if (!is_dir(PLUGIN_MONITORING_DOC_DIR)) {
+            mkdir(PLUGIN_MONITORING_DOC_DIR);
+        }
+        if (!is_dir(PLUGIN_MONITORING_DOC_DIR . '/templates')) {
+            mkdir(PLUGIN_MONITORING_DOC_DIR . "/templates");
+        }
+//        if (!is_dir(PLUGIN_MONITORING_DOC_DIR . '/weathermapbg')) {
+//            mkdir(PLUGIN_MONITORING_DOC_DIR . "/weathermapbg");
+//        }
+    }
+
+    /**
+     * Create database items:
+     * - users,
+     * - calendars,
+     * - ...
+     */
+    protected function createItems()
+    {
+        $this->migration->displayMessage("Creating database items:");
+
+        $user = new User();
+        if (! $user->getFromDBByCrit(['name' => "monitoring"])) {
+            $this->migration->displayMessage("- monitoring user");
+            $input = array();
+            $input['name'] = 'monitoring';
+            $input['comment'] = 'Created by the monitoring plugin';
+            $user->add($input);
+        } else {
+            $this->migration->displayMessage("- monitoring user is still existing");
+        }
+
+        $calendar = new Calendar();
+        if (! $calendar->getFromDBByCrit(['name' => "24x7"])) {
+            $this->migration->displayMessage("- calendar 24x7");
+            $input = array();
+            $input['name'] = '24x7';
+            $input['comment'] = 'Created by the monitoring plugin';
+            $input['is_recursive'] = 1;
+            $calendars_id = $calendar->add($input);
+
+            $calendarSegment = new CalendarSegment();
+            $input = array();
+            $input['calendars_id'] = $calendars_id;
+            $input['is_recursive'] = 1;
+            $input['begin'] = '00:00:00';
+            $input['end'] = '24:00:00';
+            $input['day'] = '0';
+            $calendarSegment->add($input);
+            $input['day'] = '1';
+            $calendarSegment->add($input);
+            $input['day'] = '2';
+            $calendarSegment->add($input);
+            $input['day'] = '3';
+            $calendarSegment->add($input);
+            $input['day'] = '4';
+            $calendarSegment->add($input);
+            $input['day'] = '5';
+            $calendarSegment->add($input);
+            $input['day'] = '6';
+            $calendarSegment->add($input);
+        } else {
+            $this->migration->displayMessage("- calendar 24x7 is still existing");
+        }
+    }
+
+    /**
+     * Create cron tasks
+     */
+    protected function createCronTasks()
+    {
+
+        $this->migration->displayMessage("Creating plugin tasks");
+
+        // TODO: some other are to be registered !
+
+        CronTask::Register('PluginMonitoringLog', 'cleanlogs', '96400',
+            array('mode' => 2, 'allowmode' => 3, 'logs_lifetime' => 30));
+        CronTask::Register('PluginMonitoringUnavailability', 'unavailability', '300',
+            array('mode' => 2, 'allowmode' => 3, 'logs_lifetime' => 30));
+        CronTask::Register('PluginMonitoringDisplayview_rule', 'replayallviewrules', '1200',
+            array('mode' => 2, 'allowmode' => 3, 'logs_lifetime' => 30));
+
+        CronTask::Register('PluginMonitoringAlignak', 'AlignakBuild', DAY_TIMESTAMP, [
+            'comment' => __('Alignak - to be developed...', 'alignak'),
+            'mode' => CronTask::MODE_EXTERNAL,
+            'state' => CronTask::STATE_DISABLE,
+            'param' => 50
+        ]);
+        CronTask::Register('PluginMonitoringComputerTemplate', 'AlignakComputerTemplate', DAY_TIMESTAMP, [
+            'comment' => __('Alignak Send Counters-...', 'alignak'),
+            'mode' => CronTask::MODE_EXTERNAL,
+            'state' => CronTask::STATE_DISABLE,
+            'param' => 50
+        ]);
+    }
+
+    /**
+     * Create profile rights
+     */
+    protected function createProfile()
+    {
+
+        $this->migration->displayMessage("Creating plugin profile");
+
+        require_once(GLPI_ROOT . "/plugins/monitoring/inc/profile.class.php");
+        PluginMonitoringProfile::initProfile();
+        $this->migration->displayMessage("created.");
+    }
+
+    /**
+     * Clean profile rights
+     */
+    protected function cleanProfile()
+    {
+        require_once(GLPI_ROOT . "/plugins/monitoring/inc/profile.class.php");
+
+        // Remove information related to profiles from the session (to clean menu and breadcrumb)
+        PluginMonitoringProfile::removeRightsFromSession();
+        // Remove profiles rights
+        PluginMonitoringProfile::uninstallProfile();
+    }
+
+    /**
+     * Migrate tables to InnoDB engine if Glpi > 9.3
+     */
+    protected function migrateInnoDb()
+    {
+        global $DB;
+
+        $this->migration->displayMessage("Migrating tables engine");
+
+        $version = rtrim(GLPI_VERSION, '-dev');
+        if (version_compare($version, '9.3', '>=')) {
+            $to_migrate = $DB->getMyIsamTables();
+
+            while ($table = $to_migrate->next()) {
+                $this->migration->displayMessage("- migrating: {$table['TABLE_NAME']}");
+                $DB->queryOrDie("ALTER TABLE {$table['TABLE_NAME']} ENGINE = InnoDB");
+            }
+        }
+    }
+
+    /**
+     * Create default display preferences
+     */
+    protected function createDefaultDisplayPreferences()
+    {
+//        global $DB;
+        $this->migration->displayMessage("create default display preferences");
+
+        /*
+        // Create standard display preferences
+        $displayprefs = new DisplayPreference();
+        $found_dprefs = $displayprefs->find("`itemtype` = 'PluginMonitoringAlignak'");
+        if (count($found_dprefs) == 0) {
+            $query = "INSERT IGNORE INTO `glpi_displaypreferences`
+                   (`id`, `itemtype`, `num`, `rank`, `users_id`) VALUES
+                   (NULL, 'PluginMonitoringAlignak', 3, 1, 0),
+                   (NULL, 'PluginMonitoringAlignak', 4, 2, 0),
+                   (NULL, 'PluginMonitoringAlignak', 5, 3, 0)";
+            $DB->query($query) or die ($DB->error());
+        }
+
+        $displayprefs = new DisplayPreference;
+        $found_dprefs = $displayprefs->find("`itemtype` = 'PluginMonitoringMonitoringTemplate'");
+        if (count($found_dprefs) == 0) {
+            $query = "INSERT IGNORE INTO `glpi_displaypreferences`
+                   (`id`, `itemtype`, `num`, `rank`, `users_id`) VALUES
+                   (NULL, 'PluginMonitoringMonitoringTemplate', 2, 1, 0);";
+            $DB->query($query) or die ($DB->error());
+        }
+        */
+    }
 }
-
-
-function pluginMonitoringUninstall() {
-   global $DB;
-
-   if (file_exists(GLPI_PLUGIN_DOC_DIR.'/monitoring')) {
-      require_once GLPI_ROOT . "/plugins/monitoring/inc/config.class.php";
-      $pmConfig = new PluginMonitoringConfig();
-      $pmConfig->rrmdir(GLPI_PLUGIN_DOC_DIR.'/monitoring');
-   }
-
-   $query = "SHOW TABLES;";
-   $result=$DB->query($query);
-   while ($data=$DB->fetch_array($result)) {
-      if (strstr($data[0],"glpi_plugin_monitoring_")) {
-         $query_delete = "DROP TABLE `".$data[0]."`;";
-         $DB->query($query_delete) or die($DB->error());
-      }
-   }
-
-   if (isset($_SESSION['glpi_plugin_monitoring'])) {
-      unset($_SESSION['glpi_plugin_monitoring']);
-   }
-   return true;
-}
-
-?>

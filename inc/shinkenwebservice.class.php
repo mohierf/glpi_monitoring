@@ -47,7 +47,7 @@ if (!defined('GLPI_ROOT')) {
 class PluginMonitoringShinkenwebservice extends CommonDBTM {
 
    function sendAcknowledge($host_id=-1, $service_id=-1, $author= '', $comment='', $sticky='1', $notify='1', $persistent='1', $operation='') {
-      global $DB;
+//      global $DB;
 
       if (($host_id == -1) && ($service_id == -1)) return false;
 
@@ -64,8 +64,8 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM {
 //      Toolbox::logInFile("pm", "acknowledge, sendAcknowledge, host : $hostname\n");
 
       // Acknowledge an host ...
-      $acknowledgeServiceOnly = true;
-      $a_fields = array();
+//      $acknowledgeServiceOnly = true;
+//      $a_fields = array();
 
       if ($host_id == -1) {
          $tag = PluginMonitoringEntity::getTagByEntities($pmService->getEntityID());
@@ -96,7 +96,7 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM {
 
 
    function sendDowntime($host_id=-1, $service_id=-1, $author= '', $comment='', $flexible='0', $start_time='0', $end_time='0', $duration='3600', $operation='') {
-      global $DB;
+//      global $DB;
 
       if (($host_id == -1) && ($service_id == -1)) return false;
 
@@ -109,8 +109,8 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM {
       $hostname = $pmHost->getName(true);
 
       // Downtime an host ...
-      $acknowledgeServiceOnly = true;
-      $a_fields = array();
+//      $acknowledgeServiceOnly = true;
+//      $a_fields = array();
 
       if ($host_id == -1) {
          $tag = PluginMonitoringEntity::getTagByEntities($pmService->getEntityID());
@@ -232,22 +232,21 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM {
       $ret = curl_exec($ch);
       $return = true;
       if ($ret === false) {
+          $return = false;
          Session::addMessageAfterRedirect(
                  __('Shinken communication failed:', 'monitoring').' '.curl_error($ch).'<br/>'.$url.$action.' '.$fields_string,
                  false,
                  ERROR);
-         $return = false;
       } else if (strstr($ret, 'error')) {
+          $return = false;
          Session::addMessageAfterRedirect(
                  __('Shinken communication failed:', 'monitoring').' '.$ret.'<br/>'.$url.$action.' '.$fields_string,
                  false,
                  ERROR);
-         $return = false;
       } else {
          Session::addMessageAfterRedirect(
                  __('Shinken communication succeeded:', 'monitoring').' '.$ret.'<br/>'.$url.$action.' '.$fields_string,
                  false);
-         $return = true;
       }
       curl_close($ch);
       return $return;
@@ -255,4 +254,3 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM {
 
 }
 
-?>
