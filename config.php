@@ -45,7 +45,7 @@
 //header("Location:../../central.php");
 
 // Entry menu case
-//define('GLPI_ROOT', '../..');
+define('GLPI_ROOT', '../..');
 include (GLPI_ROOT . "/inc/includes.php");
 
 Session::checkRight("config", UPDATE);
