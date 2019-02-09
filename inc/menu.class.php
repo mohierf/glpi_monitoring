@@ -46,7 +46,7 @@ class PluginMonitoringMenu extends CommonGLPI
      **/
     static function getMenuName()
     {
-        return __("Glpi monitoring", "monitoring");
+        return __("Monitoring", "monitoring");
     }
 
 
@@ -68,22 +68,29 @@ class PluginMonitoringMenu extends CommonGLPI
     static function getAdditionalMenuOptions() {
         global $CFG_GLPI;
 
-        PluginMonitoringToolbox::log("getAdditionalMenuOptions\n");
         $elements = [
             'config' => 'PluginMonitoringConfig',
-//            'alignak' => 'PluginMonitoringAlignak',
+            'realm' => 'PluginMonitoringRealm',
+            'tag' => 'PluginMonitoringTag',
+            'check' => 'PluginMonitoringCheck',
+            'command' => 'PluginMonitoringCommand',
+            'eventhandler' => 'PluginMonitoringEventhandler',
+            'notificationcommand' => 'PluginMonitoringNotificationcommand',
+
+            'contact_template' => 'PluginMonitoringContacttemplate',
+            'hn_template' => 'PluginMonitoringHostnotificationtemplate',
+            'sn_template' => 'PluginMonitoringServicenotificationtemplate',
+
             'entity' => 'PluginMonitoringEntity',
             'host' => 'PluginMonitoringHost',
             'service' => 'PluginMonitoringService',
             'component' => 'PluginMonitoringComponent',
-            'realm' => 'PluginMonitoringRealm',
 //            'mail_notification' => 'PluginMonitoringMailNotification',
 //            'monitoring_template' => 'PluginMonitoringMonitoringTemplate',
 //            'computer_counters_template' => 'PluginMonitoringCountersTemplate',
 //            'counters_template' => 'PluginMonitoringCountersTemplate',
 //            'counter' => 'PluginMonitoringCounter'
         ];
-        PluginMonitoringToolbox::log("getAdditionalMenuOptions, " . print_r($elements, true) . "\n");
 
         // List of the elements which must have some breadcrumb items
         $options = [];
@@ -112,7 +119,7 @@ class PluginMonitoringMenu extends CommonGLPI
             ['alt' => __('Import', 'alignak')]);
         $options['menu']['links'][$img] = '/plugins/monitoring/front/documentation.php';
 
-        PluginMonitoringToolbox::log("getAdditionalMenuOptions, " . print_r($options, true) . "\n");
+        PluginMonitoringToolbox::logIfDebug("getAdditionalMenuOptions, " . print_r($options, true) . "\n");
         return $options;
     }
 }

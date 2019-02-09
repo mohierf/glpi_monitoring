@@ -31,192 +31,278 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringContacttemplate extends CommonDBTM {
+class PluginMonitoringContacttemplate extends CommonDBTM
+{
+    static $rightname = 'plugin_monitoring_notification';
+
+    /**
+     * Initialization called on plugin installation
+     */
+    function initialize()
+    {
+        $check_period = -1;
+        $calendar = new Calendar();
+        if ($calendar->getFromDBByCrit(['name' => "24x7"])) {
+            $check_period = $calendar->getID();
+        }
+
+        $cmd_host_notification = -1;
+        $pmCommand = new PluginMonitoringNotificationcommand();
+        if ($pmCommand->getFromDBByCrit(["command_name" => "notify-host-by-log"])) {
+            $cmd_host_notification = $pmCommand->getID();
+        }
+
+        $cmd_service_notification = -1;
+        $pmCommand = new PluginMonitoringNotificationcommand();
+        if ($pmCommand->getFromDBByCrit(["command_name" => "notify-service-by-log"])) {
+            $cmd_service_notification = $pmCommand->getID();
+        }
+
+        $input = [];
+        $input['name'] = 'Default notifications';
+        $input['is_default'] = '1';
+
+        // Default is not administrator but allowed to raise commands
+        $input['shinken_administrator'] = '0';
+        $input['shinken_can_submit_commands'] = '1';
+
+        // Default are disabled
+        $input['hn_enabled'] = '0';
+        $input['hn_period'] = $check_period;
+        $input['hn_commands'] = $cmd_host_notification;
+
+        $input['sn_enabled'] = '0';
+        $input['sn_period'] = $check_period;
+        $input['sn_commands'] = $cmd_service_notification;
+        PluginMonitoringToolbox::log("Contact template: " . print_r($input, true));
+        $this->add($input);
+    }
+
+    static function getTypeName($nb = 0)
+    {
+        return __('Contact templates', 'monitoring');
+    }
 
 
-   static $rightname = 'user';
+    /*
+     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
+     */
+    public function getSearchOptionsNew()
+    {
+        return $this->rawSearchOptions();
+    }
 
-   static function getTypeName($nb=0) {
-      return __('Contact templates', 'monitoring');
-   }
+    function rawSearchOptions()
+    {
+
+        $tab = [];
+
+        $tab[] = [
+            'id' => 'common',
+            'name' => __('Contact templates', 'monitoring')
+        ];
+
+        $index = 1;
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'name',
+            'name' => __('Name'),
+            'datatype' => 'itemlink'
+        ];
+
+        $tab[] = [
+            'id' => $index,
+            'table' => $this->getTable(),
+            'field' => 'is_default',
+            'name' => __('Is default'),
+            'datatype' => 'bool'
+        ];
+
+        /*
+         * Include other fields here
+         */
+
+        $tab[] = [
+            'id' => '99',
+            'table' => $this->getTable(),
+            'field' => 'id',
+            'name' => __('ID'),
+            'usehaving' => true,
+            'searchtype' => 'equals',
+        ];
+
+        return $tab;
+    }
 
 
-
-   /**
-   * Display form for contact template configuration
-   *
-   * @param $items_id integer ID
-   * @param $options array
-   *
-   *@return bool true if form is ok
-   *
-   **/
-   function showForm($items_id, $options=array()) {
-      if ($items_id == '') {
-         if (isset($_POST['id'])) {
-            $a_list = $this->find("`users_id`='".$_POST['id']."'", '', 1);
-            if (count($a_list)) {
-               $array = current($a_list);
-               $items_id = $array['id'];
+    function showForm($items_id, $options = array())
+    {
+        if ($items_id == '') {
+            if (isset($_POST['id'])) {
+                $a_list = $this->find("`users_id`='" . $_POST['id'] . "'", '', 1);
+                if (count($a_list)) {
+                    $array = current($a_list);
+                    $items_id = $array['id'];
+                }
             }
-         }
-      }
+        }
 
-      $this->initForm($items_id, $options);
-      $this->showFormHeader($options);
+        $this->initForm($items_id, $options);
+        $this->showFormHeader($options);
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Name')."&nbsp;:</td>";
-      echo "<td align='center'>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Name') . "&nbsp;:</td>";
+        echo "<td align='center'>";
 
-      $objectName = autoName($this->fields["name"], "name", false,
-                             $this->getType());
-      Html::autocompletionTextField($this, 'name', array('value' => $objectName));
-      echo "</td>";
-      echo "<td>".__('Default template', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo("is_default", $this->fields['is_default']);
-      echo "</td>";
-      echo "</tr>";
+        $objectName = autoName($this->fields["name"], "name", false,
+            $this->getType());
+        Html::autocompletionTextField($this, 'name', array('value' => $objectName));
+        echo "</td>";
+        echo "<td>" . __('Default template', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo("is_default", $this->fields['is_default']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<th colspan='4'>".__('Contact configuration for Shinken WebUI', 'monitoring')."</th>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<th colspan='4'>" . __('Contact configuration for Shinken WebUI', 'monitoring') . "</th>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Contact has Shinken administrator rights', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('shinken_administrator', $this->fields['shinken_administrator']);
-      echo "</td>";
-      echo "<td>".__('Contact can submit Shinken commands', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('shinken_can_submit_commands', $this->fields['shinken_can_submit_commands']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Contact has Shinken administrator rights', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('shinken_administrator', $this->fields['shinken_administrator']);
+        echo "</td>";
+        echo "<td>" . __('Contact can submit Shinken commands', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('shinken_can_submit_commands', $this->fields['shinken_can_submit_commands']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<th colspan='2'>".__('Hosts', 'monitoring')."</th>";
-      echo "<th colspan='2'>".__('Services', 'monitoring')."</th>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<th colspan='2'>" . __('Hosts', 'monitoring') . "</th>";
+        echo "<th colspan='2'>" . __('Services', 'monitoring') . "</th>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notifications', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notifications_enabled', $this->fields['host_notifications_enabled']);
-      echo "</td>";
-      echo "<td>".__('Notifications', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('service_notifications_enabled', $this->fields['service_notifications_enabled']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notifications', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_enabled', $this->fields['hn_enabled']);
+        echo "</td>";
+        echo "<td>" . __('Notifications', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('sn_enabled', $this->fields['sn_enabled']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notification command', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      dropdown::show("PluginMonitoringNotificationcommand", array('name'=>'host_notification_commands',
-                                 'value'=>$this->fields['host_notification_commands']));
-      echo "</td>";
-      echo "<td>".__('Notification command', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      dropdown::show("PluginMonitoringNotificationcommand", array('name'=>'service_notification_commands',
-                                 'value'=>$this->fields['service_notification_commands']));
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notification command', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        dropdown::show("PluginMonitoringNotificationcommand", array('name' => 'hn_commands',
+            'value' => $this->fields['hn_commands']));
+        echo "</td>";
+        echo "<td>" . __('Notification command', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        dropdown::show("PluginMonitoringNotificationcommand", array('name' => 'sn_commands',
+            'value' => $this->fields['sn_commands']));
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Period', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      dropdown::show("Calendar", array('name'=>'host_notification_period',
-                                 'value'=>$this->fields['host_notification_period']));
-      echo "</td>";
-      echo "<td>".__('Period', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      dropdown::show("Calendar", array('name'=>'service_notification_period',
-                                 'value'=>$this->fields['service_notification_period']));
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Period', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        dropdown::show("Calendar", array('name' => 'hn_period',
+            'value' => $this->fields['hn_period']));
+        echo "</td>";
+        echo "<td>" . __('Period', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        dropdown::show("Calendar", array('name' => 'sn_period',
+            'value' => $this->fields['sn_period']));
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify on DOWN host states', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_d', $this->fields['host_notification_options_d']);
-      echo "</td>";
-      echo "<td>".__('Notify on WARNING service states', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('service_notification_options_w', $this->fields['service_notification_options_w']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify on DOWN host states', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_d', $this->fields['hn_options_d']);
+        echo "</td>";
+        echo "<td>" . __('Notify on WARNING service states', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('sn_options_w', $this->fields['sn_options_w']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify on UNREACHABLE host states', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_u', $this->fields['host_notification_options_u']);
-      echo "</td>";
-      echo "<td>".__('Notify on UNKNOWN service states', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('service_notification_options_u', $this->fields['service_notification_options_u']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify on UNREACHABLE host states', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_u', $this->fields['hn_options_u']);
+        echo "</td>";
+        echo "<td>" . __('Notify on UNKNOWN service states', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('sn_options_u', $this->fields['sn_options_u']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify on host recoveries (UP states)', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_r', $this->fields['host_notification_options_r']);
-      echo "</td>";
-      echo "<td>".__('Notify on CRITICAL service states', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('service_notification_options_c', $this->fields['service_notification_options_c']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify on host recoveries (UP states)', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_r', $this->fields['hn_options_r']);
+        echo "</td>";
+        echo "<td>" . __('Notify on CRITICAL service states', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('sn_options_c', $this->fields['sn_options_c']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify when the host starts and stops flapping', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_f', $this->fields['host_notification_options_f']);
-      echo "</td>";
-      echo "<td>".__('Notify on service recoveries (OK states)', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('service_notification_options_r', $this->fields['service_notification_options_r']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify when the host starts and stops flapping', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_f', $this->fields['hn_options_f']);
+        echo "</td>";
+        echo "<td>" . __('Notify on service recoveries (OK states)', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('sn_options_r', $this->fields['sn_options_r']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Send notifications when host or service scheduled downtime starts and ends', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_s', $this->fields['host_notification_options_s']);
-      echo "</td>";
-      echo "<td>".__('Notify when the service starts and stops flapping', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('service_notification_options_f', $this->fields['service_notification_options_f']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Send notifications when host or service scheduled downtime starts and ends', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_s', $this->fields['hn_options_s']);
+        echo "</td>";
+        echo "<td>" . __('Notify when the service starts and stops flapping', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('sn_options_f', $this->fields['sn_options_f']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td></td>";
-      echo "<td align='center'>";
-      echo "</td>";
-      echo "<td>".__('Notify when service scheduled downtime starts and ends', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('service_notification_options_s', $this->fields['service_notification_options_s']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td></td>";
+        echo "<td align='center'>";
+        echo "</td>";
+        echo "<td>" . __('Notify when service scheduled downtime starts and ends', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('sn_options_s', $this->fields['sn_options_s']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('The contact will not receive any type of host notifications', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_n', $this->fields['host_notification_options_n']);
-      echo "</td>";
-      echo "<td>".__('The contact will not receive any type of service notifications', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('service_notification_options_n', $this->fields['service_notification_options_n']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('The contact will not receive any type of host notifications', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_n', $this->fields['hn_options_n']);
+        echo "</td>";
+        echo "<td>" . __('The contact will not receive any type of service notifications', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('sn_options_n', $this->fields['sn_options_n']);
+        echo "</td>";
+        echo "</tr>";
 
-      $this->showFormButtons($options);
+        $this->showFormButtons($options);
 
-      return true;
-   }
+        return true;
+    }
 }

@@ -32,10 +32,10 @@
 
 include ("../../../inc/includes.php");
 
-Session::checkRight("user", READ);
+Session::checkRight("plugin_monitoring_notification", UPDATE);
 
-Html::header(__('Monitoring - contact templates', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "PluginMonitoringDashboard", "contacttemplate");
+Html::header(__('Monitoring - contact templates', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "contact_template");
 
 $pmContacttemplate = new PluginMonitoringContacttemplate();
 if (isset($_POST["add"])) {

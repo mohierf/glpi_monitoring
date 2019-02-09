@@ -36,9 +36,25 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringServicenotificationtemplate extends CommonDBTM
 {
+    static $rightname = 'plugin_monitoring_notification';
 
+    /**
+     * Initialization called on plugin installation
+     */
+    function initialize()
+    {
+        $check_period = -1;
+        $calendar = new Calendar();
+        if ($calendar->getFromDBByCrit(['name' => "24x7"])) {
+            $check_period = $calendar->getID();
+        }
 
-    static $rightname = 'plugin_monitoring_eventhandler';
+        $input = [];
+        $input['name'] = 'Default service notification';
+        $input['sn_enabled'] = '0';
+        $input['sn_period'] = $check_period;
+        $this->add($input);
+    }
 
 
     static function getTypeName($nb = 0)
@@ -47,73 +63,125 @@ class PluginMonitoringServicenotificationtemplate extends CommonDBTM
     }
 
 
-    function getSearchOptions()
+    /*
+     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
+     */
+    public function getSearchOptionsNew()
+    {
+        return $this->rawSearchOptions();
+    }
+
+    function rawSearchOptions()
     {
 
-        $tab = array();
+        $tab = [];
 
-        $tab['common'] = __('Components', 'monitoring');
+        $tab[] = [
+            'id' => 'common',
+            'name' => __('Services notification templates', 'monitoring')
+        ];
 
-        $i = 1;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'name';
-        $tab[$i]['linkfield'] = 'name';
-        $tab[$i]['name'] = __('Name');
-        $tab[$i]['datatype'] = 'itemlink';
+        $index = 1;
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'name',
+            'name' => __('Name'),
+            'datatype' => 'itemlink'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notification_period';
-        $tab[$i]['name'] = __('Notification period', 'monitoring');
-        $tab[$i]['datatype'] = 'specific';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_enabled',
+            'name' => __('Enabled/disabled', 'monitoring'),
+            'datatype' => 'bool'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notifications_enabled';
-        $tab[$i]['name'] = __('Enabled/disabled', 'monitoring');
-        $tab[$i]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_period',
+            'name' => __('Notification period'),
+            'datatype' => 'specific'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notification_options_n';
-        $tab[$i]['name'] = __('No notifications', 'monitoring');
-        $tab[$i]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_options_n',
+            'name' => __('No notification', 'monitoring'),
+            'datatype' => 'bool'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notification_options_w';
-        $tab[$i]['name'] = __('Service warning', 'monitoring');
-        $tab[$i]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_options_c',
+            'name' => __('Service critical', 'monitoring'),
+            'datatype' => 'bool'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notification_options_u';
-        $tab[$i]['name'] = __('Service unknown', 'monitoring');
-        $tab[$i]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_options_w',
+            'name' => __('Service warning', 'monitoring'),
+            'datatype' => 'bool'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notification_options_c';
-        $tab[$i]['name'] = __('Service critical', 'monitoring');
-        $tab[$i]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_options_u',
+            'name' => __('Service unknown', 'monitoring'),
+            'datatype' => 'bool'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notification_options_r';
-        $tab[$i]['name'] = __('Service recovery', 'monitoring');
-        $tab[$i]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_options_x',
+            'name' => __('Service unreachable', 'monitoring'),
+            'datatype' => 'bool'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notification_options_f';
-        $tab[$i]['name'] = __('Service flapping', 'monitoring');
-        $tab[$i]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_options_r',
+            'name' => __('Service recovery', 'monitoring'),
+            'datatype' => 'bool'
+        ];
 
-        $i++;
-        $tab[$i]['table'] = $this->getTable();
-        $tab[$i]['field'] = 'service_notification_options_s';
-        $tab[$i]['name'] = __('Service downtime', 'monitoring');
-        $tab[$i]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'sn_options_f',
+            'name' => __('Service flapping', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        $tab[] = [
+            'id' => $index,
+            'table' => $this->getTable(),
+            'field' => 'sn_options_s',
+            'name' => __('Service acknowledge / downtime', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        /*
+         * Include other fields here
+         */
+
+        $tab[] = [
+            'id' => '99',
+            'table' => $this->getTable(),
+            'field' => 'id',
+            'name' => __('ID'),
+            'usehaving' => true,
+            'searchtype' => 'equals',
+        ];
 
         return $tab;
     }
@@ -126,7 +194,7 @@ class PluginMonitoringServicenotificationtemplate extends CommonDBTM
             $values = array($field => $values);
         }
         switch ($field) {
-            case 'host_notification_period':
+            case 'sn_period':
                 $calendar = new Calendar();
                 $calendar->getFromDB($values[$field]);
                 return $calendar->getName(1);
@@ -137,15 +205,6 @@ class PluginMonitoringServicenotificationtemplate extends CommonDBTM
     }
 
 
-    /**
-     * Display form for configuration
-     *
-     * @param $items_id integer ID
-     * @param $options array
-     *
-     * @return bool true if form is ok
-     *
-     **/
     function showForm($items_id, $options = array())
     {
         if ($items_id == '') {
@@ -187,64 +246,64 @@ class PluginMonitoringServicenotificationtemplate extends CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Notifications', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('service_notifications_enabled', $this->fields['service_notifications_enabled']);
+        Dropdown::showYesNo('sn_enabled', $this->fields['sn_enabled']);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Period', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        dropdown::show("Calendar", array('name' => 'service_notification_period',
-            'value' => $this->fields['service_notification_period']));
+        dropdown::show("Calendar", array('name' => 'sn_period',
+            'value' => $this->fields['sn_period']));
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Notify on WARNING service states', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('service_notification_options_w', $this->fields['service_notification_options_w']);
+        Dropdown::showYesNo('sn_options_w', $this->fields['sn_options_w']);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Notify on UNKNOWN service states', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('service_notification_options_u', $this->fields['service_notification_options_u']);
+        Dropdown::showYesNo('sn_options_u', $this->fields['sn_options_u']);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Notify on CRITICAL service states', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('service_notification_options_c', $this->fields['service_notification_options_c']);
+        Dropdown::showYesNo('sn_options_c', $this->fields['sn_options_c']);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Notify on service recoveries (OK states)', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('service_notification_options_r', $this->fields['service_notification_options_r']);
+        Dropdown::showYesNo('sn_options_r', $this->fields['sn_options_r']);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Notify when the service starts and stops flapping', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('service_notification_options_f', $this->fields['service_notification_options_f']);
+        Dropdown::showYesNo('sn_options_f', $this->fields['sn_options_f']);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Notify when service scheduled downtime starts and ends', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('service_notification_options_s', $this->fields['service_notification_options_s']);
+        Dropdown::showYesNo('sn_options_s', $this->fields['sn_options_s']);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('The contact will not receive any type of service notifications', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('service_notification_options_n', $this->fields['service_notification_options_n']);
+        Dropdown::showYesNo('sn_options_n', $this->fields['sn_options_n']);
         echo "</td>";
         echo "</tr>";
 

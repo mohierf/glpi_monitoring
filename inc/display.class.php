@@ -187,9 +187,9 @@ class PluginMonitoringDisplay extends CommonDBTM
         if (Session::haveRight("plugin_monitoring_hoststatus", PluginMonitoringHost::DASHBOARD)) {
             $ong[2] = __('Hosts status', 'monitoring');
         }
-        if (Session::haveRight("plugin_monitoring_servicescatalog", PluginMonitoringServicescatalog::DASHBOARD)) {
-            $ong[3] = __('Services catalog', 'monitoring');
-        }
+//        if (Session::haveRight("plugin_monitoring_servicescatalog", PluginMonitoringServicescatalog::DASHBOARD)) {
+//            $ong[3] = __('Services catalog', 'monitoring');
+//        }
         if (Session::haveRight("plugin_monitoring_componentscatalog", PluginMonitoringComponentscatalog::DASHBOARD)) {
             $ong[4] = __('Components catalog', 'monitoring');
         }
@@ -2476,50 +2476,52 @@ EOF;
     static function restartShinken() {
         global $CFG_GLPI;
 
-        if (Session::haveRight("plugin_monitoring_restartshinken", CREATE)) {
-            $pmTag = new PluginMonitoringTag();
-            $a_tagsBrut = $pmTag->find();
+        if (! Session::haveRight("plugin_monitoring_restartshinken", CREATE)) {
+            return;
+        }
 
-            $a_tags = array();
-            foreach ($a_tagsBrut as $data) {
-                if (!isset($a_tags[$data['ip'].':'.$data['port']])) {
-                    $a_tags[$data['ip'].':'.$data['port']] = $data;
-                }
+        $pmTag = new PluginMonitoringTag();
+        $a_tagsBrut = $pmTag->find();
+
+        $a_tags = array();
+        foreach ($a_tagsBrut as $data) {
+            if (!isset($a_tags[$data['ip'].':'.$data['port']])) {
+                $a_tags[$data['ip'].':'.$data['port']] = $data;
             }
+        }
 
-            if (count($a_tags) > 0) {
-                $shinken_commands = array(
-                    'reload'    => array(
-                        'command' => 'reload',
-                        'title'   => __('Reload Shinken configuration from Glpi database', 'monitoring'),
-                        'button'  => __('Reload Shinken config', 'monitoring'),
-                    ),
-                    'restart'   => array(
-                        'command' => 'restart',
-                        'title'   => __('Restart all Shinken daemons', 'monitoring'),
-                        'button'  => __('Restart Shinken', 'monitoring'),
-                    ),
-                );
+        if (count($a_tags) > 0) {
+            $shinken_commands = array(
+                'reload'    => array(
+                    'command' => 'reload',
+                    'title'   => __('Reload Shinken configuration from Glpi database', 'monitoring'),
+                    'button'  => __('Reload Shinken config', 'monitoring'),
+                ),
+                'restart'   => array(
+                    'command' => 'restart',
+                    'title'   => __('Restart all Shinken daemons', 'monitoring'),
+                    'button'  => __('Restart Shinken', 'monitoring'),
+                ),
+            );
 
-                foreach ($shinken_commands as $command) {
-                    echo "<table class='tab_cadre_fixe' width='950'>";
-                    echo "<tr class='tab_bg_1'>";
-                    echo "<th width='400'>";
-                    echo $command['title'].' : ';
-                    echo '</th>';
-                    echo '<td> | ';
-                    echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/restartshinken.form.php?action=".$command['command']."&tag=0'>".__('All instances', 'monitoring')."</a> | ";
-                    if (count($a_tags) > 1) {
-                        foreach ($a_tags as $taginfo=>$data) {
-                            echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/restartshinken.form.php?action=".$command['command']."&tag=". $data['id'] ."'>".$taginfo."</a> | ";
-                        }
+            foreach ($shinken_commands as $command) {
+                echo "<table class='tab_cadre_fixe' width='950'>";
+                echo "<tr class='tab_bg_1'>";
+                echo "<th width='400'>";
+                echo $command['title'].' : ';
+                echo '</th>';
+                echo '<td> | ';
+                echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/restartshinken.form.php?action=".$command['command']."&tag=0'>".__('All instances', 'monitoring')."</a> | ";
+                if (count($a_tags) > 1) {
+                    foreach ($a_tags as $taginfo=>$data) {
+                        echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/restartshinken.form.php?action=".$command['command']."&tag=". $data['id'] ."'>".$taginfo."</a> | ";
                     }
-                    echo '</td>';
-                    echo '</tr>';
-                    echo '</table>';
                 }
-                echo '<br/>';
+                echo '</td>';
+                echo '</tr>';
+                echo '</table>';
             }
+            echo '<br/>';
         }
     }
 }

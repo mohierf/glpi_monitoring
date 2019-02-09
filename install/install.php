@@ -259,7 +259,7 @@ class PluginMonitoringInstall
         $user = new User();
         if (! $user->getFromDBByCrit(['name' => "monitoring"])) {
             $this->migration->displayMessage("- monitoring user");
-            $input = array();
+            $input = [];
             $input['name'] = 'monitoring';
             $input['comment'] = 'Created by the monitoring plugin';
             $user->add($input);
@@ -270,14 +270,14 @@ class PluginMonitoringInstall
         $calendar = new Calendar();
         if (! $calendar->getFromDBByCrit(['name' => "24x7"])) {
             $this->migration->displayMessage("- calendar 24x7");
-            $input = array();
+            $input = [];
             $input['name'] = '24x7';
             $input['comment'] = 'Created by the monitoring plugin';
             $input['is_recursive'] = 1;
             $calendars_id = $calendar->add($input);
 
             $calendarSegment = new CalendarSegment();
-            $input = array();
+            $input = [];
             $input['calendars_id'] = $calendars_id;
             $input['is_recursive'] = 1;
             $input['begin'] = '00:00:00';
@@ -299,6 +299,48 @@ class PluginMonitoringInstall
         } else {
             $this->migration->displayMessage("- calendar 24x7 is still existing");
         }
+
+        // Create default realms
+        $this->migration->displayMessage("- default realms");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/realm.class.php";
+        $pmCommand = new PluginMonitoringRealm();
+        $pmCommand->initialize();
+
+        // Create default check strategies
+        $this->migration->displayMessage("- default check strategies");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/check.class.php";
+        $pmCommand = new PluginMonitoringCheck();
+        $pmCommand->initialize();
+
+        // Create default commands
+        $this->migration->displayMessage("- default commands");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/command.class.php";
+        $pmCommand = new PluginMonitoringCommand();
+        $pmCommand->initialize();
+
+        // Create default notification commands
+        $this->migration->displayMessage("- default notification commands");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/notificationcommand.class.php";
+        $pmCommand = new PluginMonitoringNotificationcommand();
+        $pmCommand->initialize();
+
+        // Create default contact templates
+        $this->migration->displayMessage("- default contact templates");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/contacttemplate.class.php";
+        $pmCommand = new PluginMonitoringContacttemplate();
+        $pmCommand->initialize();
+
+        // Create default host notifications templates
+        $this->migration->displayMessage("- default host notifications templates");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/hostnotificationtemplate.class.php";
+        $pmCommand = new PluginMonitoringHostnotificationtemplate();
+        $pmCommand->initialize();
+
+        // Create default service notifications templates
+        $this->migration->displayMessage("- default service notifications templates");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/servicenotificationtemplate.class.php";
+        $pmCommand = new PluginMonitoringServicenotificationtemplate();
+        $pmCommand->initialize();
     }
 
     /**

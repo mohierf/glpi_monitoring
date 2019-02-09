@@ -34,8 +34,8 @@ include ("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_acknowledge", READ);
 
-Html::header(__('Monitoring - acknowledges', 'monitoring'),'', "plugins",
-        "PluginMonitoringDashboard", "acknowledge");
+Html::header(__('Monitoring - acknowledges', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "acknowledge");
 
 $pmAcknowledge = new PluginMonitoringAcknowledge();
 

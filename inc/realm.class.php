@@ -36,17 +36,31 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringRealm extends CommonDropdown
 {
+    public $display_dropdowntitle  = false;
 
-//    public $first_level_menu = "plugins";
-//    public $second_level_menu = "pluginmonitoringmenu";
-//    public $third_level_menu = "realm";
+    public $first_level_menu = "plugins";
+    public $second_level_menu = "pluginmonitoringmenu";
+    public $third_level_menu = "realm";
 
     static $rightname = 'plugin_monitoring_realm';
 
 
+    /**
+     * Initialization called on plugin installation
+     */
+    function initialize()
+    {
+        // Default realm All
+        $input = [];
+        $input['name'] = "All";
+        $input['comment'] = __("Default realm", 'monitoring');
+        $this->add($input);
+    }
+
+
     static function getTypeName($nb = 0)
     {
-        return __('Reamls', 'monitoring');
+        return _n('Realm', 'Realms', $nb, 'monitoring');
     }
 
 

@@ -96,7 +96,4 @@ class PluginMonitoringSystem extends CommonDBTM {
 
       return $values;
    }
-
-
 }
-

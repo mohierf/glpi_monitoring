@@ -31,226 +31,260 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringHostnotificationtemplate extends CommonDBTM {
-
-
+class PluginMonitoringHostnotificationtemplate extends CommonDBTM
+{
     static $rightname = 'plugin_monitoring_notification';
 
+    /**
+     * Initialization called on plugin installation
+     */
+    function initialize()
+    {
+        $check_period = -1;
+        $calendar = new Calendar();
+        if ($calendar->getFromDBByCrit(['name' => "24x7"])) {
+            $check_period = $calendar->getID();
+        }
 
-    static function getTypeName($nb=0) {
-      return __('Host notification templates', 'monitoring');
-   }
+        $input = [];
+        $input['name'] = 'Default host notification';
+        $input['hn_enabled'] = '0';
+        $input['hn_period'] = $check_period;
+        $this->add($input);
+    }
 
-
-
-//   static function canCreate() {
-//      return Session::haveRight("plugin_monitoring_componentscatalog", CREATE);
-//   }
-//
-//
-//
-//   static function canUpdate() {
-//      return Session::haveRight("plugin_monitoring_componentscatalog", UPDATE);
-//   }
-//
-//
-//
-//   static function canView() {
-//      return Session::haveRight("plugin_monitoring_componentscatalog", READ);
-//   }
-
-
-
-   function getSearchOptions() {
-
-      $tab = array();
-
-      $tab['common'] = __('Components', 'monitoring');
-
-      $i=1;
-      $tab[$i]['table']          = $this->getTable();
-      $tab[$i]['field']          = 'name';
-      $tab[$i]['linkfield']      = 'name';
-      $tab[$i]['name']           = __('Name');
-      $tab[$i]['datatype']          = 'itemlink';
-
-      $i++;
-      $tab[$i]['table']           = $this->getTable();
-      $tab[$i]['field']           = 'host_notification_period';
-      $tab[$i]['name']            = __('Notification period', 'monitoring');
-      $tab[$i]['datatype']        = 'specific';
-
-      $i++;
-      $tab[$i]['table']           = $this->getTable();
-      $tab[$i]['field']           = 'host_notifications_enabled';
-      $tab[$i]['name']            = __('Enabled/disabled', 'monitoring');
-      $tab[$i]['datatype']        = 'bool';
-
-      $i++;
-      $tab[$i]['table']           = $this->getTable();
-      $tab[$i]['field']           = 'host_notification_options_n';
-      $tab[$i]['name']            = __('No notifications', 'monitoring');
-      $tab[$i]['datatype']        = 'bool';
-
-      $i++;
-      $tab[$i]['table']           = $this->getTable();
-      $tab[$i]['field']           = 'host_notification_options_d';
-      $tab[$i]['name']            = __('Host down', 'monitoring');
-      $tab[$i]['datatype']        = 'bool';
-
-      $i++;
-      $tab[$i]['table']           = $this->getTable();
-      $tab[$i]['field']           = 'host_notification_options_u';
-      $tab[$i]['name']            = __('Host unreachable', 'monitoring');
-      $tab[$i]['datatype']        = 'bool';
-
-      $i++;
-      $tab[$i]['table']           = $this->getTable();
-      $tab[$i]['field']           = 'host_notification_options_r';
-      $tab[$i]['name']            = __('Host recovery', 'monitoring');
-      $tab[$i]['datatype']        = 'bool';
-
-      $i++;
-      $tab[$i]['table']           = $this->getTable();
-      $tab[$i]['field']           = 'host_notification_options_d';
-      $tab[$i]['name']            = __('Host downtime', 'monitoring');
-      $tab[$i]['datatype']        = 'bool';
-
-      $i++;
-      $tab[$i]['table']           = $this->getTable();
-      $tab[$i]['field']           = 'host_notification_options_f';
-      $tab[$i]['name']            = __('Host flapping', 'monitoring');
-      $tab[$i]['datatype']        = 'bool';
-
-      return $tab;
-   }
+    static function getTypeName($nb = 0)
+    {
+        return __('Hosts notification templates', 'monitoring');
+    }
 
 
-   static function getSpecificValueToDisplay($field, $values, array $options=array()) {
+    /*
+     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
+     */
+    public function getSearchOptionsNew()
+    {
+        return $this->rawSearchOptions();
+    }
 
-      if (!is_array($values)) {
-         $values = array($field => $values);
-      }
-      switch ($field) {
-         case 'host_notification_period':
-            $calendar = new Calendar();
-            $calendar->getFromDB($values[$field]);
-            return $calendar->getName(1);
-            break;
+    function rawSearchOptions()
+    {
 
-      }
-      return parent::getSpecificValueToDisplay($field, $values, $options);
-   }
+        $tab = [];
+
+        $tab[] = [
+            'id' => 'common',
+            'name' => __('Hosts notification templates', 'monitoring')
+        ];
+
+        $index = 1;
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'name',
+            'name' => __('Name'),
+            'datatype' => 'itemlink'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'hn_enabled',
+            'name' => __('Enabled/disabled', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'hn_period',
+            'name' => __('Notification period'),
+            'datatype' => 'specific'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'hn_options_n',
+            'name' => __('No notification', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'hn_options_d',
+            'name' => __('Host down', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'hn_options_u',
+            'name' => __('Host unreachable', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'hn_options_r',
+            'name' => __('Host recovery', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'hn_options_f',
+            'name' => __('Host flapping', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        $tab[] = [
+            'id' => $index,
+            'table' => $this->getTable(),
+            'field' => 'hn_options_s',
+            'name' => __('Host acknowledge / downtime', 'monitoring'),
+            'datatype' => 'bool'
+        ];
+
+        /*
+         * Include other fields here
+         */
+
+        $tab[] = [
+            'id' => '99',
+            'table' => $this->getTable(),
+            'field' => 'id',
+            'name' => __('ID'),
+            'usehaving' => true,
+            'searchtype' => 'equals',
+        ];
+
+        return $tab;
+    }
 
 
-   /**
-   * Display form for configuration
-   *
-   * @param $items_id integer ID
-   * @param $options array
-   *
-   *@return bool true if form is ok
-   *
-   **/
-   function showForm($items_id, $options=array()) {
-      if ($items_id == '') {
-         if (isset($_POST['id'])) {
-            $a_list = $this->find("`users_id`='".$_POST['id']."'", '', 1);
-            if (count($a_list)) {
-               $array = current($a_list);
-               $items_id = $array['id'];
+    static function getSpecificValueToDisplay($field, $values, array $options = array())
+    {
+
+        if (!is_array($values)) {
+            $values = array($field => $values);
+        }
+        switch ($field) {
+            case 'hn_period':
+                $calendar = new Calendar();
+                $calendar->getFromDB($values[$field]);
+                return $calendar->getName(1);
+                break;
+
+        }
+        return parent::getSpecificValueToDisplay($field, $values, $options);
+    }
+
+
+    function showForm($items_id, $options = array())
+    {
+        if ($items_id == '') {
+            if (isset($_POST['id'])) {
+                $a_list = $this->find("`users_id`='" . $_POST['id'] . "'", '', 1);
+                if (count($a_list)) {
+                    $array = current($a_list);
+                    $items_id = $array['id'];
+                }
             }
-         }
-      }
+        }
 
-      if ($items_id!='') {
-         $this->getFromDB($items_id);
-      } else {
-         $this->getEmpty();
-      }
+        if ($items_id != '') {
+            $this->getFromDB($items_id);
+        } else {
+            $this->getEmpty();
+        }
 
 //      $this->showTabs($options);
-      $this->showFormHeader($options);
+        $this->showFormHeader($options);
 
-      $this->getFromDB($items_id);
+        $this->getFromDB($items_id);
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Name')."&nbsp;:</td>";
-      echo "<td align='center'>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Name') . "&nbsp;:</td>";
+        echo "<td align='center'>";
 
-      $objectName = autoName($this->fields["name"], "name", false,
-                             $this->getType());
-      Html::autocompletionTextField($this, 'name', array('value' => $objectName));
-      echo "</td>";
-      echo "<td></td>";
-      echo "</tr>";
+        $objectName = autoName($this->fields["name"], "name", false,
+            $this->getType());
+        Html::autocompletionTextField($this, 'name', array('value' => $objectName));
+        echo "</td>";
+        echo "<td></td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<th colspan='2'>".__('Hosts', 'monitoring')."</th>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<th colspan='2'>" . __('Hosts', 'monitoring') . "</th>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notifications', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notifications_enabled', $this->fields['host_notifications_enabled']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notifications', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_enabled', $this->fields['hn_enabled']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Period', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      dropdown::show("Calendar", array('name'=>'host_notification_period',
-                                 'value'=>$this->fields['host_notification_period']));
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Period', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        dropdown::show("Calendar", array('name' => 'hn_period',
+            'value' => $this->fields['hn_period']));
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify on DOWN host states', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_d', $this->fields['host_notification_options_d']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify on DOWN host states', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_d', $this->fields['hn_options_d']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify on UNREACHABLE host states', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_u', $this->fields['host_notification_options_u']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify on UNREACHABLE host states', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_u', $this->fields['hn_options_u']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify on host recoveries (UP states)', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_r', $this->fields['host_notification_options_r']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify on host recoveries (UP states)', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_r', $this->fields['hn_options_r']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify when the host starts and stops flapping', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_f', $this->fields['host_notification_options_f']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify when the host starts and stops flapping', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_f', $this->fields['hn_options_f']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Notify when host scheduled downtime starts and ends', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_s', $this->fields['host_notification_options_s']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Notify when host scheduled downtime starts and ends', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_s', $this->fields['hn_options_s']);
+        echo "</td>";
+        echo "</tr>";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('The contact will not receive any type of host notifications', 'monitoring')."&nbsp;:</td>";
-      echo "<td align='center'>";
-      Dropdown::showYesNo('host_notification_options_n', $this->fields['host_notification_options_n']);
-      echo "</td>";
-      echo "</tr>";
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('The contact will not receive any type of host notifications', 'monitoring') . "&nbsp;:</td>";
+        echo "<td align='center'>";
+        Dropdown::showYesNo('hn_options_n', $this->fields['hn_options_n']);
+        echo "</td>";
+        echo "</tr>";
 
-      $this->showFormButtons($options);
+        $this->showFormButtons($options);
 
-      return true;
-   }
+        return true;
+    }
 }

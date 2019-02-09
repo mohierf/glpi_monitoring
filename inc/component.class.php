@@ -40,21 +40,18 @@ class PluginMonitoringComponent extends CommonDBTM
     static $rightname = 'plugin_monitoring_component';
 
 
-    static function getTypeName($nb = 1)
+    /**
+     * Initialization called on plugin installation
+     */
+    function initialize()
     {
-        return __('Component', 'monitoring');
-//        return _n('Component', 'Components', $nb, 'monitoring');
+
     }
 
 
-    /*
-     * Add some services Component at install
-     *
-     */
-    function initComponents()
+    static function getTypeName($nb = 1)
     {
-
-
+        return __('Component', 'monitoring');
     }
 
 
@@ -77,8 +74,9 @@ class PluginMonitoringComponent extends CommonDBTM
      */
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
+        /* @var CommonDBTM $item */
         if ($item->getID() > 0
-            AND $item->fields['graph_template'] != 0) {
+            AND $item->getField('graph_template') != 0) {
 
             return array(
                 __('Copy'),
@@ -123,107 +121,109 @@ class PluginMonitoringComponent extends CommonDBTM
     /*
      * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
      */
-    public function getSearchOptionsNew() {
+    public function getSearchOptionsNew()
+    {
         return $this->rawSearchOptions();
     }
 
-    function rawSearchOptions() {
+    function rawSearchOptions()
+    {
 
         $tab = [];
 
         $tab[] = [
-            'id'                 => 'common',
-            'name'               => __('Components', 'monitoring')
+            'id' => 'common',
+            'name' => __('Components', 'monitoring')
         ];
 
         $tab[] = [
-            'id'                 => '1',
-            'table'              => $this->getTable(),
-            'field'              => 'name',
-            'name'               => __('Name'),
+            'id' => '1',
+            'table' => $this->getTable(),
+            'field' => 'name',
+            'name' => __('Name'),
         ];
 
         $tab[] = [
-            'id'                 => '2',
-            'table'              => $this->getTable(),
-            'field'              => 'description',
-            'name'               => __('Comment'),
+            'id' => '2',
+            'table' => $this->getTable(),
+            'field' => 'description',
+            'name' => __('Comment'),
         ];
 
         $tab[] = [
-            'id'                 => '3',
-            'table'              => $this->getTable(),
-            'field'              => 'active_checks_enabled',
-            'datatype'           => 'bool',
-            'name'               => __('Active check', 'monitoring'),
+            'id' => '3',
+            'table' => $this->getTable(),
+            'field' => 'active_checks_enabled',
+            'datatype' => 'bool',
+            'name' => __('Active check', 'monitoring'),
         ];
 
         $tab[] = [
-            'id'                 => '4',
-            'table'              => $this->getTable(),
-            'field'              => 'passive_checks_enabled',
-            'datatype'           => 'bool',
-            'name'               => __('Passive check', 'monitoring'),
+            'id' => '4',
+            'table' => $this->getTable(),
+            'field' => 'passive_checks_enabled',
+            'datatype' => 'bool',
+            'name' => __('Passive check', 'monitoring'),
         ];
 
         $tab[] = [
-            'id'                 => '5',
-            'table'              => 'glpi_plugin_monitoring_commands',
-            'field'              => 'name',
-            'datatype'           => 'itemlink',
-            'linkfield'          => 'plugin_monitoring_commands_id',
-            'name'               => __('Related command', 'monitoring'),
+            'id' => '5',
+            'table' => 'glpi_plugin_monitoring_commands',
+            'field' => 'name',
+            'datatype' => 'itemlink',
+            'linkfield' => 'plugin_monitoring_commands_id',
+            'name' => __('Related command', 'monitoring'),
         ];
 
         $tab[] = [
-            'id'                 => '6',
-            'table'              => 'glpi_plugin_monitoring_eventhandlers',
-            'field'              => 'name',
-            'datatype'           => 'itemlink',
-            'linkfield'          => 'plugin_monitoring_eventhandlers_id',
-            'name'               => __('Related event handler', 'monitoring'),
+            'id' => '6',
+            'table' => 'glpi_plugin_monitoring_eventhandlers',
+            'field' => 'name',
+            'datatype' => 'itemlink',
+            'linkfield' => 'plugin_monitoring_eventhandlers_id',
+            'name' => __('Related event handler', 'monitoring'),
         ];
 
         $tab[] = [
-            'id'                 => '7',
-            'table'              => 'glpi_plugin_monitoring_checks',
-            'field'              => 'name',
-            'datatype'           => 'itemlink',
-            'linkfield'          => 'plugin_monitoring_checks_id',
-            'name'               => __('Related check frequency', 'monitoring'),
+            'id' => '7',
+            'table' => 'glpi_plugin_monitoring_checks',
+            'field' => 'name',
+            'datatype' => 'itemlink',
+            'linkfield' => 'plugin_monitoring_checks_id',
+            'name' => __('Related check frequency', 'monitoring'),
         ];
 
         $tab[] = [
-            'id'                 => '8',
-            'table'              => 'glpi_calendars',
-            'field'              => 'name',
-            'datatype'           => 'specific',
+            'id' => '8',
+            'table' => 'glpi_calendars',
+            'field' => 'name',
+            'datatype' => 'specific',
 //            'linkfield'          => 'calendars_id',
-            'name'               => __('Related check period', 'monitoring'),
+            'name' => __('Related check period', 'monitoring'),
         ];
 
         $tab[] = [
-            'id'                 => '9',
-            'table'              => $this->getTable(),
-            'field'              => 'business_priority',
-            'datatype'           => 'integer',
-            'name'               => __('Business impact', 'monitoring'),
+            'id' => '9',
+            'table' => $this->getTable(),
+            'field' => 'business_priority',
+            'datatype' => 'integer',
+            'name' => __('Business impact', 'monitoring'),
         ];
 
         $tab[] = [
-            'id'                 => '11',
-            'table'              => $this->getTable(),
-            'field'              => 'freshness_type',
-            'datatype'           => 'specific',
-            'name'               => __('Freshness type', 'monitoring'),
+            'id' => '11',
+            'table' => $this->getTable(),
+            'field' => 'freshness_type',
+            'datatype' => 'specific',
+            'name' => __('Freshness type', 'monitoring'),
         ];
 
         $tab[] = [
-            'id'                 => '10',
-            'table'              => $this->getTable(),
-            'field'              => 'freshness_count',
-            'datatype'           => 'integer',
-            'name'               => __('Freshness count', 'monitoring'),
+            'id' => '10',
+            'table' => $this->getTable(),
+            'field' => 'freshness_count',
+            'datatype' => 'integer',
+            'name' => __('Freshness count', 'monitoring'),
         ];
 
         /*
@@ -231,12 +231,12 @@ class PluginMonitoringComponent extends CommonDBTM
          */
 
         $tab[] = [
-            'id'                 => '30',
-            'table'              => $this->getTable(),
-            'field'              => 'id',
-            'name'               => __('ID'),
-            'usehaving'          => true,
-            'searchtype'         => 'equals',
+            'id' => '99',
+            'table' => $this->getTable(),
+            'field' => 'id',
+            'name' => __('ID'),
+            'usehaving' => true,
+            'searchtype' => 'equals',
         ];
 
         return $tab;
@@ -322,15 +322,6 @@ class PluginMonitoringComponent extends CommonDBTM
     }
 
 
-    /**
-     * Display form for service configuration
-     *
-     * @param $items_id integer ID
-     * @param $options array
-     *
-     * @return bool true if form is ok
-     *
-     **/
     function showForm($items_id, $options = array(), $copy = array())
     {
         $pMonitoringCommand = new PluginMonitoringCommand();

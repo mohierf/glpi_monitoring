@@ -1,5 +1,4 @@
 <?php
-
 /**
  *    ------------------------------------------------------------------------
  *    Copyright notice:
@@ -34,32 +33,5 @@ include ("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_tag", READ);
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "PluginMonitoringDashboard", "tag");
-
-$pmTag = new PluginMonitoringTag();
-
-if (isset($_POST["add"])) {
-   $pmTag->add($_POST);
-   Html::back();
-} else if (isset($_POST["update"])) {
-   $pmTag->update($_POST);
-   Html::back();
-} else if (isset($_POST["purge"])) {
-   $pmTag->getFromDB($_POST['id']);
-   if ($pmTag->fields['tag'] != '') {
-      $pmTag->delete($_POST);
-      $pmTag->redirectToList();
-   }
-   Html::back();
-}
-
-if (!isset($_GET["id"])) {
-   $_GET["id"] = "";
-}
-
-$pmTag->display(array('id' => $_GET["id"]));
-
-Html::footer();
-
-?>
+$dropdown = new PluginMonitoringTag();
+include (GLPI_ROOT . "/front/dropdown.common.form.php");

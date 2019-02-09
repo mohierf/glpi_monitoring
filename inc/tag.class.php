@@ -31,13 +31,18 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringTag extends CommonDBTM {
+class PluginMonitoringTag extends CommonDBTM
+{
+    public $display_dropdowntitle  = false;
 
+    public $first_level_menu = "plugins";
+    public $second_level_menu = "pluginmonitoringmenu";
+    public $third_level_menu = "tag";
 
-   static $rightname = 'plugin_monitoring_tag';
+    static $rightname = 'plugin_monitoring_tag';
 
     /**
      * Get name of this type
@@ -46,9 +51,10 @@ class PluginMonitoringTag extends CommonDBTM {
      * @return string name of this type by language of the user connected
      *
      */
-   static function getTypeName($nb=0) {
-      return __('Tag', 'monitoring');
-   }
+    static function getTypeName($nb = 0)
+    {
+        return __('Tag', 'monitoring');
+    }
 
 
     /**
@@ -58,64 +64,65 @@ class PluginMonitoringTag extends CommonDBTM {
      * @param string $interface
      * @return array
      */
-   function getRights($interface='central') {
+    function getRights($interface = 'central')
+    {
 
-      $values = parent::getRights();
-      unset($values[CREATE]);
+        $values = parent::getRights();
+        unset($values[CREATE]);
 
-      return $values;
-   }
+        return $values;
+    }
 
 
-
-   function getSearchOptions() {
-      $tab = array();
-
-      $tab['common'] = __('Commands', 'monitoring');
-
-		$tab[1]['table']     = $this->getTable();
-		$tab[1]['field']     = 'tag';
-		$tab[1]['linkfield'] = 'tag';
-		$tab[1]['name']      = __('Shinken tag', 'monitoring');
-      $tab[1]['datatype']  = 'itemlink';
-
-		$tab[2]['table']     = $this->getTable();
-		$tab[2]['field']     = 'ip';
-		$tab[2]['linkfield'] = 'ip';
-		$tab[2]['name']      = __('Shinken IP address', 'monitoring');
-
-		$tab[3]['table']     = $this->getTable();
-		$tab[3]['field']     = 'username';
-		$tab[3]['linkfield'] = 'username';
-		$tab[3]['name']      = __('Username (Shinken webservice)', 'monitoring');
-
-		$tab[4]['table']     = $this->getTable();
-		$tab[4]['field']     = 'password';
-		$tab[4]['linkfield'] = 'password';
-		$tab[4]['name']      = __('Password (Shinken webservice)', 'monitoring');
-
-		$tab[5]['table']     = $this->getTable();
-		$tab[5]['field']     = 'iplock';
-		$tab[5]['linkfield'] = 'iplock';
-		$tab[5]['name']      = __('Lock shinken address', 'monitoring');
-      $tab[5]['datatype']  = 'bool';
-
-		$tab[6]['table']     = $this->getTable();
-		$tab[6]['field']     = 'port';
-		$tab[6]['linkfield'] = 'port';
-		$tab[6]['name']      = __('Port', 'monitoring');
-
-      $tab[7]['table']     = $this->getTable();
-      $tab[7]['field']     = 'comment';
-      $tab[7]['name']      = __('Comments');
-      $tab[7]['datatype']  = 'text';
-
-      return $tab;
-   }
+//    function getSearchOptions()
+//    {
+//        $tab = array();
+//
+//        $tab['common'] = __('Commands', 'monitoring');
+//
+//        $tab[1]['table'] = $this->getTable();
+//        $tab[1]['field'] = 'tag';
+//        $tab[1]['linkfield'] = 'tag';
+//        $tab[1]['name'] = __('Shinken tag', 'monitoring');
+//        $tab[1]['datatype'] = 'itemlink';
+//
+//        $tab[2]['table'] = $this->getTable();
+//        $tab[2]['field'] = 'ip';
+//        $tab[2]['linkfield'] = 'ip';
+//        $tab[2]['name'] = __('Shinken IP address', 'monitoring');
+//
+//        $tab[3]['table'] = $this->getTable();
+//        $tab[3]['field'] = 'username';
+//        $tab[3]['linkfield'] = 'username';
+//        $tab[3]['name'] = __('Username (Shinken webservice)', 'monitoring');
+//
+//        $tab[4]['table'] = $this->getTable();
+//        $tab[4]['field'] = 'password';
+//        $tab[4]['linkfield'] = 'password';
+//        $tab[4]['name'] = __('Password (Shinken webservice)', 'monitoring');
+//
+//        $tab[5]['table'] = $this->getTable();
+//        $tab[5]['field'] = 'iplock';
+//        $tab[5]['linkfield'] = 'iplock';
+//        $tab[5]['name'] = __('Lock shinken address', 'monitoring');
+//        $tab[5]['datatype'] = 'bool';
+//
+//        $tab[6]['table'] = $this->getTable();
+//        $tab[6]['field'] = 'port';
+//        $tab[6]['linkfield'] = 'port';
+//        $tab[6]['name'] = __('Port', 'monitoring');
+//
+//        $tab[7]['table'] = $this->getTable();
+//        $tab[7]['field'] = 'comment';
+//        $tab[7]['name'] = __('Comments');
+//        $tab[7]['datatype'] = 'text';
+//
+//        return $tab;
+//    }
 
 
     /**
-     * Display form for agent configuration
+     * Display form for tag configuration
      *
      * @param $items_id integer ID
      * @param $options array
@@ -124,218 +131,225 @@ class PluginMonitoringTag extends CommonDBTM {
      * @return bool true if form is ok
      *
      */
-   function showForm($items_id, $options=array(), $copy=array()) {
-      $this->initForm($items_id, $options);
-      $this->showFormHeader($options);
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Tag', 'monitoring')." :</td>";
-      echo "<td>";
-      echo $this->fields["tag"];
-      echo "</td>";
-      echo "<td>".__('Username (Shinken webservice)', 'monitoring')."&nbsp;:</td>";
-      echo "<td>";
-      Html::autocompletionTextField($this, 'username');
-      echo "</td>";
-      echo "</tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Shinken IP address', 'monitoring')." :</td>";
-      echo "<td>";
-      Html::autocompletionTextField($this, 'ip');
-      echo "</td>";
-      echo "<td>".__('Password (Shinken webservice)', 'monitoring')."&nbsp;:</td>";
-      echo "<td>";
-      Html::autocompletionTextField($this, 'password');
-      echo "</td>";
-      echo "</tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Lock shinken IP', 'monitoring')." :</td>";
-      echo "<td>";
-      Dropdown::showYesNo('iplock', $this->fields["iplock"]);
-      echo "</td>";
-      echo "<td rowspan='2'>".__('Comments')."</td>";
-      echo "<td rowspan='2' class='middle'>";
-      echo "<textarea cols='45' rows='3' name='comment' >".$this->fields["comment"];
-      echo "</textarea></td>";
-      echo "</tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Port', 'monitoring')." :</td>";
-      echo "<td>";
-      Html::autocompletionTextField($this, 'port', array('size' => 10));
-      echo "</td>";
-      echo "<td colspan='2'>";
-      echo "</td>";
-      echo "</tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td colspan='4'>";
-      echo "</td>";
-      echo "</tr>";
-
-
-      $this->showFormButtons($options);
-
-      return true;
-   }
-
-
-
-   function setIP($tag, $ip) {
-      if (!$this->isIPLocked($tag)) {
-         $id = $this->getTagID($tag);
-         $input= array();
-         $input['id'] = $id;
-         $input['ip'] = $ip;
-         $this->update($input);
-      }
-   }
-
-
-
-   function getIP($tag) {
-
-      $a_tags = $this->find("`tag`='".$tag."'", '', 1);
-      if (count($a_tags) == 1) {
-         $a_tag = current($a_tags);
-         return $a_tag['ip'];
-      }
-      return '';
-   }
-
-
-
-   function getPort($tag) {
-
-      $a_tags = $this->find("`tag`='".$tag."'", '', 1);
-      if (count($a_tags) == 1) {
-         $a_tag = current($a_tags);
-         return $a_tag['port'];
-      }
-      return '';
-   }
-
-
-
-   function getAuth($tag) {
-
-      $a_tags = $this->find("`tag`='".$tag."'", '', 1);
-      if (count($a_tags) == 1) {
-         $a_tag = current($a_tags);
-         return $a_tag['username'].":".$a_tag['password'];
-      }
-      return '';
-   }
-
-
-
-   function getTagID($tag) {
-
-      $a_tags = $this->find("`tag`='".$tag."'", '', 1);
-      if (count($a_tags) == 1) {
-         $a_tag = current($a_tags);
-         return $a_tag['id'];
-      }
-
-      return $this->add(array('tag' => $tag));
-   }
-
-
-
-   function isIPLocked($tag) {
-      $a_tags = $this->find("`tag`='".$tag."'", '', 1);
-      if (count($a_tags) == 1) {
-         $a_tag = current($a_tags);
-         return $a_tag['iplock'];
-      }
-      return FALSE;
-   }
-
-
-
-   function servers_status() {
-
-      $servers = $this->find();
-
-      echo "<table class='tab_cadre' width='950'>";
-      foreach ($servers as $data) {
-         echo "<tr class='tab_bg_1'>";
-         echo "<th colspan='2'>";
-         echo $data['ip'];
-         echo "</th>";
-         echo "</tr>";
-
-         echo "<tr class='tab_bg_1'>";
-         echo "<td>";
-         echo "ping :";
-         echo "</td>";
-         echo "<td>";
-         $ch = curl_init();
-         curl_setopt($ch,CURLOPT_URL, 'http://'.$data['ip'].':7770/ping');
-         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
-         curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 4);
-         curl_setopt($ch,CURLOPT_TIMEOUT, 4);
-         $ret = curl_exec($ch);
-         curl_close($ch);
-         echo $ret;
-         echo "</td>";
-         echo "</tr>";
-
-         $ch = curl_init();
-         curl_setopt($ch,CURLOPT_URL, 'http://'.$data['ip'].':7770/get-all-states');
-         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
-         curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 4);
-         curl_setopt($ch,CURLOPT_TIMEOUT, 4);
-         $ret = curl_exec($ch);
-         curl_close($ch);
-         if ($ret != '') {
-            foreach (json_decode($ret) as $module=>$dataret) {
-               echo "<tr class='tab_bg_1'>";
-               echo "<td>";
-               echo $module;
-               echo "</td>";
-               echo "<td>";
-               if ($dataret[0]->alive == 1) {
-                  echo "<div class='service serviceOK' style='float : left;'></div>";
-               } else {
-                  echo "<div class='service serviceCRITICAL' style='float : left;'></div>";
-               }
-               echo "</td>";
-               echo "</tr>";
+    function showForm($items_id, $options = array(), $copy = array())
+    {
+        if (count($copy) > 0) {
+            foreach ($copy as $key => $value) {
+                $this->fields[$key] = stripslashes($value);
             }
-         }
-      }
-      echo "</table>";
-   }
+        }
+
+        $this->initForm($items_id, $options);
+        $this->showFormHeader($options);
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Tag', 'monitoring') . " :</td>";
+        echo "<td>";
+        echo $this->fields["tag"];
+        echo "</td>";
+        echo "<td>" . __('Username (Shinken webservice)', 'monitoring') . "&nbsp;:</td>";
+        echo "<td>";
+        Html::autocompletionTextField($this, 'username');
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Shinken IP address', 'monitoring') . " :</td>";
+        echo "<td>";
+        Html::autocompletionTextField($this, 'ip');
+        echo "</td>";
+        echo "<td>" . __('Password (Shinken webservice)', 'monitoring') . "&nbsp;:</td>";
+        echo "<td>";
+        Html::autocompletionTextField($this, 'password');
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Lock shinken IP', 'monitoring') . " :</td>";
+        echo "<td>";
+        Dropdown::showYesNo('iplock', $this->fields["iplock"]);
+        echo "</td>";
+        echo "<td rowspan='2'>" . __('Comments') . "</td>";
+        echo "<td rowspan='2' class='middle'>";
+        echo "<textarea cols='45' rows='3' name='comment' >" . $this->fields["comment"];
+        echo "</textarea></td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Port', 'monitoring') . " :</td>";
+        echo "<td>";
+        Html::autocompletionTextField($this, 'port', array('size' => 10));
+        echo "</td>";
+        echo "<td colspan='2'>";
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td colspan='4'>";
+        echo "</td>";
+        echo "</tr>";
 
 
-   function get_servers_status() {
-      $ok = true;
-      $servers = $this->find();
+        $this->showFormButtons($options);
 
-      foreach ($servers as $data) {
-         $ch = curl_init();
-         curl_setopt($ch,CURLOPT_URL, 'http://'.$data['ip'].':7770/get-all-states');
-         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
-         curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 4);
-         curl_setopt($ch,CURLOPT_TIMEOUT, 4);
-         $ret = curl_exec($ch);
-         curl_close($ch);
-         if (strstr($ret, 'Not found')) {
-            $ok = false;
-         } else if ($ret != '') {
-            foreach (json_decode($ret) as $module=>$dataret) {
-               if ($dataret[0]->alive != 1) {
-                  $ok = false;
-               }
+        return true;
+    }
+
+
+    function setIP($tag, $ip)
+    {
+        if (!$this->isIPLocked($tag)) {
+            $id = $this->getTagID($tag);
+            $input = array();
+            $input['id'] = $id;
+            $input['ip'] = $ip;
+            $this->update($input);
+        }
+    }
+
+
+    function getIP($tag)
+    {
+
+        $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
+        if (count($a_tags) == 1) {
+            $a_tag = current($a_tags);
+            return $a_tag['ip'];
+        }
+        return '';
+    }
+
+
+    function getPort($tag)
+    {
+
+        $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
+        if (count($a_tags) == 1) {
+            $a_tag = current($a_tags);
+            return $a_tag['port'];
+        }
+        return '';
+    }
+
+
+    function getAuth($tag)
+    {
+
+        $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
+        if (count($a_tags) == 1) {
+            $a_tag = current($a_tags);
+            return $a_tag['username'] . ":" . $a_tag['password'];
+        }
+        return '';
+    }
+
+
+    function getTagID($tag)
+    {
+
+        $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
+        if (count($a_tags) == 1) {
+            $a_tag = current($a_tags);
+            return $a_tag['id'];
+        }
+
+        return $this->add(array('tag' => $tag));
+    }
+
+
+    function isIPLocked($tag)
+    {
+        $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
+        if (count($a_tags) == 1) {
+            $a_tag = current($a_tags);
+            return $a_tag['iplock'];
+        }
+        return FALSE;
+    }
+
+
+    function servers_status()
+    {
+
+        $servers = $this->find();
+
+        echo "<table class='tab_cadre' width='950'>";
+        foreach ($servers as $data) {
+            echo "<tr class='tab_bg_1'>";
+            echo "<th colspan='2'>";
+            echo $data['ip'];
+            echo "</th>";
+            echo "</tr>";
+
+            echo "<tr class='tab_bg_1'>";
+            echo "<td>";
+            echo "ping :";
+            echo "</td>";
+            echo "<td>";
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'http://' . $data['ip'] . ':7770/ping');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+            $ret = curl_exec($ch);
+            curl_close($ch);
+            echo $ret;
+            echo "</td>";
+            echo "</tr>";
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'http://' . $data['ip'] . ':7770/get-all-states');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+            $ret = curl_exec($ch);
+            curl_close($ch);
+            if ($ret != '') {
+                foreach (json_decode($ret) as $module => $dataret) {
+                    echo "<tr class='tab_bg_1'>";
+                    echo "<td>";
+                    echo $module;
+                    echo "</td>";
+                    echo "<td>";
+                    if ($dataret[0]->alive == 1) {
+                        echo "<div class='service serviceOK' style='float : left;'></div>";
+                    } else {
+                        echo "<div class='service serviceCRITICAL' style='float : left;'></div>";
+                    }
+                    echo "</td>";
+                    echo "</tr>";
+                }
             }
-         } else {
-            $ok = false;
-         }
-      }
-      return $ok;
-   }
+        }
+        echo "</table>";
+    }
+
+
+    function get_servers_status()
+    {
+        $ok = true;
+        $servers = $this->find();
+
+        foreach ($servers as $data) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'http://' . $data['ip'] . ':7770/get-all-states');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+            $ret = curl_exec($ch);
+            curl_close($ch);
+            if (strstr($ret, 'Not found')) {
+                $ok = false;
+            } else if ($ret != '') {
+                foreach (json_decode($ret) as $module => $dataret) {
+                    if ($dataret[0]->alive != 1) {
+                        $ok = false;
+                    }
+                }
+            } else {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
 }
-

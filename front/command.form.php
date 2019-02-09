@@ -34,8 +34,8 @@ include ("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_command", READ);
 
-Html::header(__('Monitoring - commands', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "PluginMonitoringDashboard", "command");
+Html::header(__('Monitoring - commands', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "command");
 
 if (PLUGIN_MONITORING_SYSTEM == 'shinken') {
    $pMonitoringCommand = new PluginMonitoringCommand();

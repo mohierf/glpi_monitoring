@@ -34,17 +34,8 @@ include ("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_component", READ);
 
-//Html::header(
-//    __('Entity', 'alignak'),
-//    $_SERVER['PHP_SELF'],
-//    'admin',
-//    'pluginalignakmenu', 'alignak_entity');
-
-Html::header(
-    __('Monitoring - components', 'monitoring'),
-    $_SERVER["PHP_SELF"],
-    "plugins",
-    "pluginmonitoringmenu", "alignak_entity");
+Html::header(__('Monitoring - components', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "component");
 
 
 Search::show('PluginMonitoringComponent');

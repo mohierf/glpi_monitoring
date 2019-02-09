@@ -70,6 +70,7 @@ class PluginMonitoringProfile extends Profile
      **/
     static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
+        /* @var CommonDBTM $item */
         if ($item->getType() == 'Profile') {
             $self_service = ($item->getField('interface') != 'central');
 
@@ -165,6 +166,7 @@ class PluginMonitoringProfile extends Profile
                 'label' => __('Homepage', 'monitoring'),
                 'field' => 'plugin_monitoring_homepage'
             ],
+
             ['itemtype' => 'PluginMonitoringAcknowledge',
                 'label' => __('Acknowledge', 'monitoring'),
                 'field' => 'plugin_monitoring_acknowledge'
@@ -196,6 +198,18 @@ class PluginMonitoringProfile extends Profile
             ['itemtype' => 'PluginMonitoringComponent',
                 'label' => __('Component', 'monitoring'),
                 'field' => 'plugin_monitoring_component'
+            ],
+            ['itemtype' => 'PluginMonitoringContacttemplate',
+                'label' => __('Notifications', 'monitoring'),
+                'field' => 'plugin_monitoring_notification'
+            ],
+            ['itemtype' => 'PluginMonitoringHostnotificationtemplate',
+                'label' => __('Notifications', 'monitoring'),
+                'field' => 'plugin_monitoring_notification'
+            ],
+            ['itemtype' => 'PluginMonitoringServicenotificationtemplate',
+                'label' => __('Notifications', 'monitoring'),
+                'field' => 'plugin_monitoring_notification'
             ],
             ['itemtype' => 'PluginMonitoringCommand',
                 'label' => __('Command', 'monitoring'),

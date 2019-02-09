@@ -46,46 +46,76 @@ class PluginMonitoringEventhandler extends CommonDBTM
     }
 
 
-    function getSearchOptions()
+    public function getSearchOptionsNew()
+    {
+        return $this->rawSearchOptions();
+    }
+    function rawSearchOptions()
     {
 
-        $tab = array();
+        $tab = [];
 
-        $tab['common'] = __('Commands', 'monitoring');
+        $tab[] = [
+            'id' => 'common',
+            'name' => __('Event handlers', 'monitoring')
+        ];
 
-        $tab[1]['table'] = $this->getTable();
-        $tab[1]['field'] = 'name';
-        $tab[1]['linkfield'] = 'name';
-        $tab[1]['name'] = __('Name');
-        $tab[1]['datatype'] = 'itemlink';
+        $index = 1;
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'name',
+            'name' => __('Name'),
+            'datatype' => 'itemlink'
+        ];
 
-        $tab[2]['table'] = $this->getTable();
-        $tab[2]['field'] = 'is_active';
-        $tab[2]['linkfield'] = 'is_active';
-        $tab[2]['name'] = __('Active');
-        $tab[2]['datatype'] = 'bool';
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'is_active',
+            'name' => __('Is active'),
+            'datatype' => 'bool'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'command_name',
+            'name' => __('Command name'),
+        ];
+
+        $tab[] = [
+            'id' => $index,
+            'table' => $this->getTable(),
+            'field' => 'command_line',
+            'name' => __('Command line'),
+        ];
+
+        /*
+         * Include other fields here
+         */
+
+        $tab[] = [
+            'id' => '99',
+            'table' => $this->getTable(),
+            'field' => 'id',
+            'name' => __('ID'),
+            'usehaving' => true,
+            'searchtype' => 'equals',
+        ];
 
         return $tab;
     }
 
 
-    function defineTabs($options = array())
-    {
-        $ong = array();
-        $this->addDefaultFormTab($ong);
-        return $ong;
-    }
+//    function defineTabs($options = array())
+//    {
+//        $ong = array();
+//        $this->addDefaultFormTab($ong);
+//        return $ong;
+//    }
 
 
-    /**
-     * Display form for agent configuration
-     *
-     * @param $items_id integer ID
-     * @param $options array
-     *
-     * @return bool true if form is ok
-     *
-     **/
     function showForm($items_id, $options = array(), $copy = array())
     {
 

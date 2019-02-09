@@ -36,70 +36,133 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringCheck extends CommonDBTM
 {
+    static $rightname = 'plugin_monitoring_command';
 
-    static $rightname = 'config';
-
-    function initChecks()
+    /**
+     * Initialization called on plugin installation
+     */
+    function initialize()
     {
-
-        $input = array();
-        $input['name'] = '5 minutes / 5 retry';
+        $input = [];
+        $input['name'] = '5 minutes / 5 retries';
         $input['max_check_attempts'] = '5';
         $input['check_interval'] = '5';
         $input['retry_interval'] = '1';
         $this->add($input);
 
-        $input = array();
-        $input['name'] = '5 minutes / 3 retry';
+        $input = [];
+        $input['name'] = '5 minutes / 3 retries';
         $input['max_check_attempts'] = '3';
         $input['check_interval'] = '5';
         $input['retry_interval'] = '1';
         $this->add($input);
 
-        $input = array();
-        $input['name'] = '15 minutes / 3 retry';
+        $input = [];
+        $input['name'] = '15 minutes / 3 retries';
         $input['max_check_attempts'] = '3';
         $input['check_interval'] = '15';
         $input['retry_interval'] = '1';
         $this->add($input);
 
-        $input = array();
+        $input = [];
+        $input['name'] = '15 minutes / 1 retry';
+        $input['max_check_attempts'] = '1';
+        $input['check_interval'] = '15';
+        $input['retry_interval'] = '1';
+        $this->add($input);
+
+        $input = [];
+        $input['name'] = '60 minutes / 3 retries';
+        $input['max_check_attempts'] = '3';
+        $input['check_interval'] = '60';
+        $input['retry_interval'] = '1';
+        $this->add($input);
+
+        $input = [];
         $input['name'] = '60 minutes / 1 retry';
         $input['max_check_attempts'] = '1';
         $input['check_interval'] = '60';
         $input['retry_interval'] = '1';
         $this->add($input);
-
     }
 
 
     static function getTypeName($nb = 0)
     {
-        return __('Check definition', 'monitoring');
+        return __('Check strategies', 'monitoring');
     }
 
 
-    function getSearchOptions()
+    /*
+     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
+     */
+    public function getSearchOptionsNew()
+    {
+        return $this->rawSearchOptions();
+    }
+
+    function rawSearchOptions()
     {
 
-        $tab = array();
+        $tab = [];
 
-        $tab['common'] = __('Check definition', 'monitoring');
+        $tab[] = [
+            'id' => 'common',
+            'name' => __('Check strategies', 'monitoring')
+        ];
 
-        $tab[1]['table'] = $this->getTable();
-        $tab[1]['field'] = 'name';
-        $tab[1]['linkfield'] = 'name';
-        $tab[1]['name'] = __('Name');
-        $tab[1]['datatype'] = 'itemlink';
+        $tab[] = [
+            'id' => '1',
+            'table' => $this->getTable(),
+            'field' => 'name',
+            'name' => __('Name'),
+            'datatype' => 'itemlink'
+        ];
+
+        $tab[] = [
+            'id' => '2',
+            'table' => $this->getTable(),
+            'field' => 'max_check_attempts',
+            'datatype' => 'number',
+            'name' => __('Maximum check attempts', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => '3',
+            'table' => $this->getTable(),
+            'field' => 'check_interval',
+            'datatype' => 'number',
+            'name' => __('Check interval', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => '4',
+            'table' => $this->getTable(),
+            'field' => 'retry_interval',
+            'datatype' => 'number',
+            'name' => __('Retry interval', 'monitoring'),
+        ];
+
+        /*
+         * Include other fields here
+         */
+
+        $tab[] = [
+            'id' => '99',
+            'table' => $this->getTable(),
+            'field' => 'id',
+            'name' => __('ID'),
+            'usehaving' => true,
+            'searchtype' => 'equals',
+        ];
 
         return $tab;
     }
 
 
-    function defineTabs($options = array())
+    function defineTabs($options = [])
     {
-
-        $ong = array();
+        $ong = [];
         $this->addDefaultFormTab($ong);
         return $ong;
     }
@@ -107,8 +170,8 @@ class PluginMonitoringCheck extends CommonDBTM
 
     function getComments()
     {
-
-        $comment = __('Max check attempts (number of retries)', 'monitoring') . ' : ' . $this->fields['max_check_attempts'] . '<br/>
+        $comment =
+            __('Max check attempts (number of retries)', 'monitoring') . ' : ' . $this->fields['max_check_attempts'] . '<br/>
          ' . __('Time in minutes between 2 checks', 'monitoring') . ' : ' . $this->fields['check_interval'] . ' minutes<br/>
          ' . __('Time in minutes between 2 retries', 'monitoring') . ' : ' . $this->fields['retry_interval'] . ' minutes';
 
@@ -120,16 +183,7 @@ class PluginMonitoringCheck extends CommonDBTM
     }
 
 
-    /**
-     *
-     *
-     * @param $items_id integer ID
-     * @param $options array
-     *
-     * @return bool true if form is ok
-     *
-     **/
-    function showForm($items_id, $options = array())
+    function showForm($items_id, $options = [])
     {
 
         $this->initForm($items_id, $options);

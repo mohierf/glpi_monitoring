@@ -34,8 +34,8 @@ include("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_eventhandler", READ);
 
-Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-    "PluginMonitoringDashboard", "eventhandler");
+Html::header(__('Monitoring - event handlers', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "eventhandler");
 
 $pMonitoringEventhandler = new PluginMonitoringEventhandler();
 

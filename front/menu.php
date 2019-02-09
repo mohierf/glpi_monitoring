@@ -29,23 +29,31 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
 Html::header(__('Monitoring - dashboard', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-             "PluginMonitoringDashboard", "menu");
+    "PluginMonitoringDashboard", "menu");
 
 $pmMessage = new PluginMonitoringMessage();
 $pmMessage->getMessages();
 
-$toDisplayArea=0;
+$toDisplayArea = 0;
 
-PluginMonitoringDisplay::restartShinken();
-
+/*
+ * Redirect to the dashboard if acces is granted and no configuration is allowed
+ */
 if (Session::haveRight("plugin_monitoring_dashboard", READ)
-        && !Session::haveRight("config", READ)) {
-   Html::redirect($CFG_GLPI['root_doc']."/plugins/monitoring/front/dashboard.php");
+    && !Session::haveRight("config", READ)) {
+    Html::redirect($CFG_GLPI['root_doc'] . "/plugins/monitoring/front/dashboard.php");
+}
+
+/*
+ * Add Shinken restart commands if necessary
+ */
+if (Session::haveRight("plugin_monitoring_restartshinken", READ)) {
+    PluginMonitoringDisplay::restartShinken();
 }
 
 /*
@@ -139,80 +147,86 @@ if (Session::haveRight("plugin_monitoring_weathermap", READ)
 */
 
 if (Session::haveRight("config", READ)) {
+    $toDisplayArea++;
+    echo "<table class='tab_cadre' width='950'>";
+    echo "<tr class='tab_bg_1'>";
+    echo "<th colspan='3' height='30' width='50%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/component.php'>" . __('Components', 'monitoring') . "</a>";
+    echo "</th>";
 
-   $toDisplayArea++;
-   echo "<table class='tab_cadre' width='950'>";
-   echo "<tr class='tab_bg_1'>";
-   echo "<th colspan='5' height='30' width='55%'>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/component.php'>".__('Components', 'monitoring')."</a>";
-   echo "</th>";
+    echo "<th width='15%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/contacttemplate.php'>" . __('Contact templates', 'monitoring') . "</a>";
+    echo "</th>";
 
-   echo "<th width='11%'>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/contacttemplate.php'>".__('Contact templates', 'monitoring')."</a>";
-   echo "</th>";
+    echo "<th width='15%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/hostnotificationtemplate.php'>" . __('Hosts notifications templates', 'monitoring') . "</a>";
+    echo "</th>";
 
-   echo "<th width='11%'>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/hostnotificationtemplate.php'>".__('Hosts notifications templates', 'monitoring')."</a>";
-   echo "</th>";
-
-   echo "<th width='11%'>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/servicenotificationtemplate.php'>".__('Services notifications templates', 'monitoring')."</a>";
-   echo "</th>";
-
-   echo "</tr>";
+    echo "<th width='15%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/servicenotificationtemplate.php'>" . __('Services notifications templates', 'monitoring') . "</a>";
+    echo "</th>";
+    echo "</tr>";
 
 
-   echo "<tr class='tab_bg_1'>";
-   echo "<th width='11%' height='25'>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/command.php'>".__('Commands', 'monitoring')."</a>";
-   echo "</th>";
+    echo "<tr class='tab_bg_1'>";
+    echo "<th width='15%' height='30'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/command.php'>" . __('Commands', 'monitoring') . "</a>";
+    echo "</th>";
 
-   echo "<th width='11%'>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/check.php'>".__('Check definition', 'monitoring')."</a>";
-   echo "</th>";
+    echo "<th width='15%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/eventhandler.php'>" . __('Event handlers', 'monitoring') . "</a>";
+    echo "</th>";
 
-   echo "<th width='11%'>";
-   if (Session::haveRight('calendar', READ)) {
-      echo "<a href='".$CFG_GLPI['root_doc']."/front/calendar.php'>".__('Calendar')."</a>";
-   }
-   echo "</th>";
+    echo "<th width='15%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/notificationcommand.php'>" . __('Notification commands', 'monitoring') . "</a>";
+    echo "</th>";
 
-   echo "<th width='11%'>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/eventhandler.php'>".__('Event handler', 'monitoring')."</a>";
-   echo "</th>";
+    echo "<th colspan='3' height='30' width='50%'>";
+    echo "</th>";
+    echo "</tr>";
 
-   echo "<th width='11%'>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/perfdata.php'>".__('Graph templates', 'monitoring')."</a>";
-   echo "</th>";
 
-   echo "<th>";
-   echo "</th>";
 
-   echo "<th>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/realm.php'>".__('Reamls', 'monitoring')."</a>";
-   echo "</th>";
+    echo "<tr class='tab_bg_1'>";
+    echo "<th width='15%' height='30'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/check.php'>" . __('Check strategies', 'monitoring') . "</a>";
+    echo "</th>";
 
-   echo "<th>";
-   echo "<a href='".$CFG_GLPI['root_doc']."/plugins/monitoring/front/tag.php'>".__('Tag', 'monitoring')."</a>";
-   echo "</th>";
-   echo "</tr>";
+    echo "<th width='15%'>";
+    if (Session::haveRight('calendar', READ)) {
+        echo "<a href='" . $CFG_GLPI['root_doc'] . "/front/calendar.php'>" . __('Check periods') . "</a>";
+    }
+    echo "</th>";
 
-   echo "</table>";
+    echo "<th width='15%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/perfdata.php'>" . __('Graph templates', 'monitoring') . "</a>";
+    echo "</th>";
 
+    echo "<th>";
+    echo "</th>";
+
+    echo "<th width='15%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/realm.php'>" . __('Realms', 'monitoring') . "</a>";
+    echo "</th>";
+
+    echo "<th width='15%'>";
+    echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/tag.php'>" . __('Tags', 'monitoring') . "</a>";
+    echo "</th>";
+    echo "</tr>";
+
+    echo "</table>";
 
 
 }
 
 if ($toDisplayArea <= 0) {
-   echo "<table class='tab_cadre' width='950'>";
-   echo "<tr class='tab_bg_1'>";
-   echo "<th height='80'>";
-   echo __('Sorry, your profile does not allow any views in the Monitoring', 'monitoring');
-   echo "</th>";
-   echo "</tr>";
-   echo "</table>";
+    echo "<table class='tab_cadre' width='950'>";
+    echo "<tr class='tab_bg_1'>";
+    echo "<th height='80'>";
+    echo __('Sorry, your profile does not allow any views in the Monitoring', 'monitoring');
+    echo "</th>";
+    echo "</tr>";
+    echo "</table>";
 }
 
 Html::footer();
-
-?>

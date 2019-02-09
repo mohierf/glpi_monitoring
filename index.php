@@ -37,5 +37,3 @@ Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
 
 Html::redirect($CFG_GLPI["root_doc"]."/plugins/monitoring/front/menu.php");
 Html::footer();
-
-?>

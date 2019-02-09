@@ -32,11 +32,10 @@
 
 include("../../../inc/includes.php");
 
-Session::checkRight("plugin_monitoring_componentscatalog", UPDATE);
+Session::checkRight("plugin_monitoring_notification", READ);
 
-Html::header(__('Monitoring - services notifications templates', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-    "PluginMonitoringDashboard", "servicenotificationtemplate");
-
+Html::header(__('Monitoring - services notification templates', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "sn_template");
 
 Search::show('PluginMonitoringServicenotificationtemplate');
 

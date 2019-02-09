@@ -35,5 +35,3 @@ Session::checkRight("plugin_monitoring_realm", READ);
 
 $dropdown = new PluginMonitoringRealm();
 include (GLPI_ROOT . "/front/dropdown.common.form.php");
-
-?>

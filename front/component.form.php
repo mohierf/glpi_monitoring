@@ -32,14 +32,13 @@
 
 include ("../../../inc/includes.php");
 
-//Session::checkRight("plugin_monitoring_component", READ);
+Session::checkRight("plugin_monitoring_component", READ);
 
-Html::header(__('Monitoring - component', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "PluginMonitoringDashboard", "component");
+Html::header(__('Monitoring - components', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "component");
 
 
 $pMonitoringComponent = new PluginMonitoringComponent();
-//echo "<pre>";print_r($_POST);exit;
 if (isset($_POST["copy"])) {
    $pMonitoringComponent->showForm(0, array(), $_POST);
    Html::footer();

@@ -127,25 +127,25 @@ CREATE TABLE `glpi_plugin_monitoring_contacttemplates` (
   `is_default` tinyint(1) NOT NULL DEFAULT '0',
   `shinken_administrator` tinyint(1) NOT NULL DEFAULT '0',
   `shinken_can_submit_commands` tinyint(1) NOT NULL DEFAULT '0',
-  `host_notifications_enabled` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notifications_enabled` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_period` int(11) NOT NULL DEFAULT '0',
-  `host_notification_period` int(11) NOT NULL DEFAULT '0',
-  `service_notification_options_w` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_u` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_c` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_r` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_f` tinyint(1) NOT NULL DEFAULT '0',
-  `service_notification_options_s` tinyint(1) NOT NULL DEFAULT '0',
-  `service_notification_options_n` tinyint(1) NOT NULL DEFAULT '0',
-  `host_notification_options_d` tinyint(1) NOT NULL DEFAULT '1',
-  `host_notification_options_u` tinyint(1) NOT NULL DEFAULT '1',
-  `host_notification_options_r` tinyint(1) NOT NULL DEFAULT '1',
-  `host_notification_options_f` tinyint(1) NOT NULL DEFAULT '0',
-  `host_notification_options_s` tinyint(1) NOT NULL DEFAULT '0',
-  `host_notification_options_n` tinyint(1) NOT NULL DEFAULT '0',
-  `service_notification_commands` int(11) NOT NULL DEFAULT '0',
-  `host_notification_commands` int(11) NOT NULL DEFAULT '0',
+  `hn_enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_period` int(11) NOT NULL DEFAULT '0',
+  `hn_commands` int(11) NOT NULL DEFAULT '0',
+  `hn_options_d` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_u` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_r` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_f` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_s` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_n` tinyint(1) NOT NULL DEFAULT '0',
+  `sn_enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_period` int(11) NOT NULL DEFAULT '0',
+  `sn_commands` int(11) NOT NULL DEFAULT '0',
+  `sn_options_w` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_u` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_c` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_r` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_f` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_s` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_n` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -652,9 +652,6 @@ CREATE TABLE `glpi_plugin_monitoring_weathermaplinks` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-INSERT INTO `glpi_plugin_monitoring_realms`
-   (`id` ,`name` ,`comment` ,`date_mod`) VALUES (NULL , 'All', NULL , NULL);
-
 
 
 DROP TABLE IF EXISTS `glpi_plugin_monitoring_shinkenwebservices`;
@@ -855,14 +852,14 @@ DROP TABLE IF EXISTS `glpi_plugin_monitoring_hostnotificationtemplates`;
 CREATE TABLE `glpi_plugin_monitoring_hostnotificationtemplates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `host_notifications_enabled` tinyint(1) NOT NULL DEFAULT '1',
-  `host_notification_period` int(11) NOT NULL DEFAULT '0',
-  `host_notification_options_d` tinyint(1) NOT NULL DEFAULT '1',
-  `host_notification_options_u` tinyint(1) NOT NULL DEFAULT '1',
-  `host_notification_options_r` tinyint(1) NOT NULL DEFAULT '1',
-  `host_notification_options_f` tinyint(1) NOT NULL DEFAULT '0',
-  `host_notification_options_s` tinyint(1) NOT NULL DEFAULT '1',
-  `host_notification_options_n` tinyint(1) NOT NULL DEFAULT '0',
+  `hn_enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_period` int(11) NOT NULL DEFAULT '0',
+  `hn_options_d` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_u` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_r` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_f` tinyint(1) NOT NULL DEFAULT '0',
+  `hn_options_s` tinyint(1) NOT NULL DEFAULT '1',
+  `hn_options_n` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -873,14 +870,15 @@ DROP TABLE IF EXISTS `glpi_plugin_monitoring_servicenotificationtemplates`;
 CREATE TABLE `glpi_plugin_monitoring_servicenotificationtemplates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `service_notifications_enabled` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_period` int(11) NOT NULL DEFAULT '0',
-  `service_notification_options_w` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_u` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_c` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_r` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_f` tinyint(1) NOT NULL DEFAULT '0',
-  `service_notification_options_s` tinyint(1) NOT NULL DEFAULT '1',
-  `service_notification_options_n` tinyint(1) NOT NULL DEFAULT '0',
+  `sn_enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_period` int(11) NOT NULL DEFAULT '0',
+  `sn_options_c` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_w` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_u` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_x` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_r` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_f` tinyint(1) NOT NULL DEFAULT '0',
+  `sn_options_s` tinyint(1) NOT NULL DEFAULT '1',
+  `sn_options_n` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;

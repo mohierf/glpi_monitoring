@@ -647,6 +647,7 @@ function plugin_monitoring_getDropdown()
         'PluginMonitoringCheck' => __('Check definitions', 'monitoring'),
         'PluginMonitoringCommand' => __('Commands', 'monitoring'),
         'PluginMonitoringRealm' => __('Realms', 'monitoring'),
+        'PluginMonitoringTag' => __('Tags', 'monitoring'),
         'PluginMonitoringComponentscatalog' => __('Components catalogs', 'monitoring'),
         'PluginMonitoringContacttemplate' => __('Contact templates', 'monitoring'),
         'PluginMonitoringHostnotificationtemplate' => __('Host notification templates', 'monitoring'),

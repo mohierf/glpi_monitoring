@@ -34,8 +34,8 @@ include("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_downtime", READ);
 
-Html::header(__('Monitoring - downtimes', 'monitoring'), '', "plugins",
-    "PluginMonitoringDashboard", "downtime");
+Html::header(__('Monitoring - downtimes', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "downtime");
 
 $pmMessage = new PluginMonitoringMessage();
 $pmMessage->getMessages();

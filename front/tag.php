@@ -32,16 +32,12 @@
 
 include ("../../../inc/includes.php");
 
+// Check if current user have the appropriate right
 Session::checkRight("plugin_monitoring_tag", READ);
 
-Html::header(__('Monitoring - realms', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-             "PluginMonitoringDashboard", "tag");
+Html::header(
+    __('Monitoring - tags', 'monitoring'),
+    '', 'config', 'pluginmonitoringmenu', 'tag');
 
-Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-             "PluginMonitoringDashboard", "tag");
-
-Search::show('PluginMonitoringTag');
-
-Html::footer();
-
-?>
+$dropdown = new PluginMonitoringTag();
+include (GLPI_ROOT . "/front/dropdown.common.php");
