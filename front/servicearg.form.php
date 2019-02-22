@@ -30,30 +30,28 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "services");
+Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
+    "monitoring", "services");
 
 $pmService = new PluginMonitoringService();
 
 if (isset($_POST['update'])) {
-   foreach ($_POST['arg'] as $key=>$value) {
-      if ($value == '') {
-         unset($_POST['arg'][$key]);
-      }
-   }
-   $_POST['arguments'] = exportArrayToDB($_POST['arg']);
-   $pmService->update($_POST);
-   Html::back();
+    foreach ($_POST['arg'] as $key => $value) {
+        if ($value == '') {
+            unset($_POST['arg'][$key]);
+        }
+    }
+    $_POST['arguments'] = exportArrayToDB($_POST['arg']);
+    $pmService->update($_POST);
+    Html::back();
 }
 
 if (Session::haveRight("plugin_monitoring_componentscatalog", UPDATE)) {
-   $pmService->showCustomArguments($_GET['id']);
+    $pmService->showCustomArguments($_GET['id']);
 }
 
 Html::footer();
-
-?>

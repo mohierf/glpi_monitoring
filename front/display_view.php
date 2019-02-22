@@ -49,7 +49,7 @@ $pmMessage = new PluginMonitoringMessage();
 
 $pmMessage->getMessages();
 
-$pmDisplay->menu();
+$pmDisplay->dashboard();
 
 $pass = 0;
 $a_views = $pmDisplayview->getViews();
@@ -71,4 +71,3 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
 } else {
    Html::helpFooter();
 }
-?>

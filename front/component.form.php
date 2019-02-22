@@ -30,7 +30,7 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_component", READ);
 
@@ -40,105 +40,81 @@ Html::header(__('Monitoring - components', 'monitoring'),
 
 $pMonitoringComponent = new PluginMonitoringComponent();
 if (isset($_POST["copy"])) {
-   $pMonitoringComponent->showForm(0, array(), $_POST);
-   Html::footer();
-   exit;
+    $pMonitoringComponent->showForm(0, [], $_POST);
+    Html::footer();
+    exit;
 } else if (isset ($_POST["add"])) {
-   if (isset($_POST['arg'])) {
-      $_POST['arguments'] = exportArrayToDB($_POST['arg']);
-   }
-   if (empty($_POST['name'])
-           OR empty($_POST['plugin_monitoring_checks_id'])
-           OR empty($_POST['plugin_monitoring_commands_id'])
-           OR empty($_POST['calendars_id'])) {
+    if (isset($_POST['arg'])) {
+        $_POST['arguments'] = exportArrayToDB($_POST['arg']);
+    }
+    if (empty($_POST['name'])
+// No more mandatory!
+//        or empty($_POST['plugin_monitoring_checks_id'])
+//        or empty($_POST['plugin_monitoring_commands_id'])
+        or empty($_POST['calendars_id'])) {
 
-      $_SESSION['plugin_monitoring_components'] = $_POST;
+        $_SESSION['plugin_monitoring_components'] = $_POST;
 
-      Session::addMessageAfterRedirect("<span class='red'>".__('Fields with asterisk are required', 'monitoring')."</span>");
-      Html::back();
-   }
-   if ($_POST['graph_template'] != 0) {
-      $a_perfnames = array();
-      $a_perfnames = PluginMonitoringServicegraph::getperfdataNames($_POST['graph_template']);
-      foreach ($a_perfnames as $name) {
-         $a_perfnames[$name] = 1;
-      }
-      $_POST['perfname'] = exportArrayToDB($a_perfnames);
-   }
+        Session::addMessageAfterRedirect("<span class='red'>" . __('Fields with asterisk are required', 'monitoring') . "</span>");
+        Html::back();
+    }
 
-   $pMonitoringComponent->add($_POST);
-   Html::back();
+    $pMonitoringComponent->add($_POST);
+    Html::back();
 } else if (isset ($_POST["update"])) {
-   if (isset($_POST['arg'])) {
-      $_POST['arguments'] = exportArrayToDB($_POST['arg']);
-   }
-   if (empty($_POST['name'])
-           OR empty($_POST['plugin_monitoring_checks_id'])
-           OR empty($_POST['plugin_monitoring_commands_id'])
-           OR empty($_POST['calendars_id'])) {
+    if (isset($_POST['arg'])) {
+        $_POST['arguments'] = exportArrayToDB($_POST['arg']);
+    }
+    if (empty($_POST['name'])
+// No more mandatory!
+//        or empty($_POST['plugin_monitoring_checks_id'])
+//        or empty($_POST['plugin_monitoring_commands_id'])
+        or empty($_POST['calendars_id'])) {
 
-      $_SESSION['plugin_monitoring_components'] = $_POST;
+        $_SESSION['plugin_monitoring_components'] = $_POST;
 
-      Session::addMessageAfterRedirect("<span class='red'>".__('Fields with asterisk are required', 'monitoring')."</span>");
-      Html::back();
-   }
-   if ($_POST['graph_template'] != 0) {
-      if (!isset($_POST['perfname'])
-              AND !isset($_POST['perfnameinvert'])
-              AND !isset($_POST['perfnamecolor'])) {
-         $pMonitoringComponent->getFromDB($_POST['id']);
-         if (empty($pMonitoringComponent->fields['perfname'])
-                 AND empty($pMonitoringComponent->fields['perfnameinvert'])
-                 AND empty($pMonitoringComponent->fields['perfnamecolor'])) {
-
-            $a_perfnames = array();
-            $a_perfnames = PluginMonitoringServicegraph::getperfdataNames($_POST['graph_template']);
-            foreach ($a_perfnames as $name) {
-               $a_perfnames[$name] = 1;
-            }
-            $_POST['perfname'] = exportArrayToDB($a_perfnames);
-         }
-      }
-   }
-   $pMonitoringComponent->update($_POST);
-   Html::back();
+        Session::addMessageAfterRedirect("<span class='red'>" . __('Fields with asterisk are required', 'monitoring') . "</span>");
+        Html::back();
+    }
+    $pMonitoringComponent->update($_POST);
+    Html::back();
 } else if (isset ($_POST["purge"])) {
-   $pMonitoringComponent->delete($_POST);
-   $pMonitoringComponent->redirectToList();
-} else if(isset($_POST['updateperfdata'])) {
-   $a_perfname = array();
+    $pMonitoringComponent->delete($_POST);
+    $pMonitoringComponent->redirectToList();
+} else if (isset($_POST['updateperfdata'])) {
+    $a_perfname = [];
 
-   $a_perfnameinvert = array();
-   if (isset($_POST['perfnameinvert'])) {
-      $_POST['perfnameinvert'] = explode("####", $_POST['perfnameinvert']);
-      foreach ($_POST['perfnameinvert'] as $perfname) {
-         $a_perfnameinvert[$perfname] = '1';
-      }
-   }
+    $a_perfnameinvert = [];
+    if (isset($_POST['perfnameinvert'])) {
+        $_POST['perfnameinvert'] = explode("####", $_POST['perfnameinvert']);
+        foreach ($_POST['perfnameinvert'] as $perfname) {
+            $a_perfnameinvert[$perfname] = '1';
+        }
+    }
 
-   $a_perfnamecolor = array();
-   if (isset($_POST['perfnamecolor'])) {
-      foreach ($_POST['perfnamecolor'] as $perfname=>$color) {
-         if ($color != '') {
-            $a_perfnamecolor[$perfname] = $color;
-         }
-      }
-   }
-   $input = array();
-   $input['id'] = $_POST['id'];
-   // $input['perfnameinvert'] = exportArrayToDB($a_perfnameinvert);
-   $input['perfnameinvert'] = serialize($a_perfnameinvert);
-   // $input['perfnamecolor'] = exportArrayToDB($a_perfnamecolor);
-   $input['perfnamecolor'] = serialize($a_perfnamecolor);
+    $a_perfnamecolor = [];
+    if (isset($_POST['perfnamecolor'])) {
+        foreach ($_POST['perfnamecolor'] as $perfname => $color) {
+            if ($color != '') {
+                $a_perfnamecolor[$perfname] = $color;
+            }
+        }
+    }
+    $input = [];
+    $input['id'] = $_POST['id'];
+    // $input['perfnameinvert'] = exportArrayToDB($a_perfnameinvert);
+    $input['perfnameinvert'] = serialize($a_perfnameinvert);
+    // $input['perfnamecolor'] = exportArrayToDB($a_perfnamecolor);
+    $input['perfnamecolor'] = serialize($a_perfnamecolor);
 
-   $pMonitoringComponent->update($input);
-   Html::back();
+    $pMonitoringComponent->update($input);
+    Html::back();
 }
 
 if (!isset($_GET["id"])) {
-   $_GET["id"] = "";
+    $_GET["id"] = "";
 }
 
-$pMonitoringComponent->display(array('id' => $_GET["id"]));
+$pMonitoringComponent->display(['id' => $_GET["id"]]);
 
 Html::footer();

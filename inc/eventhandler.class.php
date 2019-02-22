@@ -37,7 +37,7 @@ if (!defined('GLPI_ROOT')) {
 class PluginMonitoringEventhandler extends CommonDBTM
 {
 
-    static $rightname = 'plugin_monitoring_eventhandler';
+    static $rightname = 'plugin_monitoring_command';
 
 
     static function getTypeName($nb = 0)
@@ -141,6 +141,24 @@ class PluginMonitoringEventhandler extends CommonDBTM
         echo "<td>" . __('Command name', 'monitoring') . "&nbsp;:</td>";
         echo "<td>";
         echo "<input type='text' name='command_name' value='" . $this->fields["command_name"] . "' size='30'/>";
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Active ?', 'monitoring') . "</td>";
+        echo "<td>";
+        if (self::canCreate()) {
+            Dropdown::showYesNo('is_active', $this->fields['is_active']);
+        } else {
+            echo Dropdown::getYesNo($this->fields['is_active']);
+        }
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Comment', 'monitoring') . "</td>";
+        echo "<td >";
+        echo "<textarea cols='80' rows='4' name='comment' >" . $this->fields['comment'] . "</textarea>";
         echo "</td>";
         echo "</tr>";
 

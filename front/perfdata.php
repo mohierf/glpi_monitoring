@@ -41,4 +41,3 @@ Html::header(__('Monitoring - dashboard (perfdata)', 'monitoring'),$_SERVER["PHP
 Search::show('PluginMonitoringPerfdata');
 
 Html::footer();
-?>

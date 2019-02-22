@@ -31,3937 +31,2500 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringShinken extends CommonDBTM {
+class PluginMonitoringShinken extends CommonDBTM
+{
+    // Comment to remove custom variable from host/service configuration
+    public static $default = [
+        // GLPI root entity name
+        'glpi' => [
+            'rootEntity' => '',
+            // Host id
+            'hostId' => '_HOSTSID',
+            // Entity id
+            'entityId' => '_ENTITIESID',
+            // Entity name
+            'entityName' => '_ENTITY',
+            // Entity complete
+            'entityComplete' => '_ENTITY_COMPLETE',
+            // Item type
+            'itemType' => '_ITEMTYPE',
+            // Item id
+            'itemId' => '_ITEMSID',
+            // Location
+            'location' => '_LOC_NAME',
+            // Latitude
+            'lat' => '_LOC_LAT',
+            // Longitude
+            'lng' => '_LOC_LNG',
+            // Altitude
+            'alt' => '_LOC_ALT',
+            // Full GPS
+            'gps' => '_GPS',
+            // documents
+            'documents' => '_DOCUMENTS',
+        ],
+        // Shinken configuration
+        'shinken' => [
+            // Build fake hosts for business rules
+            'fake_bp_hosts' => [
+                // Default values
+                'build' => false,
+                // Hostname
+                'hostname' => 'BP_host'
+            ],
+            // Build fake hosts for parents relationship
+            'fake_hosts' => [
+                // Default values
+                'build' => false,
+                // Default check command
+                'check_command' => 'check_dummy!0!Fake host is up',
+                // Default check_period
+                'check_period' => '24x7',
+                // Fake hosts tag
+                'use' => 'fake',
+                // Fake hosts name prefix
+                'name_prefix' => '_fake_',
+                // Hostgroup name
+                'hostgroup_name' => 'fake_hosts',
+                // Hostgroup alias
+                'hostgroup_alias' => 'Fake hosts',
+                // Main root parent
+                'root_parent' => 'Root',
+                // Main root parent
+                'bp_host' => 'BP_host'
+            ],
+            // Build fake contacts for fake hosts
+            'fake_contacts' => [
+                // Default values
+                'build' => false,
+                // Contact name
+                'contact_name' => 'monitoring',
+            ],
+            'hosts' => [
+                // Default check_period
+                'check_period' => '24x7',
+                // Default values
+                // 'use' => 'important',
+                'business_impact' => 3,
+                'process_perf_data' => '1',
+                // Default hosts notifications : none !
+                'notifications_enabled' => '0',
+                'notification_period' => '24x7',
+                'notification_options' => 'd,u,r,f,s',
+                'notification_interval' => 86400,
+                'first_notification_delay' => 0,
+                'flap_detection_enabled' => '0',
+                'flap_detection_options' => 'o,d,x',
+                'low_flap_threshold' => '25',
+                'high_flap_threshold' => '50',
+
+                'stalking_options' => '',
+
+                'failure_prediction_enabled' => '0',
+                // Set as 'entity' to use hostgroupname else use the defined value ...
+                // When fake_hosts are built (see upper), use 'entity' !
+                'parents' => 'entity',
+
+                'notes_url' => '',
+                'action_url' => '',
+                'icon_image' => '',
+                'icon_image_alt' => '',
+                'vrml_image' => '',
+                'statusmap_image' => '',
+            ],
+            'services' => [
+                // Default check_period - leave empty to use check period defined for the host.
+                'check_period' => '',
+                // Default values
+                'business_impact' => 3,
+                'process_perf_data' => 1,
+                // Default services notifications : none !
+                'notifications_enabled' => 0,
+                'notification_period' => '24x7',
+                'notification_options' => 'w,u,c,r,f,s',
+                'notification_interval' => 86400,
+                'first_notification_delay' => 0,
+                'flap_detection_enabled' => 0,
+                'flap_detection_options' => 'o,w,c,u',
+                'low_flap_threshold' => 25,
+                'high_flap_threshold' => 50,
+
+                'stalking_options' => '',
+
+                'failure_prediction_enabled' => 0,
+
+                'notes' => '',
+                'notes_url' => '',
+                'action_url' => '',
+                'icon_image' => '',
+                'icon_image_alt' => '',
+            ],
+            'contacts' => [
+                // Default user category
+                'user_category' => 'glpi',
+                // Default user's note : this prefix + monitoring template name
+                'note' => 'Monitoring template : ',
+                // Default host/service notification period
+                'host_notification_period' => '24x7',
+                'service_notification_period' => '24x7',
+            ]
+        ],
+        // Graphite configuration
+        'graphite' => [
+            // Prefix
+            'prefix' => [
+                'name' => '_GRAPHITE_PRE',
+                'value' => '',
+                'entity' => true
+            ]
+        ],
+        // WebUI configuration
+        'webui' => [
+            // Hosts custom view
+            'hostView' => [
+                'name' => 'custom_views',
+                'value' => 'kiosk'
+            ],
+            // Contacts role
+            'contacts' => [
+                // Used if not defined in contact template
+                'is_admin' => '0',
+                'can_submit_commands' => '0',
+                // Use this password if user has an empty password
+                'password' => 'shinken'
+            ],
+        ],
+    ];
+
+    var $accentsource = ['À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Æ', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ð', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ø', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'ß', 'à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ', 'Ā', 'ā', 'Ă', 'ă', 'Ą', 'ą', 'Ć', 'ć', 'Ĉ', 'ĉ', 'Ċ', 'ċ', 'Č', 'č', 'Ď', 'ď', 'Đ', 'đ', 'Ē', 'ē', 'Ĕ', 'ĕ', 'Ė', 'ė', 'Ę', 'ę', 'Ě', 'ě', 'Ĝ', 'ĝ', 'Ğ', 'ğ', 'Ġ', 'ġ', 'Ģ', 'ģ', 'Ĥ', 'ĥ', 'Ħ', 'ħ', 'Ĩ', 'ĩ', 'Ī', 'ī', 'Ĭ', 'ĭ', 'Į', 'į', 'İ', 'ı', 'Ĳ', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'Ĺ', 'ĺ', 'Ļ', 'ļ', 'Ľ', 'ľ', 'Ŀ', 'ŀ', 'Ł', 'ł', 'Ń', 'ń', 'Ņ', 'ņ', 'Ň', 'ň', 'ŉ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'Œ', 'œ', 'Ŕ', 'ŕ', 'Ŗ', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'ŝ', 'Ş', 'ş', 'Š', 'š', 'Ţ', 'ţ', 'Ť', 'ť', 'Ŧ', 'ŧ', 'Ũ', 'ũ', 'Ū', 'ū', 'Ŭ', 'ŭ', 'Ů', 'ů', 'Ű', 'ű', 'Ų', 'ų', 'Ŵ', 'ŵ', 'Ŷ', 'ŷ', 'Ÿ', 'Ź', 'ź', 'Ż', 'ż', 'Ž', 'ž', 'ſ', 'ƒ', 'Ơ', 'ơ', 'Ư', 'ư', 'Ǎ', 'ǎ', 'Ǐ', 'ǐ', 'Ǒ', 'ǒ', 'Ǔ', 'ǔ', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'Ǜ', 'ǜ', 'Ǻ', 'ǻ', 'Ǽ', 'ǽ', 'Ǿ', 'ǿ', 'Ά', 'ά', 'Έ', 'έ', 'Ό', 'ό', 'Ώ', 'ώ', 'Ί', 'ί', 'ϊ', 'ΐ', 'Ύ', 'ύ', 'ϋ', 'ΰ', 'Ή', 'ή'];
+    var $accentdestination = ['A', 'A', 'A', 'A', 'A', 'A', 'AE', 'C', 'E', 'E', 'E', 'E', 'I', 'I', 'I', 'I', 'D', 'N', 'O', 'O', 'O', 'O', 'O', 'O', 'U', 'U', 'U', 'U', 'Y', 's', 'a', 'a', 'a', 'a', 'a', 'a', 'ae', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y', 'A', 'a', 'A', 'a', 'A', 'a', 'C', 'c', 'C', 'c', 'C', 'c', 'C', 'c', 'D', 'd', 'D', 'd', 'E', 'e', 'E', 'e', 'E', 'e', 'E', 'e', 'E', 'e', 'G', 'g', 'G', 'g', 'G', 'g', 'G', 'g', 'H', 'h', 'H', 'h', 'I', 'i', 'I', 'i', 'I', 'i', 'I', 'i', 'I', 'i', 'IJ', 'ij', 'J', 'j', 'K', 'k', 'L', 'l', 'L', 'l', 'L', 'l', 'L', 'l', 'l', 'l', 'N', 'n', 'N', 'n', 'N', 'n', 'n', 'O', 'o', 'O', 'o', 'O', 'o', 'OE', 'oe', 'R', 'r', 'R', 'r', 'R', 'r', 'S', 's', 'S', 's', 'S', 's', 'S', 's', 'T', 't', 'T', 't', 'T', 't', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'W', 'w', 'Y', 'y', 'Y', 'Z', 'z', 'Z', 'z', 'Z', 'z', 's', 'f', 'O', 'o', 'U', 'u', 'A', 'a', 'I', 'i', 'O', 'o', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'A', 'a', 'AE', 'ae', 'O', 'o', 'Α', 'α', 'Ε', 'ε', 'Ο', 'ο', 'Ω', 'ω', 'Ι', 'ι', 'ι', 'ι', 'Υ', 'υ', 'υ', 'υ', 'Η', 'η'];
+
+    function writeFile($object_type, $data)
+    {
+        $content = '';
+        if (isset($data['file_comment'])) {
+            $content .= "# " . $data['file_comment'] . "\n";
+            unset($data['file_comment']);
+        }
+        $content .= "define " . $object_type . "{\n";
+        foreach ($data as $key => $value) {
+            $c = 35;
+            $c = $c - strlen($key);
+            $content .= "       " . $key;
+            for ($t = 0; $t < $c; $t++) {
+                $content .= " ";
+            }
+            $content .= $value . "\n";
+        }
+        $content .= "}\n";
+        $content .= "\n";
+
+        return $content;
+    }
 
 
-   // Comment to remove custom variable from host/service configuration
-   public static $shinkenParameters = array(
-      // GLPI root entity name
-      'glpi' => array(
-         'rootEntity'   => '',
-         // Entity id
-         'entityId' => '_ENTITIESID',
-         // Entity name
-         'entityName' => '_ENTITY',
-         // Entity complete
-         'entityComplete' => '_ENTITY_COMPLETE',
-         // Item type
-         'itemType' => '_ITEMTYPE',
-         // Item id
-         'itemId' => '_ITEMSID',
-         // Location
-         'location' => '_LOC_NAME',
-         // Latitude
-         'lat' => '_LOC_LAT',
-         // Longitude
-         'lng' => '_LOC_LNG',
-         // Altitude
-         'alt' => '_LOC_ALT',
-      ),
-      // Shinken configuration
-      'shinken' => array(
-         // Build fake hosts for business rules
-         'fake_bp_hosts' => array(
-            // Default values
-            'build' => false,
-            // Hostname
-            'hostname' => 'BP_host'
-         ),
-         // Build fake hosts for parents relationship
-         'fake_hosts' => array(
-            // Default values
-            'build' => false,
-            // Default check command
-            'check_command' => 'check_dummy!0!Fake host is up',
-            // Default check_period
-            'check_period' => '24x7',
-            // Fake hosts tag
-            'use' => 'fake',
-            // Fake hosts name prefix
-            'name_prefix' => '_fake_',
-            // Hostgroup name
-            'hostgroup_name' => 'fake_hosts',
-            // Hostgroup alias
-            'hostgroup_alias' => 'Fake hosts',
-            // Main root parent
-            'root_parent' => 'Root',
-            // Main root parent
-            'bp_host' => 'BP_host'
-         ),
-         // Build fake contacts for fake hosts
-         'fake_contacts' => array(
-            // Default values
-            'build' => false,
-            // Contact name
-            'contact_name' => 'monitoring',
-         ),
-         'hosts' => array(
-            // Default check_period
-            'check_period' => '24x7',
-            // Default values
-            // 'use' => 'important',
-            'business_impact' => 3,
-            'process_perf_data' => '1',
-            // Default hosts notifications : none !
-            'notifications_enabled' => '0',
-            'notification_period' => '24x7',
-            'notification_options' => 'd,u,r,f,s',
-            'notification_interval' => '86400',
-            /*
-            low_flap_threshold:	      This directive is used to specify the low state change threshold used in flap detection for this host. More information on flap detection can be found here. If you set this directive to a value of 0, the program-wide value specified by the low_host_flap_threshold directive will be used.
-            high_flap_threshold:	      This directive is used to specify the high state change threshold used in flap detection for this host. More information on flap detection can be found here. If you set this directive to a value of 0, the program-wide value specified by the high_host_flap_threshold directive will be used.
-            flap_detection_enabled:	   This directive is used to determine whether or not flap detection is enabled for this host. More information on flap detection can be found here. Values: 0 = disable host flap detection, 1 = enable host flap detection.
-            flap_detection_options:    This directive is used to determine what host states the flap detection logic will use for this host. Valid options are a combination of one or more of the following: o = UP states, d = DOWN states, u = UNREACHABLE states.
-            */
-            'flap_detection_enabled' => '0',
-            'flap_detection_options' => 'o',
-            'low_flap_threshold' => '25',
-            'high_flap_threshold' => '50',
-
-            'stalking_options' => '',
-
-            'failure_prediction_enabled' => '0',
-            'retain_status_information' => '0',
-            'retain_nonstatus_information' => '0',
-            // Set as 'entity' to use hostgroupname else use the defined value ...
-            // When fake_hosts are built (see upper), use 'entity' !
-            'parents' => 'entity',
-            // Shinken host parameters
-            'notes_url' => '',
-            'action_url' => '',
-            'icon_image' => '',
-            'icon_image_alt' => '',
-            'vrml_image' => '',
-            'statusmap_image' => '',
-         ),
-         'services' => array(
-            // Default check_period - leave empty to use check period defined fo the host.
-            'check_period'          => '',
-            // Default values
-            'business_impact'       => 3,
-            'process_perf_data'     => 1,
-            // Default services notifications : none !
-            'notifications_enabled' => 0,
-            'notification_period'   => '24x7',
-            'notification_options'  => 'w,u,c,r,f,s',
-            'notification_interval' => 86400,
-            /*
-            low_flap_threshold:	      This directive is used to specify the low state change threshold used in flap detection for this host. More information on flap detection can be found here. If you set this directive to a value of 0, the program-wide value specified by the low_host_flap_threshold directive will be used.
-            high_flap_threshold:	      This directive is used to specify the high state change threshold used in flap detection for this host. More information on flap detection can be found here. If you set this directive to a value of 0, the program-wide value specified by the high_host_flap_threshold directive will be used.
-            flap_detection_enabled:	   This directive is used to determine whether or not flap detection is enabled for this host. More information on flap detection can be found here. Values: 0 = disable host flap detection, 1 = enable host flap detection.
-            flap_detection_options:	   This directive is used to determine what service states the flap detection logic will use for this service. Valid options are a combination of one or more of the following: o = OK states, w = WARNING states, c = CRITICAL states, u = UNKNOWN states.
-            */
-            'flap_detection_enabled' => 0,
-            'flap_detection_options' => 'o,w,c,u',
-            'low_flap_threshold'     => 25,
-            'high_flap_threshold'    => 50,
-
-            'stalking_options' => '',
-
-            'failure_prediction_enabled'   => 0,
-            'retain_status_information'    => 0,
-            'retain_nonstatus_information' => 0,
-
-            // Shinken service parameters
-            'notes' => '',
-            'notes_url' => '',
-            'action_url' => '',
-            'icon_image' => '',
-            'icon_image_alt' => '',
-         ),
-         'contacts' => array(
-            // Default user category
-            'user_category' => 'glpi',
-            // Default user's note : this prefix + monitoring template name
-            'note' => 'Monitoring template : ',
-            // Default host/service notification period
-            'host_notification_period' => '24x7',
-            'service_notification_period' => '24x7',
-            'retain_status_information' => '0',
-            'retain_nonstatus_information' => '0',
-         )
-      ),
-      // Graphite configuration
-      'graphite' => array(
-         // Prefix
-         'prefix' => array(
-            'name'   => '_GRAPHITE_PRE',
-            'value'  => ''
-         )
-      ),
-      // WebUI configuration
-      'webui' => array(
-         // Hosts custom view
-         'hostView' => array(
-            'name'      => 'custom_views',
-            'value'     => 'kiosk'
-         ),
-         // Hosts icon set
-         'hostIcons' => array(
-            'name'      => 'icon_set',
-            'value'     => 'host'
-         ),
-         // Services icon set
-         'serviceIcons' => array(
-            'name'      => 'icon_set',
-            'value'     => 'service'
-         ),
-         // Contacts role
-         'contacts' => array(
-            // Used if not defined in contact template
-            'is_admin'              => '1',
-            'can_submit_commands'   => '0',
-            // Use this password if user has an empty password
-            'password'              => 'shinken'
-         ),
-      ),
-   );
-
-   var $accentsource = array('À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Æ', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ð', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ø', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'ß', 'à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ', 'Ā', 'ā', 'Ă', 'ă', 'Ą', 'ą', 'Ć', 'ć', 'Ĉ', 'ĉ', 'Ċ', 'ċ', 'Č', 'č', 'Ď', 'ď', 'Đ', 'đ', 'Ē', 'ē', 'Ĕ', 'ĕ', 'Ė', 'ė', 'Ę', 'ę', 'Ě', 'ě', 'Ĝ', 'ĝ', 'Ğ', 'ğ', 'Ġ', 'ġ', 'Ģ', 'ģ', 'Ĥ', 'ĥ', 'Ħ', 'ħ', 'Ĩ', 'ĩ', 'Ī', 'ī', 'Ĭ', 'ĭ', 'Į', 'į', 'İ', 'ı', 'Ĳ', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'Ĺ', 'ĺ', 'Ļ', 'ļ', 'Ľ', 'ľ', 'Ŀ', 'ŀ', 'Ł', 'ł', 'Ń', 'ń', 'Ņ', 'ņ', 'Ň', 'ň', 'ŉ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'Œ', 'œ', 'Ŕ', 'ŕ', 'Ŗ', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'ŝ', 'Ş', 'ş', 'Š', 'š', 'Ţ', 'ţ', 'Ť', 'ť', 'Ŧ', 'ŧ', 'Ũ', 'ũ', 'Ū', 'ū', 'Ŭ', 'ŭ', 'Ů', 'ů', 'Ű', 'ű', 'Ų', 'ų', 'Ŵ', 'ŵ', 'Ŷ', 'ŷ', 'Ÿ', 'Ź', 'ź', 'Ż', 'ż', 'Ž', 'ž', 'ſ', 'ƒ', 'Ơ', 'ơ', 'Ư', 'ư', 'Ǎ', 'ǎ', 'Ǐ', 'ǐ', 'Ǒ', 'ǒ', 'Ǔ', 'ǔ', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'Ǜ', 'ǜ', 'Ǻ', 'ǻ', 'Ǽ', 'ǽ', 'Ǿ', 'ǿ', 'Ά', 'ά', 'Έ', 'έ', 'Ό', 'ό', 'Ώ', 'ώ', 'Ί', 'ί', 'ϊ', 'ΐ', 'Ύ', 'ύ', 'ϋ', 'ΰ', 'Ή', 'ή');
-   var $accentdestination = array('A', 'A', 'A', 'A', 'A', 'A', 'AE', 'C', 'E', 'E', 'E', 'E', 'I', 'I', 'I', 'I', 'D', 'N', 'O', 'O', 'O', 'O', 'O', 'O', 'U', 'U', 'U', 'U', 'Y', 's', 'a', 'a', 'a', 'a', 'a', 'a', 'ae', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y', 'A', 'a', 'A', 'a', 'A', 'a', 'C', 'c', 'C', 'c', 'C', 'c', 'C', 'c', 'D', 'd', 'D', 'd', 'E', 'e', 'E', 'e', 'E', 'e', 'E', 'e', 'E', 'e', 'G', 'g', 'G', 'g', 'G', 'g', 'G', 'g', 'H', 'h', 'H', 'h', 'I', 'i', 'I', 'i', 'I', 'i', 'I', 'i', 'I', 'i', 'IJ', 'ij', 'J', 'j', 'K', 'k', 'L', 'l', 'L', 'l', 'L', 'l', 'L', 'l', 'l', 'l', 'N', 'n', 'N', 'n', 'N', 'n', 'n', 'O', 'o', 'O', 'o', 'O', 'o', 'OE', 'oe', 'R', 'r', 'R', 'r', 'R', 'r', 'S', 's', 'S', 's', 'S', 's', 'S', 's', 'T', 't', 'T', 't', 'T', 't', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'W', 'w', 'Y', 'y', 'Y', 'Z', 'z', 'Z', 'z', 'Z', 'z', 's', 'f', 'O', 'o', 'U', 'u', 'A', 'a', 'I', 'i', 'O', 'o', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'A', 'a', 'AE', 'ae', 'O', 'o', 'Α', 'α', 'Ε', 'ε', 'Ο', 'ο', 'Ω', 'ω', 'Ι', 'ι', 'ι', 'ι', 'Υ', 'υ', 'υ', 'υ', 'Η', 'η');
-
-   function generateConfig() {
-
-      return true;
-   }
+    function monitoringFilter($str, $lowercase = false)
+    {
+        $str = str_replace($this->accentsource, $this->accentdestination, $str);
+        if ($lowercase) {
+            $str = strtolower($str);
+        }
+        $str = preg_replace("/\s/", "_", $str);
+        return preg_replace("/[^A-Za-z0-9\_-]/", "", $str);
+    }
 
 
-
-   function writeFile($name, $array) {
-      $config = '';
-      $config .= "define ".$name."{\n";
-      foreach ($array as $key => $value) {
-         $c = 35;
-         $c = $c - strlen($key);
-         $config .= "       ".$key;
-         for ($t=0; $t < $c; $t++) {
-            $config .= " ";
-         }
-         $config .= $value."\n";
-      }
-      $config .= "}\n";
-      $config .= "\n\n";
-      return $config;
-   }
-
-   function removeAccents($str) {
-      return str_replace($this->accentsource, $this->accentdestination, $str);
-   }
-
-   function shinkenFilter($str) {
-      return preg_replace("/[^A-Za-z0-9\-_]/","", strtolower(self::removeAccents($str)));
-   }
-
-   function graphiteFilter($str) {
-      return preg_replace("/[^A-Za-z0-9.]/","", strtolower(self::removeAccents($str)));
-   }
+    function graphiteFilter($str, $lowercase = true)
+    {
+        $str = str_replace($this->accentsource, $this->accentdestination, $str);
+        if ($lowercase) {
+            $str = strtolower($str);
+        }
+        $str = preg_replace("/\s/", "_", $str);
+        return preg_replace("/[^A-Za-z0-9._-]/", "", $str);
+    }
 
 
+    function generateCommandsCfg($tag = '', $file = false)
+    {
+        global $PM_CONFIG;
 
-   function generateCommandsCfg($file=0) {
+        PluginMonitoringToolbox::logIfDebug("Starting generateCommandsCfg ...");
+        $pmCommand = new PluginMonitoringCommand();
+        $pmNotificationcommand = new PluginMonitoringNotificationcommand();
+        $pmEventhandler = new PluginMonitoringEventhandler();
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         "Starting generateCommandsCfg ...\n"
-      );
-      $pmCommand = new PluginMonitoringCommand();
-      $pmNotificationcommand = new PluginMonitoringNotificationcommand();
-      $pmEventhandler = new PluginMonitoringEventhandler();
+        $a_commands = [];
 
-      $a_commands = array();
-      $i=0;
+        // Only active commands and notification commands ...
+        $a_list = $pmCommand->find("`is_active`='1'");
+        $a_listnotif = $pmNotificationcommand->find("`is_active`='1'");
+        $a_list = array_merge($a_list, $a_listnotif);
 
-      // Only active commands and notification commands ...
-      $a_list = $pmCommand->find("`is_active`='1'");
-      $a_listnotif = $pmNotificationcommand->find("`is_active`='1'");
-      $a_list = array_merge($a_list, $a_listnotif);
+        foreach ($a_list as $data) {
+            if ($data['command_name'] == "bp_rule") continue;
 
-      $reload_shinken_found = false;
-      $restart_shinken_found = false;
-      $restart_shinken_1_4_found = false;
-      foreach ($a_list as $data) {
-         if ($data['command_name'] == "bp_rule") {
-            continue;
-         }
+            $my_command = [];
 
-         $a_commands[$i] = array();
-
-         // For comments ...
-         $a_commands[$i] = $this->add_value_type($data['name'], 'name', $a_commands[$i]);
-
-         // For Shinken ...
-         $a_commands[$i] = $this->add_value_type(
-                 PluginMonitoringCommand::$command_prefix . $data['command_name'],
-                 'command_name', $a_commands[$i]);
-         $a_commands[$i] = $this->add_value_type($data['command_line'], 'command_line', $a_commands[$i]);
-         if (! empty($data['module_type'])) {
-            $a_commands[$i] = $this->add_value_type($data['module_type'], 'module_type', $a_commands[$i]);
-         }
-         if (! empty($data['poller_tag'])) {
-            $a_commands[$i] = $this->add_value_type($data['poller_tag'], 'poller_tag', $a_commands[$i]);
-         }
-         if (! empty($data['reactionner_tag'])) {
-            $a_commands[$i] = $this->add_value_type($data['reactionner_tag'], 'reactionner_tag', $a_commands[$i]);
-         }
-
-         if ($data['command_name'] == "reload-shinken") {
-            $reload_shinken_found = true;
-            // No prefix for this command (WS arbiter)
-            $a_commands[$i] = $this->add_value_type($data['command_name'], 'command_name', $a_commands[$i]);
-         }
-         if ($data['command_name'] == "restart-shinken") {
-            $restart_shinken_found = true;
-            // No prefix for this command (WS arbiter)
-            $a_commands[$i] = $this->add_value_type($data['command_name'], 'command_name', $a_commands[$i]);
-         }
-         if ($data['command_name'] == "restart_shinken") {
-            $restart_shinken_1_4_found = true;
-         }
-         PluginMonitoringToolbox::logIfExtradebug(
-            "- command: ".$a_commands[$i]['command_name']." -> ".$a_commands[$i]['name']."\n"
-         );
-         $a_commands[$i] = $this->properties_list_to_string($a_commands[$i]);
-         $i++;
-      }
-      if (! $restart_shinken_1_4_found) {
-         // * Restart shinken command
-         if (!isset($a_commands[$i])) {
-            $a_commands[$i] = array();
-         }
-         $a_commands[$i] = $this->add_value_type('Restart Shinken (1.4)', 'name', $a_commands[$i]);
-         $a_commands[$i] = $this->add_value_type('restart_shinken', 'command_name', $a_commands[$i]);
-         $a_commands[$i] = $this->add_value_type(
-                 "nohup sh -c '/usr/local/shinken/bin/stop_arbiter.sh && sleep 3 && /usr/local/shinken/bin/launch_arbiter.sh'  > /dev/null 2>&1 &",
-                 'command_line', $a_commands[$i]);
-      }
-      if (! $reload_shinken_found) {
-         // * Reload shinken command (2.0)
-         if (!isset($a_commands[$i])) {
-            $a_commands[$i] = array();
-         }
-         $a_commands[$i] = $this->add_value_type('Reload Shinken configuration', 'name', $a_commands[$i]);
-         $a_commands[$i] = $this->add_value_type('reload-shinken', 'command_name', $a_commands[$i]);
-         $a_commands[$i] = $this->add_value_type(
-                 "nohup sh -c '/etc/init.d/shinken reload' > /dev/null 2>&1 &",
-                 'command_line', $a_commands[$i]);
-      }
-      if (! $restart_shinken_found) {
-         // * Restart shinken command (2.0)
-         if (!isset($a_commands[$i])) {
-            $a_commands[$i] = array();
-         }
-         $a_commands[$i] = $this->add_value_type('Restart Shinken', 'name', $a_commands[$i]);
-         $a_commands[$i] = $this->add_value_type('restart-shinken', 'command_name', $a_commands[$i]);
-         $a_commands[$i] = $this->add_value_type(
-                 "nohup sh -c '/etc/init.d/shinken restart' > /dev/null 2>&1 &",
-                 'command_line', $a_commands[$i]);
-      }
-
-      // Event handlers
-      $a_list = $pmEventhandler->find("`is_active`='1'");
-      foreach ($a_list as $data) {
-         if ($data['command_name'] != "bp_rule") {
-            if (!isset($a_commands[$i])) {
-               $a_commands[$i] = array();
+            // For comments ...
+            if ($file) {
+                $this->set_value($data['name'], 'file_comment', $my_command);
             }
 
-            $a_commands[$i] = $this->add_value_type($data['name'], 'name', $a_commands[$i]);
-            $a_commands[$i] = $this->add_value_type(
-                    PluginMonitoringCommand::$command_prefix . $data['command_name'],
-                    'command_name', $a_commands[$i]);
-            $a_commands[$i] = $this->add_value_type($data['command_line'], 'command_line', $a_commands[$i]);
-            PluginMonitoringToolbox::logIfExtradebug(
-               "- command: ".$a_commands[$i]['command_name']." -> ".$a_commands[$i]['name']."\n"
-            );
-            $a_commands[$i] = $this->properties_list_to_string($a_commands[$i]);
-            $i++;
-         }
-      }
-      PluginMonitoringToolbox::logIfExtradebug(
-         "End generateCommandsCfg\n"
-      );
+            // For the framework configuration...
+            $this->set_value(PluginMonitoringCommand::$command_prefix . $data['command_name'], 'command_name', $my_command);
+            $this->set_value($data['command_line'], 'command_line', $my_command);
+            if (!empty($data['module_type'])) {
+                $this->set_value($data['module_type'], 'module_type', $my_command);
+            }
+            if (!empty($data['poller_tag'])) {
+                $this->set_value($data['poller_tag'], 'poller_tag', $my_command);
+            }
+            if (!empty($data['reactionner_tag'])) {
+                $this->set_value($data['reactionner_tag'], 'reactionner_tag', $my_command);
+            }
 
-      if ($file == "1") {
-         $config = "# Generated by plugin monitoring for GLPI\n# on ".date("Y-m-d H:i:s")."\n\n";
-         foreach ($a_commands as $data) {
-            $config .= "# ".$data['name']."\n";
-            unset($data['name']);
-            $config .= $this->writeFile("command", $data);
-         }
-         return array('commands.cfg', $config);
-      } else {
-         return $a_commands;
-      }
-   }
+            PluginMonitoringToolbox::logIfDebug("- command: " . $my_command['command_name']);
+            $my_command = $this->properties_list_to_string($my_command);
+            $a_commands[] = $my_command;
+        }
 
+        // Event handlers
+        $a_list = $pmEventhandler->find("`is_active`='1'");
+        foreach ($a_list as $data) {
+            if ($data['command_name'] == "bp_rule") continue;
 
+            $my_command = [];
 
-   function generateHostsCfg($file=0, $tag='') {
-      global $DB;
+            // For comments ...
+            if ($file) {
+                $this->set_value($data['name'], 'file_comment', $my_command);
+            }
 
-      // Log Shinken restart event with Tag information ...
-      // Should be moved to the webservice caller function ???
-      $pmLog = new PluginMonitoringLog();
-      if (isset($_SERVER['HTTP_USER_AGENT'])
-              AND strstr($_SERVER['HTTP_USER_AGENT'], 'xmlrpclib.py')) {
-         if (!isset($_SESSION['glpi_currenttime'])) {
-            $_SESSION['glpi_currenttime'] = date("Y-m-d H:i:s");
-         }
-         $input = array();
-         $input['user_name'] = "Shinken";
-         $input['action'] = "restart";
-         $input['date_mod'] = date("Y-m-d H:i:s");
-         $input['value'] = $tag;
-         $pmLog->add($input);
-      }
+            $this->set_value(PluginMonitoringCommand::$command_prefix . $data['command_name'], 'command_name', $my_command);
+            $this->set_value($data['command_line'], 'command_line', $my_command);
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         "Starting generateHostsCfg ($tag) ...\n"
-      );
-      $pmCommand     = new PluginMonitoringCommand();
-      $pmCheck       = new PluginMonitoringCheck();
-      $pmComponent   = new PluginMonitoringComponent();
-      $pmEntity      = new PluginMonitoringEntity();
-      $pmHostconfig  = new PluginMonitoringHostconfig();
-      $pmHost        = new PluginMonitoringHost();
-      $calendar      = new Calendar();
-      $pmRealm       = new PluginMonitoringRealm();
-      $networkEquipment = new NetworkEquipment();
-      $pmContact_Item = new PluginMonitoringContact_Item();
-      $profile_User   = new Profile_User();
-      $pmEventhandler = new PluginMonitoringEventhandler();
-      $user           = new User();
-      $pmConfig       = new PluginMonitoringConfig();
-      $computerType   = new ComputerType();
-
-      $default_host = self::$shinkenParameters['shinken']['hosts'];
-
-      // Get computer type container / VM
-      $conteners = $computerType->find("`name`='BSDJail'");
-
-      $pmConfig->getFromDB(1);
-
-      $a_hosts = array();
-      $i=0;
-      $a_parents_found = array();
-      $a_hosts_found = array();
-
-      $a_entities_allowed = $pmEntity->getEntitiesByTag($tag);
-      $a_entities_list = array();
-      foreach ($a_entities_allowed as $entity) {
-         // @ddurieux: should array_merge ($a_entities_list and getSonsOf("glpi_entities", $entity)) ?
-         $a_entities_list = getSonsOf("glpi_entities", $entity);
-      }
-      $where = '';
-      if (! isset($a_entities_allowed['-1'])) {
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_entities", '', $a_entities_list);
-      }
+            PluginMonitoringToolbox::logIfDebug("- event hadler: " . $my_command['command_name'] . " -> " . $my_command['name']);
+            $my_command = $this->properties_list_to_string($my_command);
+            $a_commands[] = $my_command;
+        }
 
 
-      // * Prepare contacts
-      $a_contacts_entities = array();
-      $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringComponentscatalog'
-         AND `users_id`>0");
-      foreach ($a_list_contact as $data) {
-         $contactentities = getSonsOf('glpi_entities', $data['entities_id']);
-         if (isset($a_contacts_entities[$data['items_id']][$data['users_id']])) {
-            $contactentities = array_merge($contactentities, $a_contacts_entities[$data['items_id']][$data['users_id']]);
-         }
-         $a_contacts_entities[$data['items_id']][$data['users_id']] = $contactentities;
-      }
+        PluginMonitoringToolbox::log("Found " . count($a_commands) . " commands");
+        PluginMonitoringToolbox::logIfDebug("End generateCommandsCfg");
 
-      $query = "SELECT
+        if ($PM_CONFIG['build_files']) {
+            $config = "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+            $config .= "# ---\n";
+            $config .= "# Commands\n";
+            $config .= "# ---\n";
+
+            foreach ($a_commands as $data) {
+                $config .= $this->writeFile("command", $data);
+            }
+            $filename = PLUGIN_MONITORING_CFG_DIR . '/' . $tag . '-commands.cfg';
+            file_put_contents($filename, $config);
+            PluginMonitoringToolbox::logIfDebug("Written file: " . $filename);
+
+            if ($file) return $config;
+        }
+
+        return $a_commands;
+    }
+
+
+    function generateHostsCfg($tag = '', $file = false)
+    {
+        global $DB, $PM_CONFIG, $TIMER_DEBUG;
+
+        PluginMonitoringToolbox::logIfDebug("Starting generateHostsCfg ($tag) ...");
+
+        $pmCommand = new PluginMonitoringCommand();
+        $pmCheck = new PluginMonitoringCheck();
+        $pmComponent = new PluginMonitoringComponent();
+        $pmCC = new PluginMonitoringComponentscatalog();
+        $pmHostconfig = new PluginMonitoringHostconfig();
+        $pmHNTemplate = new PluginMonitoringHostnotificationtemplate();
+        $pmHost = new PluginMonitoringHost();
+        $calendar = new Calendar();
+        $pmRealm = new PluginMonitoringRealm();
+        $pmEventhandler = new PluginMonitoringEventhandler();
+        $pmContact_Item = new PluginMonitoringContact_Item();
+        $user = new User();
+        $pmConfig = new PluginMonitoringConfig();
+
+        $default_host = self::$default['shinken']['hosts'];
+
+        $pmConfig->getFromDB(1);
+
+        $a_hosts = [];
+        $a_templates = [];
+        $a_templates_found = [];
+//        $a_documents_found = [];
+        $a_hosts_found = [];
+
+        // Get entities concerned by the provided tag and get the definition order of the highest entty
+        $where = '';
+        if (!empty($_SESSION['plugin_monitoring']['allowed_entities'])) {
+            $where = getEntitiesRestrictRequest("WHERE",
+                "glpi_entities", '',
+                $_SESSION['plugin_monitoring']['allowed_entities']);
+        }
+
+        // Huge query to get almost all in one operation!
+        $query = "SELECT
          `glpi_plugin_monitoring_componentscatalogs_hosts`.*,
          CONCAT_WS('', `glpi_computers`.`id`, `glpi_printers`.`id`, `glpi_networkequipments`.`id`) AS id,
-         CONCAT_WS('', `glpi_computers`.`entities_id`, `glpi_printers`.`entities_id`, `glpi_networkequipments`.`id`) AS device_entities_id,
          CONCAT_WS('', `glpi_computers`.`comment`, `glpi_printers`.`comment`, `glpi_networkequipments`.`comment`) AS comment,
          `glpi_entities`.`id` AS entityId, `glpi_entities`.`name` AS entityName,
          `glpi_entities`.`completename` AS entityFullName,
          `glpi_locations`.`id`, `glpi_locations`.`completename` AS locationName,
-         `glpi_locations`.`comment` AS locationComment, `glpi_locations`.`building` AS locationGPS,
+         `glpi_locations`.`comment` AS locationComment, 
+         `glpi_locations`.`latitude` AS lat, `glpi_locations`.`longitude` AS lng, `glpi_locations`.`altitude` AS alt,
          `glpi_plugin_monitoring_services`.`networkports_id`
          FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
          LEFT JOIN `glpi_computers`
             ON `glpi_computers`.`id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id`
                AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Computer'
+
          LEFT JOIN `glpi_printers`
             ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_printers`.`id`
                AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Printer'
+
          LEFT JOIN `glpi_networkequipments`
             ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_networkequipments`.`id`
                AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='NetworkEquipment'
 
          LEFT JOIN `glpi_entities`
-            ON ((`glpi_computers`.`entities_id` = `glpi_entities`.`id`
-                  AND `glpi_computers`.`id` IS NOT NULL)
-                OR
-                (`glpi_printers`.`entities_id` = `glpi_entities`.`id`
-                  AND `glpi_printers`.`id` IS NOT NULL)
-                OR
-                (`glpi_networkequipments`.`entities_id` = `glpi_entities`.`id`
-                  AND `glpi_networkequipments`.`id` IS NOT NULL)
+            ON ((`glpi_computers`.`entities_id` = `glpi_entities`.`id` AND `glpi_computers`.`id` IS NOT NULL)
+                OR (`glpi_printers`.`entities_id` = `glpi_entities`.`id` AND `glpi_printers`.`id` IS NOT NULL)
+                OR (`glpi_networkequipments`.`entities_id` = `glpi_entities`.`id` AND `glpi_networkequipments`.`id` IS NOT NULL)
                 )
 
          LEFT JOIN `glpi_locations` ON `glpi_locations`.`id` = `glpi_computers`.`locations_id`
          LEFT JOIN `glpi_plugin_monitoring_services`
             ON `glpi_plugin_monitoring_services`.`plugin_monitoring_componentscatalogs_hosts_id`
-               = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
-         $where
-         GROUP BY `itemtype`, `items_id`";
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
+               = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id` $where GROUP BY `itemtype`, `items_id`";
 
-         $a_hosts[$i] = array();
-         $classname = $data['itemtype'];
-         $class = new $classname;
-         if (! $class->getFromDB($data['items_id'])) {
-            Toolbox::logDebug('[Monitoring] Host item not found: '.print_r($data, true));
-            return false;
-         }
+        if ($result = $DB->query($query)) {
+            PluginMonitoringToolbox::log("generateHostsCfg, huge query execution, got " . $DB->numrows($result) . " rows, duration: " . $TIMER_DEBUG->getTime());
+            while ($data = $DB->fetch_array($result)) {
+                $my_host = [];
+                $new_template = null;
+                $my_template = [];
 
-         $pmHost->getFromDBByQuery("WHERE `glpi_plugin_monitoring_hosts`.`itemtype` = '" . $data['itemtype'] . "' AND `glpi_plugin_monitoring_hosts`.`items_id` = '" . $data['items_id'] . "' LIMIT 1");
+                /* @var CommonDBTM $my_host_item */
+                $my_host_type = $data['itemtype'];
+                $my_host_item = new $my_host_type;
+                if (!$my_host_item->getFromDB($data['items_id'])) {
+                    PluginMonitoringToolbox::log('[ERROR] Host item not found: ' . print_r($data, true));
+                    continue;
+                }
 
-         $a_hosts[$i] = $this->add_value_type(
-                 self::shinkenFilter($class->fields['name']),
-                 'host_name', $a_hosts[$i]);
-         if ($pmConfig->fields['append_id_hostname'] == 1) {
-            $hn = array();
-            $hn = $this->add_value_type($class->fields['id'], 'host_name', $hn);
-            $a_hosts[$i]['host_name'] .= "-".$hn['host_name'];
-         }
-         // Fix if hostname is not defined ...
-         if (empty($a_hosts[$i]['host_name'])) {
-            continue;
-         }
-         $a_hosts_found[$a_hosts[$i]['host_name']] = 1;
-         PluginMonitoringToolbox::logIfExtradebug(
-            " - add host ".$a_hosts[$i]['host_name']."\n"
-         );
+                if (!$pmHost->getFromDBByCrit(['itemtype' => $data['itemtype'], 'items_id' => $data["items_id"]])) {
+                    PluginMonitoringToolbox::log('[ERROR] Host monitoring item not found: ' . print_r($data, true));
+                    continue;
+                }
 
-         // Host customs variables
-         $a_hosts[$i] = $this->add_value_type(
-                 $pmHost->getField('id'), '_HOSTID', $a_hosts[$i]);
-         if (isset(self::$shinkenParameters['glpi']['entityId'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    $data['entityId'],
-                    self::$shinkenParameters['glpi']['entityId'], $a_hosts[$i]);
-         }
-         if (isset(self::$shinkenParameters['glpi']['itemType'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    $classname,
-                    self::$shinkenParameters['glpi']['itemType'], $a_hosts[$i]);
-         }
-         if (isset(self::$shinkenParameters['glpi']['itemId'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    $data['items_id'],
-                    self::$shinkenParameters['glpi']['itemId'], $a_hosts[$i]);
-         }
+                // Host component catalog
+                if (!$pmCC->getFromDB($data['plugin_monitoring_componentscatalogs_id'])) {
+                    PluginMonitoringToolbox::log('[ERROR] Host components catalog item not found: ' . print_r($data, true));
+                    continue;
+                }
 
-         if (isset(self::$shinkenParameters['glpi']['entityName'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    strtolower(self::shinkenFilter($data['entityName'])),
-                    self::$shinkenParameters['glpi']['entityName'], $a_hosts[$i]);
-         }
+                // Fix: if hostname is not defined ...
+                if (empty($my_host_item->getName())) {
+                    continue;
+                }
 
-         // Dynamic setup of a default parameter ...
-         self::$shinkenParameters['glpi']['rootEntity'] = __('Root entity');
-         $data['entityFullName'] = preg_replace("/ > /","#",$data['entityFullName']);
-         $data['entityFullName'] = preg_replace("/". self::$shinkenParameters['glpi']['rootEntity'] ."#/","",$data['entityFullName']);
-         $data['entityFullName'] = preg_replace("/#/","_",$data['entityFullName']);
-         if (isset(self::$shinkenParameters['glpi']['entityComplete'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    self::shinkenFilter ($data['entityFullName']),
-                    self::$shinkenParameters['glpi']['entityComplete'], $a_hosts[$i]);
-         }
-         $data['entityFullName'] = preg_replace("/_/",".",$data['entityFullName']);
+                if (!in_array($data['plugin_monitoring_componentscatalogs_id'], $a_templates_found)) {
+                    // Still got this component catalog as a template
+                    PluginMonitoringToolbox::logIfDebug('Got a new template from a CC: ' . $data['plugin_monitoring_componentscatalogs_id']);
+                    $new_template = self::monitoringFilter($pmCC->getName());
+                    $a_templates_found[] = $data['plugin_monitoring_componentscatalogs_id'];
+                }
 
-         // Graphite
-         if (isset(self::$shinkenParameters['graphite']['prefix']['name'])) {
-            // Dynamic setup of a default parameter ...
-            self::$shinkenParameters['graphite']['prefix']['value'] = $pmHostconfig->getValueAncestor('graphite_prefix', $data['entityId']);
-            if (self::$shinkenParameters['graphite']['prefix']['value'] != '') {
-               self::$shinkenParameters['graphite']['prefix']['value'] .= '.';
-            }
+                // Template is name, not host_name
+                if ($new_template) {
+                    $this->set_value($new_template, 'name', $my_template);
+                    $this->set_value('0', 'register', $my_template);
+                    PluginMonitoringToolbox::log("adding host template: " . $my_template['name']);
+                }
+                //  Host using the template
+                $this->set_value(self::monitoringFilter($my_host_item->getName()), 'host_name', $my_host);
+                if ($PM_CONFIG['append_id_hostname'] == 1) {
+                    $this->set_value(self::monitoringFilter($my_host_item->getName() . '-' . $my_host_item->getID()), 'host_name', $my_host);
+                }
+                $this->set_value(self::monitoringFilter($pmCC->getName()), 'use', $my_host);
+                if (!empty($pmCC->getField('additional_templates'))) {
+                    $this->set_value($pmCC->getField('additional_templates'), 'use', $my_host);
+                }
+                PluginMonitoringToolbox::log("adding host " . $my_host['host_name'] . ", using: " . implode(',', $my_host['use']));
 
-            $a_hosts[$i] = $this->add_value_type(
-                    strtolower(self::$shinkenParameters['graphite']['prefix']['value'] . self::graphiteFilter($data['entityFullName'])),
-                    self::$shinkenParameters['graphite']['prefix']['name'], $a_hosts[$i]);
-         }
+                $a_hosts_found[$my_host_item->getName()] = false;
 
-         // Location
-         if (isset(self::$shinkenParameters['glpi']['location'])) {
-            if (! empty($data['locationName'])) {
-               $string = utf8_decode(strip_tags(trim($data['locationName'])));
-               $string = preg_replace("/[\r\n]/",".",$data['locationName']);
-               $string = $this->shinkenFilter($string);
-               $a_hosts[$i] = $this->add_value_type(
-                       $string,
-                       self::$shinkenParameters['glpi']['location'], $a_hosts[$i]);
-               $data['hostLocation'] = $string;
-            }
-         }
-         if (isset(self::$shinkenParameters['glpi']['lat'])) {
-            if (! empty($data['locationGPS'])) {
-               $split = explode(',', $data['locationGPS']);
-               if (count($split) > 2) {
-                  // At least 3 elements, let us consider as GPS coordinates with altitude ...
-                  $a_hosts[$i] = $this->add_value_type(
-                          $split[0],
-                          self::$shinkenParameters['glpi']['lat'], $a_hosts[$i]);
-                  $a_hosts[$i] = $this->add_value_type(
-                          $split[1],
-                          self::$shinkenParameters['glpi']['lng'], $a_hosts[$i]);
-                  $a_hosts[$i] = $this->add_value_type(
-                          $split[2],
-                          self::$shinkenParameters['glpi']['alt'], $a_hosts[$i]);
-               } else if (count($split) > 1) {
-                  // At least 2 elements, let us consider as GPS coordinates ...
-                  $a_hosts[$i] = $this->add_value_type(
-                          $split[0],
-                          self::$shinkenParameters['glpi']['lat'], $a_hosts[$i]);
-                  $a_hosts[$i] = $this->add_value_type(
-                          $split[1],
-                          self::$shinkenParameters['glpi']['lng'], $a_hosts[$i]);
-               }
-            }
-         }
+                /*
+                // Host Documents of the CC
+                $document_obj = new Document();
+                $document_item_obj = new Document_Item();
+                $document_items = $document_item_obj->find("itemtype = 'PluginMonitoringComponentscatalog' AND items_id = " . $pmCC->getID());
+                foreach ($document_items as $document_item) {
+                    $document_obj->getFromDB($document_item['documents_id']);
 
-         // Hostgroup name
-         $a_hosts[$i] = $this->add_value_type(
-                 preg_replace("/[ ]/","_", self::shinkenFilter($data['entityName'])),
-                 'hostgroups', $a_hosts[$i]);
-         // Alias
-         $a_hosts[$i] = $this->add_value_type(
-                 $this->shinkenFilter($data['entityName'])." / ". $a_hosts[$i]['host_name'],
-                 'alias', $a_hosts[$i]);
-         if (isset($data['hostLocation'])) {
-            $hn = array();
-            $hn = $this->add_value_type(" (".$data['hostLocation'].")", 'alias', $hn);
-            $a_hosts[$i]['alias'] .= "-".$hn['alias'];
-         }
-
-         // WebUI user interface ...
-         if (isset(self::$shinkenParameters['webui']['hostIcons']['name'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['webui']['hostIcons']['value'],
-                    self::$shinkenParameters['webui']['hostIcons']['name'], $a_hosts[$i]);
-         }
-         if (isset(self::$shinkenParameters['webui']['hostView']['name'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['webui']['hostView']['value'],
-                    self::$shinkenParameters['webui']['hostView']['name'], $a_hosts[$i]);
-         }
-
-         // IP address
-         $ip = PluginMonitoringHostaddress::getIp($data['items_id'], $data['itemtype'], $class->fields['name']);
-         $a_hosts[$i] = $this->add_value_type($ip, 'address', $a_hosts[$i]);
-
-         // use host IP of container if activated
-         if ($data['itemtype'] == 'Computer') {
-            if ($pmConfig->fields['nrpe_prefix_container'] == 1) {
-               if (isset($conteners[$class->fields['computertypes_id']])) {
-                  // get Host of contener/VM
-                  $where = "LOWER(`uuid`)".  ComputerVirtualMachine::getUUIDRestrictRequest($class->fields['uuid']);
-                  $hosts = getAllDatasFromTable('glpi_computervirtualmachines', $where);
-                  if (!empty($hosts)) {
-                     $host = current($hosts);
-                     $ip = PluginMonitoringHostaddress::getIp($host['computers_id'], 'Computer', '');
-                     $a_hosts[$i] = $this->add_value_type($ip, 'address', $a_hosts[$i]);
-                  }
-               }
-            }
-         }
-
-
-         // Manage dependencies
-         $parent = '';
-         if ($data['itemtype'] != 'NetworkEquipment') {
-            $networkPort = new NetworkPort();
-            $a_networkports = $networkPort->find("`itemtype`='".$data['itemtype']."'
-               AND `items_id`='".$data['items_id']."'");
-            foreach ($a_networkports as $data_n) {
-               $networkports_id = $networkPort->getContact($data_n['id']);
-               if ($networkports_id) {
-                  $networkPort->getFromDB($networkports_id);
-                  if ($networkPort->fields['itemtype'] == 'NetworkEquipment') {
-                     $networkEquipment->getFromDB($networkPort->fields['items_id']);
-                     $parent = self::shinkenFilter($networkEquipment->fields['name']);
-                     $a_parents_found[$parent] = 1;
-                     $pmHost->updateDependencies($classname, $data['items_id'], 'NetworkEquipment-'.$networkPort->fields['items_id']);
-                  }
-               }
-            }
-
-            if (empty($parent)) {
-               if ($default_host['parents'] == 'entity') {
-                  foreach ($a_hosts[$i]['hostgroups'] as $val) {
-                     $a_hosts[$i] = $this->add_value_type(
-                             self::$shinkenParameters['shinken']['fake_hosts']['name_prefix'].$val,
-                             'parents', $a_hosts[$i]);
-                  }
-               } else {
-                  $a_hosts[$i] = $this->add_value_type($default_host['parents'], 'parents', $a_hosts[$i]);
-               }
-            }
-         }
-
-         // Host check command
-         $pmComponent->getFromDB($pmHostconfig->getValueAncestor('plugin_monitoring_components_id',
-                                                                  $class->fields['entities_id'],
-                                                                  $classname,
-                                                                  $class->getID()));
-
-         $pmCommand->getFromDB($pmComponent->fields['plugin_monitoring_commands_id']);
-
-         $a_fields = $pmComponent->fields;
-
-         // Manage host check_command arguments
-         $array = array();
-         preg_match_all("/\\$(ARG\d+)\\$/", $pmCommand->fields['command_line'], $array);
-         sort($array[0]);
-         $a_arguments = importArrayFromDB($pmCommand->fields['arguments']);
-         $a_argumentscustom = importArrayFromDB($a_fields['arguments']);
-         foreach ($a_argumentscustom as $key=>$value) {
-            $a_arguments[$key] = $value;
-         }
-         foreach ($a_arguments as $key=>$value) {
-            $a_arguments[$key] = str_replace('!', '\!', html_entity_decode($value));
-         }
-         $args = '';
-         foreach ($array[0] as $arg) {
-            if ($arg != '$PLUGINSDIR$'
-                    AND $arg != '$NAGIOSPLUGINSDIR$'
-                    AND $arg != '$HOSTADDRESS$'
-                    AND $arg != '$MYSQLUSER$'
-                    AND $arg != '$MYSQLPASSWORD$') {
-               $arg = str_replace('$', '', $arg);
-               if (!isset($a_arguments[$arg])) {
-                  $args .= '!';
-               } else {
-                  if (strstr($a_arguments[$arg], "[[HOSTNAME]]")) {
-                     $a_arguments[$arg] = str_replace(
-                             "[[HOSTNAME]]",
-                             $class->fields['name'],
-                             $a_arguments[$arg]);
-                  } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTDESCR]]")){
-                     if (class_exists("PluginFusioninventoryNetworkPort")) {
-                        $pfNetworkPort = new PluginFusioninventoryNetworkPort();
-                        $pfNetworkPort->loadNetworkport($data['networkports_id']);
-                        $descr = $pfNetworkPort->getValue("ifdescr");
-                        $a_arguments[$arg] = str_replace("[[NETWORKPORTDESCR]]", $descr, $a_arguments[$arg]);
-                     }
-                  } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTNUM]]")){
-                     $networkPort = new NetworkPort();
-                     if (isset($data['networkports_id'])
-                             && $data['networkports_id'] > 0) {
-                        $networkPort->getFromDB($data['networkports_id']);
-                     } else if ($classname == 'Computer') {
-                        $networkPort = PluginMonitoringHostaddress::getNetworkport($class->fields['id'], $classname);
-                     }
-                     if ($networkPort->getID() > 0) {
-                        $logicalnum = $networkPort->fields['logical_number'];
-                        $a_arguments[$arg] = str_replace("[[NETWORKPORTNUM]]", $logicalnum, $a_arguments[$arg]);
-                     }
-                  } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTNAME]]")) {
-                     $networkPort = new NetworkPort();
-                     if (isset($data['networkports_id'])
-                             && $data['networkports_id'] > 0) {
-                        $networkPort->getFromDB($data['networkports_id']);
-                     } else if ($classname == 'Computer') {
-                        $networkPort = PluginMonitoringHostaddress::getNetworkport($class->fields['id'], $classname);
-                     }
-                     if ($networkPort->getID() > 0) {
-                        $portname = $networkPort->fields['name'];
-                        $a_arguments[$arg] = str_replace("[[NETWORKPORTNAME]]", $portname, $a_arguments[$arg]);
-                     }
-                  } else if (strstr($a_arguments[$arg], '[[IP]]')) {
-                     $ip = PluginMonitoringHostaddress::getIp(
-                             $data['items_id'], $data['itemtype'], '');
-                     $a_arguments[$arg] = str_replace("[[IP]]", $ip, $a_arguments[$arg]);
-                  } else if (strstr($a_arguments[$arg], "[")) {
-                     $a_arguments[$arg] = PluginMonitoringService::convertArgument($data['id'], $a_arguments[$arg]);
-                  }
-                  if ($a_arguments == '') {
-                     $notadd = 1;
-                     if ($notadddescription != '') {
-                        $notadddescription .= ", ";
-                     }
-                     $notadddescription .= "Argument ".$a_arguments[$arg]." Not have value";
-                  }
-                  $args .= '!'.$a_arguments[$arg];
-                  if ($a_arguments[$arg] == ''
-                          AND $a_component['alias_command'] != '') {
-                     $args .= $a_component['alias_command'];
-                  }
-               }
-            }
-         }
-         $a_hosts[$i] = $this->add_value_type(
-                 PluginMonitoringCommand::$command_prefix . $pmCommand->fields['command_name'].$args,
-                 'check_command', $a_hosts[$i]);
-
-         // Check retries
-         $pmCheck->getFromDB($a_fields['plugin_monitoring_checks_id']);
-         $a_hosts[$i] = $this->add_value_type(
-                 $pmCheck->fields['check_interval'], 'check_interval',
-                 $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 $pmCheck->fields['retry_interval'], 'retry_interval',
-                 $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 $pmCheck->fields['max_check_attempts'], 'max_check_attempts',
-                 $a_hosts[$i]);
-
-         $a_hosts[$i] = $this->add_value_type(
-                 $a_fields['active_checks_enabled'], 'active_checks_enabled',
-                 $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 $a_fields['passive_checks_enabled'], 'passive_checks_enabled',
-                 $a_hosts[$i]);
-
-         // Check period
-         // Host entity jetlag ...
-         $timeperiodsuffix = '_'.$pmHostconfig->getValueAncestor('jetlag', $data['entityId']);
-         if ($timeperiodsuffix == '_0') {
-            $timeperiodsuffix = '';
-         }
-         // Use the calendar defined for the host entity ...
-         $calendar = new Calendar();
-         $cid = Entity::getUsedConfig('calendars_id', $data['entityId'], '', 0);
-         PluginMonitoringToolbox::logIfExtradebug(
-            " - add host ".$a_hosts[$i]['host_name']." in entity ".$data['entityId']. ", calendar: ". $cid ."\n"
-         );
-
-         if ($calendar->getFromDB($cid) && $this->_addTimeperiod($data['entityId'], $cid)) {
-            $a_hosts[$i] = $this->add_value_type(
-                    self::shinkenFilter($calendar->fields['name'].$timeperiodsuffix),
-                    'check_period', $a_hosts[$i]);
-         } else {
-            $a_hosts[$i] = $this->add_value_type(
-                    $default_host['check_period'], 'check_period', $a_hosts[$i]);
-         }
-
-         // Manage freshness
-         if ($a_fields['freshness_count'] == 0) {
-            $a_hosts[$i] = $this->add_value_type('0', 'check_freshness', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type('0', 'freshness_threshold', $a_hosts[$i]);
-         } else {
-            $multiple = 1;
-            if ($a_fields['freshness_type'] == 'seconds') {
-               $multiple = 1;
-            } else if ($a_fields['freshness_type'] == 'minutes') {
-               $multiple = 60;
-            } else if ($a_fields['freshness_type'] == 'hours') {
-               $multiple = 3600;
-            } else if ($a_fields['freshness_type'] == 'days') {
-               $multiple = 86400;
-            }
-            $a_hosts[$i] = $this->add_value_type('1', 'check_freshness', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                    $a_fields['freshness_count'] * $multiple,
-                    'freshness_threshold', $a_hosts[$i]);
-         }
-
-         // Manage event handler
-         if ($a_fields['plugin_monitoring_eventhandlers_id'] > 0) {
-            if ($pmEventhandler->getFromDB($a_fields['plugin_monitoring_eventhandlers_id'])) {
-               $a_hosts[$i] = $this->add_value_type(
-                       PluginMonitoringCommand::$command_prefix . $pmEventhandler->fields['command_name'],
-                       'event_handler', $a_hosts[$i]);
-               $a_hosts[$i] = $this->add_value_type(
-                       '1', 'event_handler_enabled', $a_hosts[$i]);
-            } else {
-               $a_hosts[$i] = $this->add_value_type(
-                       '1', 'event_handler_enabled', $a_hosts[$i]);
-            }
-         } else {
-            $a_hosts[$i] = $this->add_value_type(
-                    '1', 'event_handler_enabled', $a_hosts[$i]);
-         }
-
-         // Realm
-         $pmRealm->getFromDB($pmHostconfig->getValueAncestor('plugin_monitoring_realms_id',
-                                                                              $class->fields['entities_id'],
-                                                                              $classname,
-                                                                              $class->getID()));
-         $a_hosts[$i] = $this->add_value_type(
-                 $pmRealm->fields['name'], 'realm', $a_hosts[$i]);
-
-         // Business impact
-         if (isset ($a_fields['business_priority'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                 $a_fields['business_priority'],
-                 'business_impact', $a_hosts[$i]);
-         } else {
-            if (! empty($default_host['business_impact'])) {
-               $a_hosts[$i] = $this->add_value_type(
-                       $default_host['business_impact'],
-                       'business_impact', $a_hosts[$i]);
-            } else {
-               $a_hosts[$i] = $this->add_value_type(
-                       '0', 'business_impact', $a_hosts[$i]);
-            }
-         }
-
-         // Additional information in host note
-         /* Shinken WebUI notes definition:
-
-            # Define a simple classic note
-               #notes                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin et leo gravida, lobortis nunc nec, imperdiet odio. Vivamus quam velit, scelerisque nec egestas et, semper ut massa. Vestibulum id tincidunt lacus. Ut in arcu at ex egestas vestibulum eu non sapien. Nulla facilisi. Aliquam non blandit tellus, non luctus tortor. Mauris tortor libero, egestas quis rhoncus in, sollicitudin et tortor.
-
-               # Define a classic note with a title
-               #notes                KB1023::note with a title
-
-               # Define a note with a title and an icon (from font-awesome icons)
-               #notes                KB1023,,tag::<strong>Lorem ipsum dolor sit amet</strong>, consectetur adipiscing elit. Proin et leo gravida, lobortis nunc nec, imperdiet odio. Vivamus quam velit, scelerisque nec egestas et, semper ut massa. Vestibulum id tincidunt lacus. Ut in arcu at ex egestas vestibulum eu non sapien. Nulla facilisi. Aliquam non blandit tellus, non luctus tortor. Mauris tortor libero, egestas quis rhoncus in, sollicitudin et tortor.
-
-               # Define two notes with a title and an icon
-               #notes                KB1023,,tag::<strong>Lorem ipsum dolor sit amet</strong>, consectetur adipiscing elit. Proin et leo gravida, lobortis nunc nec, imperdiet odio. Vivamus quam velit, scelerisque nec egestas et, semper ut massa. Vestibulum id tincidunt lacus. Ut in arcu at ex egestas vestibulum eu non sapien. Nulla facilisi. Aliquam non blandit tellus, non luctus tortor. Mauris tortor libero, egestas quis rhoncus in, sollicitudin et tortor.|KB1024,,tag::<strong>Lorem ipsum dolor sit amet</strong>, consectetur adipiscing elit. Proin et leo gravida, lobortis nunc nec, imperdiet odio. Vivamus quam velit, scelerisque nec egestas et, semper ut massa. Vestibulum id tincidunt lacus. Ut in arcu at ex egestas vestibulum eu non sapien. Nulla facilisi. Aliquam non blandit tellus, non luctus tortor. Mauris tortor libero, egestas quis rhoncus in, sollicitudin et tortor.
-
-               notes_url            http://www.my-KB.fr?host=$HOSTADDRESS$|http://www.my-KB.fr?host=$HOSTNAME$
-
-         */
-         // Location in notes ...
-         // PluginMonitoringToolbox::logIfExtradebug(
-            // " - location:{$data['locationName']} - {$data['locationComment']}\n"
-         // );
-         $notes = array();
-         if (isset(self::$shinkenParameters['glpi']['location'])
-                 && isset($data['locationName'])
-                 && isset($data['locationComment'])) {
-            $comment = str_replace("\r\n", "<br/>", $data['locationComment']);
-            $comment = preg_replace('/[[:cntrl:]]/', '§', $comment);
-            $notes[] = "Location,,home::<strong>{$data['locationName']}</strong><br/>{$comment}";
-         }
-         // Computer comment in notes ...
-         if (isset($data['comment'])) {
-            $comment = str_replace("\r\n", "<br/>", $data['comment']);
-            $comment = preg_replace('/[[:cntrl:]]/', '§', $comment);
-            $notes[] = "Comment,,comment::{$comment}";
-         }
-         if (count($notes) > 0) {
-            $a_hosts[$i] = $this->add_value_type(
-                    implode("|", $notes), 'notes', $a_hosts[$i]);
-         }
-
-         // Extra parameters
-         // Should make a loop :/P !!!!
-         $extrapram = array(
-            'process_perf_data',
-            'flap_detection_enabled',
-            'flap_detection_options',
-            'stalking_options',
-            'low_flap_threshold',
-            'high_flap_threshold',
-            'failure_prediction_enabled',
-            'retain_status_information',
-            'retain_nonstatus_information',
-            // 'notes',
-            'notes_url',
-            'action_url',
-            'icon_image',
-            'icon_image_alt',
-            'vrml_image',
-            'statusmap_image'
-         );
-         foreach ($extrapram as $parm) {
-            if (isset($default_host[$parm])) {
-               $a_hosts[$i] = $this->add_value_type(
-                       $default_host[$parm], $parm, $a_hosts[$i]);
-            }
-         }
-
-         // For contacts, check if a component catalog contains the host associated component ...
-         $a_hosts[$i] = $this->add_value_type( '', 'contacts', $a_hosts[$i]);
-
-         if (($a_fields['passive_checks_enabled'] == '1') and ($a_fields['active_checks_enabled'] == '0')) {
-            // Specific query if host is only passively checked ...
-            // Find the first component catalog in which the host is used ...
-            $querycont = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-               LEFT JOIN `glpi_plugin_monitoring_services`
-                  ON `plugin_monitoring_componentscatalogs_hosts_id`
-                     = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
-               WHERE `items_id`='".$data['items_id']."' AND `itemtype`='".$data['itemtype']."'
-               LIMIT 1";
-         } else {
-            // Find component catalog which contains the host associated component ...
-            $querycont = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-               LEFT JOIN `glpi_plugin_monitoring_services`
-                  ON `plugin_monitoring_componentscatalogs_hosts_id`
-                     = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
-               WHERE `plugin_monitoring_components_id`='".$pmComponent->fields['id']."' AND
-                  `items_id`='".$data['items_id']."' AND `itemtype`='".$data['itemtype']."'
-               LIMIT 1";
-         }
-
-         $resultcont = $DB->query($querycont);
-         if ($DB->numrows($resultcont) != 0) {
-            $a_componentscatalogs_hosts = $DB->fetch_assoc($resultcont);
-
-            PluginMonitoringToolbox::logIfExtradebug(
-               "generateHostsCfg - CC, host: {$a_hosts[$i]['host_name']} in {$a_componentscatalogs_hosts['plugin_monitoring_componentscalalog_id']}\n"
-            );
-            // Notification options / interval
-            $pmComponentscatalog = new PluginMonitoringComponentscatalog();
-            if (! $pmComponentscatalog->getFromDB($a_componentscatalogs_hosts['plugin_monitoring_componentscalalog_id'])) {
-               continue;
-            }
-
-            PluginMonitoringToolbox::logIfExtradebug(
-               "generateHostsCfg - CC, host: {$a_hosts[$i]['host_name']} in {$pmComponentscatalog->fields['name']}\n"
-            );
-            // Host template/tag is CC name
-            $a_hosts[$i] = $this->add_value_type(
-                    $pmComponentscatalog->fields['name'],
-                    'use', $a_hosts[$i]);
-
-            // Hosts notification
-            $pmHNTemplate = new PluginMonitoringHostnotificationtemplate();
-            if ((! isset ($pmComponentscatalog->fields['hostsnotification_id']))
-               ||  (! $pmHNTemplate->getFromDB($pmComponentscatalog->fields['hostsnotification_id']))) {
-               // No notifications defined for host, use defaults ...
-               $extrapram = array(
-                  'notifications_enabled',
-                  'notification_period',
-                  'notification_options',
-                  'notification_interval'
-               );
-               foreach ($extrapram as $parm) {
-                  if (isset($default_host[$parm])) {
-                     $a_hosts[$i] = $this->add_value_type(
-                             $default_host[$parm], $parm, $a_hosts[$i]);
-                  }
-               }
-
-               PluginMonitoringToolbox::logIfExtradebug(
-                  "generateHostsCfg - CC, host: {$a_hosts[$i]['host_name']} in {$pmComponentscatalog->fields['name']}, no notifications.\n"
-               );
-            } else {
-               $a_HN = $pmHNTemplate->fields;
-
-               PluginMonitoringToolbox::logIfExtradebug(
-                  "generateHostsCfg - CC, host: {$a_hosts[$i]['host_name']} in {$pmComponentscatalog->fields['name']}, notification template: {$a_HN['name']}.\n"
-               );
-
-               if ($a_HN['host_notifications_enabled'] == 0) {
-                  // No notifications for host
-                  $a_hosts[$i] = $this->add_value_type(
-                          '0', 'notifications_enabled', $a_hosts[$i]);
-                  $a_hosts[$i] = $this->add_value_type(
-                          '24x7', 'notification_period', $a_hosts[$i]);
-                  $a_hosts[$i] = $this->add_value_type(
-                          '', 'notification_options', $a_hosts[$i]);
-                  $a_hosts[$i] = $this->add_value_type(
-                          '0', 'notification_interval', $a_hosts[$i]);
-
-                  PluginMonitoringToolbox::logIfExtradebug(
-                     "generateHostsCfg - CC, host: {$a_hosts[$i]['host_name']} in {$pmComponentscatalog->fields['name']}, no notifications for host.\n"
-                  );
-               } else {
-                  if (! isset($a_HN['host_notification_period']) ||
-                        ! $a_HN['host_notifications_enabled']) {
-                     // No notifications for host
-                     $a_hosts[$i] = $this->add_value_type(
-                             '0', 'notifications_enabled', $a_hosts[$i]);
-                     $a_hosts[$i] = $this->add_value_type(
-                             '24x7', 'notification_period', $a_hosts[$i]);
-                     $a_hosts[$i] = $this->add_value_type(
-                             '', 'notification_options', $a_hosts[$i]);
-                     $a_hosts[$i] = $this->add_value_type(
-                             '0', 'notification_interval', $a_hosts[$i]);
-
-                     PluginMonitoringToolbox::logIfExtradebug(
-                        "generateHostsCfg - CC, host: {$a_hosts[$i]['host_name']} in {$pmComponentscatalog->fields['name']}, no notifications for host.\n"
-                     );
-                  } else {
-                     // Notifications enabled for host
-                     $a_hosts[$i] = $this->add_value_type(
-                             '1', 'notifications_enabled', $a_hosts[$i]);
-
-                     PluginMonitoringToolbox::logIfExtradebug(
-                        "generateHostsCfg - CC, host: {$a_hosts[$i]['host_name']}, host notification period : {$a_HN['host_notification_period']}.\n"
-                     );
-                     // Notification period
-                     if ($calendar->getFromDB($a_HN['host_notification_period']) && $this->_addTimeperiod($class->fields['entities_id'], $a_HN['host_notification_period'])) {
-                        $a_hosts[$i] = $this->add_value_type(
-                                self::shinkenFilter($calendar->fields['name'].$timeperiodsuffix),
-                                'notification_period', $a_hosts[$i]);
-                     } else {
-                        if (! empty($default_host['notification_period']))
-                           $a_hosts[$i] = $this->add_value_type(
-                                   $default_host['notification_period'],
-                                   'notification_period', $a_hosts[$i]);
-                     }
-
-                     // Notification options
-                     if ($a_HN['host_notification_options_d'] == 1) {
-                        $a_hosts[$i] = $this->add_value_type(
-                                "d", 'notification_options', $a_hosts[$i]);
-                     }
-                     if ($a_HN['host_notification_options_u'] == 1) {
-                        $a_hosts[$i] = $this->add_value_type(
-                                "u", 'notification_options', $a_hosts[$i]);
-                     }
-                     if ($a_HN['host_notification_options_r'] == 1) {
-                        $a_hosts[$i] = $this->add_value_type(
-                                "r", 'notification_options', $a_hosts[$i]);
-                     }
-                     if ($a_HN['host_notification_options_f'] == 1) {
-                        $a_hosts[$i] = $this->add_value_type(
-                                "f", 'notification_options', $a_hosts[$i]);
-                     }
-                     if ($a_HN['host_notification_options_s'] == 1) {
-                        $a_hosts[$i] = $this->add_value_type(
-                                "s", 'notification_options', $a_hosts[$i]);
-                     }
-                     if ($a_HN['host_notification_options_n'] == 1) {
-                        $a_hosts[$i] = $this->add_value_type(
-                                "n", 'notification_options', $a_hosts[$i]);
-                     }
-                     if (count($a_hosts[$i]['notification_options']) == 0) {
-                        if (isset($a_hosts[$i]['notification_options'])) {
-                           unset($a_hosts[$i]['notification_options']);
+                    $filepath = GLPI_DOC_DIR . ' / ' . $document_obj->fields['filepath'];
+                    if (file_exists($filepath)) {
+                        if (!in_array($filepath, $a_documents_found, true)) {
+                            $a_documents_found[] = $filepath;
+                            PluginMonitoringToolbox::logIfDebug('got a new CC document: ' . print_r($document_obj->fields, true));
+                            $this->set_value($document_obj->getID(), self::$default['glpi']['documents'], $my_template);
                         }
-                        $a_hosts[$i] = $this->add_value_type(
-                                "n", 'notification_options', $a_hosts[$i]);
-                     }
+                    } else {
+                        PluginMonitoringToolbox::logIfDebug('CC document does not exist as a file: ' . $filepath);
+                    }
+                }
+                */
 
-                     // Notification interval
-                     if (isset ($pmComponentscatalog->fields['notification_interval']) ) {
-                        $a_hosts[$i] = $this->add_value_type(
-                                $pmComponentscatalog->fields['notification_interval'],
-                                'notification_interval', $a_hosts[$i]);
-                     } else {
-                        if (! empty($default_host['notification_interval']))
-                           $a_hosts[$i] = $this->add_value_type(
-                                   $default_host['notification_interval'],
-                                   'notification_interval', $a_hosts[$i]);
-                     }
-                  }
-               }
+                // Host specific attributes
+                // Host customs variables
+                $this->set_value($pmHost->getID(), self::$default['glpi']['hostId'], $my_host);
+                if (isset(self::$default['glpi']['entityId'])) {
+                    $this->set_value($data['entityId'], self::$default['glpi']['entityId'], $my_host);
+                }
+                if (isset(self::$default['glpi']['itemType'])) {
+                    $this->set_value($my_host_type, self::$default['glpi']['itemType'], $my_host);
+                }
+                if (isset(self::$default['glpi']['itemId'])) {
+                    $this->set_value($data['items_id'], self::$default['glpi']['itemId'], $my_host);
+                }
+                if (isset(self::$default['glpi']['entityName'])) {
+                    $this->set_value(strtolower(self::monitoringFilter($data['entityName'])),
+                        self::$default['glpi']['entityName'], $my_host);
+                }
+
+                // Dynamic setup of a default parameter ...
+                self::$default['glpi']['rootEntity'] = __('Root entity');
+                $data['entityFullName'] = preg_replace("/" . self::$default['glpi']['rootEntity'] . " > /", "", $data['entityFullName']);
+                $data['entityFullName'] = preg_replace("/ > /", " - ", $data['entityFullName']);
+//                $data['entityFullName'] = preg_replace("/#/", "_", $data['entityFullName']);
+                if (isset(self::$default['glpi']['entityComplete'])) {
+                    $this->set_value(self::monitoringFilter($data['entityFullName']), self::$default['glpi']['entityComplete'], $my_host);
+                }
+                $data['entityFullName'] = preg_replace("/_-_/", ".", $data['entityFullName']);
+
+                if ($new_template) {
+                    // Graphite prefix
+                    if (isset(self::$default['graphite']['prefix']['name'])) {
+                        // Get the Graphite prefix defined for the current entity
+                        $default_prefix = self::$default['graphite']['prefix']['value'];
+                        $entity_prefix = $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['graphite_prefix'];
+
+                        if (self::$default['graphite']['prefix']['entity']) {
+                            if (!empty($default_prefix)) {
+                                $entity_prefix = $default_prefix . '.' . $entity_prefix;
+                            }
+                            if (!empty($entity_prefix)) {
+                                $entity_prefix = $entity_prefix . '.' . $data['entityFullName'];
+                            } else {
+                                $entity_prefix = $data['entityFullName'];
+                            }
+                            $this->set_value(self::graphiteFilter($entity_prefix, false),
+                                self::$default['graphite']['prefix']['name'], $my_template);
+                        } else {
+                            $this->set_value(self::graphiteFilter($entity_prefix, false),
+                                self::$default['graphite']['prefix']['name'], $my_template);
+                        }
+                    }
+
+                    if (isset(self::$default['webui']['hostView']['name'])) {
+                        $this->set_value(self::$default['webui']['hostView']['value'],
+                            self::$default['webui']['hostView']['name'], $my_template);
+                    }
+                }
+
+                // Location and GPS
+                if (isset(self::$default['glpi']['location'])) {
+                    if (!empty($data['locationName'])) {
+//                    $string = utf8_decode(strip_tags(trim($data['locationName'])));
+                        $string = preg_replace("/[\r\n]/", ".", $data['locationName']);
+                        $this->set_value($this->monitoringFilter($string), self::$default['glpi']['location'], $my_host);
+                        $data['hostLocation'] = $string;
+                    }
+                }
+                if (isset(self::$default['glpi']['lat']) and !empty($data['lat'])) {
+                    $this->set_value($data['lat'], self::$default['glpi']['lat'], $my_host);
+                }
+                if (isset(self::$default['glpi']['lng']) and !empty($data['lng'])) {
+                    $this->set_value($data['lng'], self::$default['glpi']['lng'], $my_host);
+                }
+                if (isset(self::$default['glpi']['alt']) and !empty($data['alt'])) {
+                    $this->set_value($data['alt'], self::$default['glpi']['alt'], $my_host);
+                }
+                if (isset(self::$default['glpi']['lat']) and !empty($data['lat'])
+                    and isset(self::$default['glpi']['lng']) and !empty($data['lng'])) {
+                    $this->set_value($data['lat'] . ',' . $data['lng'], self::$default['glpi']['gps'], $my_host);
+                }
+
+                // Hostgroup name
+                $this->set_value(preg_replace("/[ ]/", "_", self::monitoringFilter($data['entityName'])), 'hostgroups', $my_host);
+
+                // Alias
+                $this->set_value($this->monitoringFilter($data['entityName']) . " / " . $my_host['host_name'], 'alias', $my_host);
+                if (isset($data['hostLocation'])) {
+                    $this->set_value($my_host['alias'] . " (" . $data['hostLocation'] . ")", 'alias', $hn);
+                }
+
+                // For comments ...
+                if ($file) {
+                    $this->set_value($my_host['alias'], 'file_comment', $my_host);
+                }
+
+                // IP address
+                $ip = PluginMonitoringHostaddress::getIp($data['items_id'], $data['itemtype'], $my_host_item->fields['name']);
+                $this->set_value($ip, 'address', $my_host);
+
+                if ($new_template) {
+                    // Host check command
+                    $cmp_fields = null;
+                    $hc_id = $pmHostconfig->getValueAncestor('plugin_monitoring_components_id',
+                        $my_host_item->fields['entities_id'], $my_host_type, $my_host_item->getID());
+                    if (!$pmComponent->getFromDB($hc_id)) {
+                        PluginMonitoringToolbox::log("[ERROR] no monitoring component for " . $my_host['host_name']);
+                    } else {
+                        $cmp_fields = $pmComponent->fields;
+                        PluginMonitoringToolbox::logIfDebug("monitoring component for " . $my_host['host_name']);
+                    }
+
+                    // Host check command (it may not exist!)
+                    if (isset($cmp_fields['plugin_monitoring_commands_id'])
+                        and $pmCommand->getFromDB($cmp_fields['plugin_monitoring_commands_id'])) {
+                        // Manage host check_command arguments
+                        $array = [];
+                        preg_match_all("/\\$(ARG\d+)\\$/", $pmCommand->fields['command_line'], $array);
+                        sort($array[0]);
+                        $a_arguments = importArrayFromDB($pmCommand->fields['arguments']);
+                        $a_argumentscustom = importArrayFromDB($cmp_fields['arguments']);
+                        foreach ($a_argumentscustom as $key => $value) {
+                            $a_arguments[$key] = $value;
+                        }
+                        foreach ($a_arguments as $key => $value) {
+                            $a_arguments[$key] = str_replace('!', '\!', html_entity_decode($value));
+                        }
+                        $args = '';
+                        $notadddescription = '';
+                        // todo: to be tested!
+
+                        foreach ($array[0] as $arg) {
+                            if (in_array($arg, ['$PLUGINSDIR$', '$NAGIOSPLUGINSDIR$', '$HOSTADDRESS$', '$MYSQLUSER$', '$MYSQLPASSWORD$'])) {
+                                continue;
+                            }
+
+                            $arg = str_replace('$', '', $arg);
+                            if (!isset($a_arguments[$arg])) {
+                                $args .= '!';
+                            } else {
+                                if (strstr($a_arguments[$arg], "[[HOSTNAME]]")) {
+                                    $a_arguments[$arg] = str_replace("[[HOSTNAME]]", $my_host_item->fields['name'], $a_arguments[$arg]);
+
+                                    /* mohierf: disable this feature
+                                    } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTDESCR]]")) {
+                                        if (class_exists("PluginFusioninventoryNetworkPort")) {
+                                            $pfNetworkPort = new PluginFusioninventoryNetworkPort();
+                                            $pfNetworkPort->loadNetworkport($data['networkports_id']);
+                                            $descr = $pfNetworkPort->getValue("ifdescr");
+                                            $a_arguments[$arg] = str_replace("[[NETWORKPORTDESCR]]", $descr, $a_arguments[$arg]);
+                                        }
+                                    } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTNUM]]")) {
+                                        $networkPort = new NetworkPort();
+                                        if (isset($data['networkports_id'])
+                                            && $data['networkports_id'] > 0) {
+                                            $networkPort->getFromDB($data['networkports_id']);
+                                        } else if ($my_host_type == 'Computer') {
+                                            $networkPort = PluginMonitoringHostaddress::getNetworkport($my_host_item->fields['id'], $my_host_type);
+                                        }
+                                        if ($networkPort->getID() > 0) {
+                                            $logicalnum = $networkPort->fields['logical_number'];
+                                            $a_arguments[$arg] = str_replace("[[NETWORKPORTNUM]]", $logicalnum, $a_arguments[$arg]);
+                                        }
+                                    } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTNAME]]")) {
+                                        $networkPort = new NetworkPort();
+                                        if (isset($data['networkports_id']) && $data['networkports_id'] > 0) {
+                                            $networkPort->getFromDB($data['networkports_id']);
+                                        } else if ($my_host_type == 'Computer') {
+                                            $networkPort = PluginMonitoringHostaddress::getNetworkport($my_host_item->fields['id'], $my_host_type);
+                                        }
+                                        if ($networkPort->getID() > 0) {
+                                            $portname = $networkPort->fields['name'];
+                                            $a_arguments[$arg] = str_replace("[[NETWORKPORTNAME]]", $portname, $a_arguments[$arg]);
+                                        }
+                                    */
+                                } else if (strstr($a_arguments[$arg], '[[IP]]')) {
+                                    $ip = PluginMonitoringHostaddress::getIp(
+                                        $data['items_id'], $data['itemtype'], '');
+                                    $a_arguments[$arg] = str_replace("[[IP]]", $ip, $a_arguments[$arg]);
+                                } else if (strstr($a_arguments[$arg], "[")) {
+                                    $a_arguments[$arg] = PluginMonitoringService::convertArgument($data['id'], $a_arguments[$arg]);
+                                }
+                                if (empty($a_arguments)) {
+                                    if ($notadddescription != '') {
+                                        $notadddescription .= ", ";
+                                    }
+                                    $notadddescription .= "Argument " . $a_arguments[$arg] . " Not have value";
+                                }
+                                $args .= '!' . $a_arguments[$arg];
+                                if ($a_arguments[$arg] == '' and $cmp_fields['alias_command'] != '') {
+                                    $args .= $cmp_fields['alias_command'];
+                                }
+                            }
+                        }
+                        if (! empty($pmCommand->fields['command_name'])) {
+                            $this->set_value(PluginMonitoringCommand::$command_prefix . $pmCommand->fields['command_name'] . $args, 'check_command', $my_template);
+                        }
+                    }
+
+                    // Check strategy
+                    if (! empty($cmp_fields['active_checks_enabled'])) {
+                        $this->set_value($cmp_fields['active_checks_enabled'], 'active_checks_enabled', $my_template);
+                    }
+                    if (! empty($cmp_fields['passive_checks_enabled'])) {
+                        $this->set_value($cmp_fields['passive_checks_enabled'], 'passive_checks_enabled', $my_template);
+                    }
+                    // Host check strategy (may not be defined!)
+                    if ($cmp_fields['plugin_monitoring_checks_id'] != '-1') {
+                        if ($pmCheck->getFromDB($cmp_fields['plugin_monitoring_checks_id'])) {
+                            $this->set_value($pmCheck->fields['check_interval'], 'check_interval', $my_template);
+                            $this->set_value($pmCheck->fields['retry_interval'], 'retry_interval', $my_template);
+                            $this->set_value($pmCheck->fields['max_check_attempts'], 'max_check_attempts', $my_template);
+                        }
+                    }
+
+                    // Manage freshness
+                    $freshness_count = $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['freshness_count'];
+                    if ($freshness_count == 0) {
+                        $this->set_value('0', 'check_freshness', $my_template);
+                        $this->set_value('0', 'freshness_threshold', $my_template);
+                    } else {
+                        $freshness_type = $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['freshness_type'];
+
+                        $multiple = 1;
+                        if ($freshness_type == 'seconds') {
+                            $multiple = 1;
+                        } else if ($freshness_type == 'minutes') {
+                            $multiple = 60;
+                        } else if ($freshness_type == 'hours') {
+                            $multiple = 3600;
+                        } else if ($freshness_type == 'days') {
+                            $multiple = 86400;
+                        }
+                        $this->set_value('1', 'check_freshness', $my_template);
+                        $this->set_value($freshness_count * $multiple, 'freshness_threshold', $my_template);
+                    }
+
+                    // Manage event handler
+                    $this->set_value('0', 'event_handler_enabled', $my_template);
+                    if ($cmp_fields['plugin_monitoring_eventhandlers_id'] > 0) {
+                        if ($pmEventhandler->getFromDB($cmp_fields['plugin_monitoring_eventhandlers_id'])) {
+                            $this->set_value(PluginMonitoringCommand::$command_prefix . $pmEventhandler->fields['command_name'], 'event_handler', $my_template);
+                        }
+                    }
+
+                    // Business impact
+                    if (! empty($cmp_fields['business_impact'])) {
+                        $this->set_value($cmp_fields['business_impact'], 'business_impact', $my_template);
+                    }
+                }
+
+                // Check period
+                // Get the entity jet lag ...
+                $tz_suffix = '';
+                if (isset($_SESSION['plugin_monitoring']['entities'][$data['entityId']])) {
+                    $tz_suffix = '_' . $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['jet_lag'];
+                    if ($tz_suffix == '_0') {
+                        $tz_suffix = '';
+                    }
+                }
+                PluginMonitoringToolbox::log("adding host " . $my_host['host_name'] . ", jet lag: " . $tz_suffix);
+
+//                $tz_suffix = '_' . $pmHostconfig->getValueAncestor('jetlag', $data['entityId']);
+//                if ($tz_suffix == '_0') {
+//                    $tz_suffix = '';
+//                }
+                // Get the calendar defined for the host entity ...
+                $cid = -1;
+                if (isset($_SESSION['plugin_monitoring']['entities'][$data['entityId']])) {
+                    $cid = $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['calendars_id'];
+                }
+                PluginMonitoringToolbox::log("adding host " . $my_host['host_name'] . ", calendar: " . $cid);
+
+//                // Use the calendar defined for the host entity ...
+//                $cid = Entity::getUsedConfig('calendars_id', $data['entityId'], '', 0);
+//                PluginMonitoringToolbox::log("adding host " . $my_host['host_name'] . ", calendar: " . $cid);
+//
+                if ($calendar->getFromDB($cid) && $this->_addTimeperiod($data['entityId'], $cid)) {
+                    $this->set_value(self::monitoringFilter($calendar->fields['name'] . $tz_suffix), 'check_period', $my_host);
+                } else {
+                    $this->set_value($default_host['check_period'], 'check_period', $my_host);
+                }
+
+                // Realm
+                $entity_id = $my_host_item->fields['entities_id'];
+                $realm_id = $pmHostconfig->getValueAncestor('plugin_monitoring_realms_id', $entity_id, $my_host_type, $my_host_item->getID());
+                if ($pmRealm->getFromDB($realm_id)) {
+                    $this->set_value($pmRealm->getName(), 'realm', $my_host);
+                    // Store realm for future use
+                    $this->_addRealm($pmRealm);
+                }
+
+                // Additional information in host note
+                /*
+                The notes_url or actions_url fields are containing a simple url or a string in which
+                individual url are separated with a | character.
+                
+                Each url must contain an URI string and may also contain an icon and a title:
+                
+                action_url URL1,ICON1,ALT1|URL2,ICON2,ALT2|URL3,ICON3,ALT3
+                
+                As documented in Shinken:
+                 * URLx are the url you want to use
+                 * ICONx are the images you want to display the link as. It can be either a local
+                file, relative to the folder webui/plugins/eltdetail/htdocs/ or an url.
+                 * ALTx are the alternative texts you want to display when the ICONx file is missing,
+                or not set.
+                
+                The UI do not use any icon file but the font-awesome icons font. As such, ICONx information
+                is the name of an icon in the font awesome icons list.
+                
+                The ALTx information is the text label used for the hyperlink or button on the page.
+                 */
+                $notes = [];
+                if (isset(self::$default['glpi']['location'])
+                    and isset($data['locationName'])
+                    and isset($data['locationComment'])) {
+                    $comment = str_replace("\r\n", "<br>", $data['locationComment']);
+                    $comment = preg_replace(' / [[:cntrl:]]/', '§', $comment);
+                    $notes[] = "<strong>{$data['locationName']}</strong><br>{$comment}";
+                }
+                // Computer comment in notes ...
+                if (isset($data['comment']) and !empty($data['comment'])) {
+                    $comment = str_replace("\r\n", "<br>", $data['comment']);
+                    $comment = preg_replace(' / [[:cntrl:]]/', '§', $comment);
+                    $notes[] = "{$comment}";
+                }
+                if (count($notes) > 0) {
+                    $this->set_value(implode("<br>", $notes), 'notes', $my_host);
+                }
+
+                if ($new_template) {
+                    // Extra parameters
+                    $extra_params = [
+                        'process_perf_data', 'stalking_options', 'failure_prediction_enabled', 'notes_url', 'action_url',
+                        'flap_detection_enabled', 'flap_detection_options', 'low_flap_threshold', 'high_flap_threshold'
+                    ];
+                    foreach ($extra_params as $parm) {
+                        if (isset($default_host[$parm]) and !empty($default_host[$parm])) {
+                            $this->set_value($default_host[$parm], $parm, $my_template);
+                        }
+                    }
+                }
+
+                if ($new_template) {
+                    // For contacts, check if a component catalog contains the host associated component ...
+                    $this->set_value('', 'contacts', $my_template);
+
+                    PluginMonitoringToolbox::logIfDebug("generateHostsCfg - CC, host template: {$my_template['name']} in {$pmCC->getName()}");
+
+                    // Hosts notification
+                    if ((!isset ($pmCC->fields['hostnotificationtemplates_id']))
+                        or (!$pmHNTemplate->getFromDB($pmCC->fields['hostnotificationtemplates_id']))) {
+                        // No notifications defined for host, use defaults ...
+                        PluginMonitoringToolbox::logIfDebug("generateHostsCfg - CC, host: {$my_host['host_name']}, no defined notifications.");
+                        $extra_params = [
+                            'notifications_enabled', 'notification_period', 'notification_options', 'notification_interval', 'first_notification_delay'
+                        ];
+                        foreach ($extra_params as $parm) {
+                            if (isset($default_host[$parm])) {
+                                $this->set_value($default_host[$parm], $parm, $my_template);
+                            }
+                        }
+                    } else {
+                        $a_HN = $pmHNTemplate->fields;
+                        PluginMonitoringToolbox::logIfDebug("generateHostsCfg - CC, host template: {$my_template['name']}, notification template: {$a_HN['name']}.");
+
+                        if ($a_HN['hn_enabled'] == 0 or !isset($a_HN['hn_period'])) {
+                            PluginMonitoringToolbox::logIfDebug("generateHostsCfg - CC, host: {$my_template['name']}, no notifications.");
+                            // No notifications for host
+                            $this->set_value('0', 'notifications_enabled', $my_template);
+                        } else {
+                            PluginMonitoringToolbox::logIfDebug("generateHostsCfg - CC, host: {$my_template['name']}, notifications enabled.");
+
+                            // Notifications enabled for host
+                            $this->set_value('1', 'notifications_enabled', $my_template);
+
+                            // Notification period
+                            if ($calendar->getFromDB($a_HN['hn_period']) && $this->_addTimeperiod($my_host_item->fields['entities_id'], $a_HN['hn_period'])) {
+                                $this->set_value(self::monitoringFilter($calendar->fields['name'] . $tz_suffix), 'notification_period', $my_template);
+                            } else {
+                                if (!empty($default_host['notification_period'])) {
+                                    $this->set_value($default_host['notification_period'], 'notification_period', $my_template);
+                                }
+                            }
+
+                            // Notification options
+                            if ($a_HN['hn_options_d'] == 1) {
+                                $this->set_value("d", 'notification_options', $my_template);
+                            }
+                            if ($a_HN['hn_options_u'] == 1) {
+                                $this->set_value("u", 'notification_options', $my_template);
+                            }
+                            if ($a_HN['hn_options_r'] == 1) {
+                                $this->set_value("r", 'notification_options', $my_template);
+                            }
+                            if ($a_HN['hn_options_f'] == 1) {
+                                $this->set_value("f", 'notification_options', $my_template);
+                            }
+                            if ($a_HN['hn_options_s'] == 1) {
+                                $this->set_value("s", 'notification_options', $my_template);
+                            }
+                            if ($a_HN['hn_options_n'] == 1) {
+                                $this->set_value("n", 'notification_options', $my_template);
+                            }
+                            if (count($my_template['notification_options']) == 0) {
+                                $this->set_value("n", 'notification_options', $my_template);
+                            }
+
+                            // Notification interval
+                            if (isset ($pmCC->fields['notification_interval'])) {
+                                $this->set_value($pmCC->fields['notification_interval'], 'notification_interval', $my_template);
+                            } else {
+                                if (!empty($default_host['notification_interval'])) {
+                                    $this->set_value($default_host['notification_interval'], 'notification_interval', $my_template);
+                                }
+                            }
+                        }
+                    }
+
+                    // All the contacts from the CC
+                    $my_host['contacts'] = [];
+                    $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringComponentscatalog' AND `items_id`='" . $pmCC->getID() . "'");
+                    foreach ($a_list_contact as $data_contact) {
+                        if ($data_contact['users_id'] > 0) {
+                            $user->getFromDB($data_contact['users_id']);
+                            $this->set_value($user->fields['name'], 'contacts', $my_template);
+                        } else if ($data_contact['groups_id'] > 0) {
+
+                        }
+                    }
+                    if (count($my_host['contacts']) == 0) {
+                        if (self::$default['shinken']['fake_contacts']['build']) {
+                            $this->set_value(self::$default['shinken']['fake_contacts']['contact_name'], 'contacts', $my_template);
+                        }
+                    }
+                }
+
+                if ($new_template) {
+                    PluginMonitoringToolbox::logIfDebug("got template: " . print_r($my_template, true));
+                    $a_templates[] = $this->properties_list_to_string($my_template);
+                }
+                PluginMonitoringToolbox::logIfDebug("got host: " . print_r($my_host, true));
+                $a_hosts_found[$my_host_item->getName()] = true;
+                $a_hosts[] = $this->properties_list_to_string($my_host);
             }
+        }
 
-            $a_hosts[$i]['contacts'] = array();
-            $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringComponentscatalog'
-               AND `items_id`='".$a_componentscatalogs_hosts['plugin_monitoring_componentscalalog_id']."'");
-            foreach ($a_list_contact as $data_contact) {
-               if (isset($a_contacts_entities[$a_componentscatalogs_hosts['plugin_monitoring_componentscalalog_id']][$data_contact['users_id']])) {
-                  if (in_array($class->fields['entities_id'], $a_contacts_entities[$a_componentscatalogs_hosts['plugin_monitoring_componentscalalog_id']][$data_contact['users_id']])) {
-                     $user->getFromDB($data_contact['users_id']);
-                     $a_hosts[$i] = $this->add_value_type(
-                              $user->fields['name'],
-                              'contacts', $a_hosts[$i]);
-                  }
-               }
+        PluginMonitoringToolbox::log("Found " . count($a_templates) . " hosts templates");
+        PluginMonitoringToolbox::log("Found " . count($a_hosts) . " hosts");
+        PluginMonitoringToolbox::logIfDebug("End generateHostsCfg");
+
+        if ($PM_CONFIG['build_files']) {
+            $config = "";
+            if (count($a_templates)) {
+                $config .= "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+                $config .= "# ---\n";
+                $config .= "# Hosts templates\n";
+                $config .= "# ---\n";
+
+                foreach ($a_templates as $data) {
+                    $config .= $this->writeFile("host", $data);
+                }
             }
-            if (count($a_hosts[$i]['contacts']) == 0) {
-               if (self::$shinkenParameters['shinken']['fake_contacts']['build']) {
-                     $a_hosts[$i] = $this->add_value_type(
-                              self::$shinkenParameters['shinken']['fake_contacts']['contact_name'],
-                              'contacts', $a_hosts[$i]);
-               } else {
-                     $a_hosts[$i] = $this->add_value_type(
-                              '', 'contacts', $a_hosts[$i]);
-               }
+            $config .= "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+            $config .= "# ---\n";
+            $config .= "# Hosts\n";
+            $config .= "# ---\n";
+
+            foreach ($a_hosts as $data) {
+                $config .= $this->writeFile("host", $data);
             }
-         }
-         $a_hosts[$i] = $this->properties_list_to_string($a_hosts[$i]);
-         $i++;
-      }
+            $filename = PLUGIN_MONITORING_CFG_DIR . '/' . $tag . '-hosts.cfg';
+            file_put_contents($filename, $config);
+            PluginMonitoringToolbox::logIfDebug("Written file: " . $filename);
 
-      // Fake host for business rules
-      $pmServicescatalog = new PluginMonitoringServicescatalog();
-      $a_listBA = $pmServicescatalog->find("`is_generic`='0'");
-      if (count($a_listBA) > 0) {
-         PluginMonitoringToolbox::logIfExtradebug(
-            " - add host_for_bp\n"
-         );
-         $a_hosts[$i] = array();
-         $a_hosts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['fake_hosts']['name_prefix'] . self::$shinkenParameters['shinken']['fake_bp_hosts']['hostname'],
-                 'host_name', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 PluginMonitoringCommand::$command_prefix . self::$shinkenParameters['shinken']['fake_hosts']['check_command'],
-                 'check_command', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 'Fake host for business rules',
-                 'alias', $a_hosts[$i]);
-         // $a_hosts[$i]['_HOSTID'] = '0';
-         // $a_hosts[$i]['_ITEMSID'] = '0';
-         // $a_hosts[$i]['_ITEMTYPE'] = 'Computer';
-         $a_hosts[$i] = $this->add_value_type('127.0.0.1', 'address', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['fake_hosts']['name_prefix'] . self::$shinkenParameters['shinken']['fake_hosts']['root_parent'],
-                 'parents', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['fake_hosts']['hostgroup_name'],
-                 'hostgroups', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('1', 'active_checks_enabled', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('0', 'passive_checks_enabled', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('60', 'check_interval', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('1', 'retry_interval', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('1', 'max_check_attempts', $a_hosts[$i]);
+            if ($file) return $config;
+        }
+        return array_merge($a_templates, $a_hosts);
+    }
 
-         // Check period is always defined by the root entity !
-         $a_hosts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['fake_hosts']['check_period'],
-                 'check_period', $a_hosts[$i]);
-         // Host entity jetlag ...
-         $timeperiodsuffix = '_'.$pmHostconfig->getValueAncestor('jetlag', 0);
-         if ($timeperiodsuffix == '_0') {
-            $timeperiodsuffix = '';
-         }
-         $calendar = new Calendar();
-         $a_calendars = $calendar->find("`name`='".self::$shinkenParameters['shinken']['fake_hosts']['check_period']."'");
-         foreach ($a_calendars as $calendar) {
-            PluginMonitoringToolbox::logIfExtradebug(
-               " - add host_for_bp 2: ".serialize($calendar)." / ".$calendar['name']."\n"
-            );
-            if ($this->_addTimeperiod(0, $calendar['id'])) {
-               $a_hosts[$i] = $this->add_value_type(
-                       self::shinkenFilter($calendar['name'].$timeperiodsuffix),
-                       'check_period', $a_hosts[$i]);
+
+    function generateServicesCfg($tag = '', $file = false)
+    {
+        global $DB, $PM_CONFIG, $TIMER_DEBUG;
+
+        PluginMonitoringToolbox::logIfDebug("Starting generateServicesCfg services ($tag) ...");
+        $pMonitoringCommand = new PluginMonitoringCommand();
+        $pmEventhandler = new PluginMonitoringEventhandler();
+        $pMonitoringCheck = new PluginMonitoringCheck();
+        $pmComponent = new PluginMonitoringComponent();
+        $pmContact_Item = new PluginMonitoringContact_Item();
+        $networkPort = new NetworkPort();
+        $pmService = new PluginMonitoringService();
+        $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
+        $pmHostconfig = new PluginMonitoringHostconfig();
+        $calendar = new Calendar();
+        $pmConfig = new PluginMonitoringConfig();
+
+        $a_services = [];
+
+        // Get computer type contener / VM
+//        $conteners = $computerType->find("`name`='BSDJail'");
+
+        // Get entities concerned by the provided tag
+        $where = '';
+        if (!empty($_SESSION['plugin_monitoring']['allowed_entities'])) {
+            $where = getEntitiesRestrictRequest("WHERE",
+                "glpi_plugin_monitoring_services", '',
+                $_SESSION['plugin_monitoring']['allowed_entities']);
+        }
+
+        // TODO: only contacts in allowed entities ...
+        // Prepare individual contacts
+        $a_contacts_entities = [];
+        $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringComponentscatalog' AND `users_id`>0");
+        foreach ($a_list_contact as $data) {
+            $contactentities = getSonsOf('glpi_entities', $data['entities_id']);
+            if (isset($a_contacts_entities[$data['items_id']][$data['users_id']])) {
+                $contactentities = array_merge($contactentities, $a_contacts_entities[$data['items_id']][$data['users_id']]);
             }
-         }
-
-         if (self::$shinkenParameters['shinken']['fake_contacts']['build']) {
-            $a_hosts[$i] = $this->add_value_type(
-                     self::$shinkenParameters['shinken']['fake_contacts']['contact_name'],
-                     'contacts', $a_hosts[$i]);
-         } else {
-            $a_hosts[$i] = $this->add_value_type('', 'contacts', $a_hosts[$i]);
-         }
-         if (! empty(self::$shinkenParameters['shinken']['fake_hosts']['use'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['fake_hosts']['use'],
-                    'use', $a_hosts[$i]);
-         }
-
-         $extrapram = array(
-            'process_perf_data',
-            'notification_period',
-            'notification_options',
-            'notification_interval',
-            'notes',
-            'notes_url',
-            'action_url',
-            'icon_image',
-            'icon_image_alt',
-            'vrml_image',
-            'statusmap_image'
-         );
-         foreach ($extrapram as $parm) {
-            if (isset($default_host[$parm])) {
-               $a_hosts[$i] = $this->add_value_type(
-                       $default_host[$parm], $parm, $a_hosts[$i]);
-            }
-         }
-         $a_hosts[$i] = $this->properties_list_to_string($a_hosts[$i]);
-         $i++;
-      }
-
-
-      // Add one fake host for each entity
-      if (self::$shinkenParameters['shinken']['fake_hosts']['build']) {
-         PluginMonitoringToolbox::logIfExtradebug(
-            " - add fake hosts for parents relationship\n"
-         );
-
-         // Main root parent
-         $a_hosts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['fake_hosts']['name_prefix'] . self::$shinkenParameters['shinken']['fake_hosts']['root_parent'],
-                 'host_name', $a_hosts[$i]);
-         // $a_hosts[$i]['check_command'] = PluginMonitoringCommand::$command_prefix . 'check_dummy!0';
-         $a_hosts[$i] = $this->add_value_type(
-                 PluginMonitoringCommand::$command_prefix . self::$shinkenParameters['shinken']['fake_hosts']['check_command'],
-                 'check_command', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 'Main root parent', 'alias', $a_hosts[$i]);
-         // $a_hosts[$i]['_HOSTID'] = '0';
-         // $a_hosts[$i]['_ITEMSID'] = '0';
-         // $a_hosts[$i]['_ITEMTYPE'] = 'Computer';
-         $a_hosts[$i] = $this->add_value_type(
-                 '127.0.0.1', 'address', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('', 'parents', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['fake_hosts']['hostgroup_name'],
-                 'hostgroups', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('60', 'check_interval', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('1', 'retry_interval', $a_hosts[$i]);
-         $a_hosts[$i] = $this->add_value_type('1', 'max_check_attempts', $a_hosts[$i]);
-         // Check period is always defined by the root entity !
-         $a_hosts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['fake_hosts']['check_period'],
-                 'check_period', $a_hosts[$i]);
-         // Host entity jetlag ...
-         $timeperiodsuffix = '_'.$pmHostconfig->getValueAncestor('jetlag', 0);
-         if ($timeperiodsuffix == '_0') {
-            $timeperiodsuffix = '';
-         }
-         $calendar = new Calendar();
-         $a_calendars = $calendar->find("`name`='".self::$shinkenParameters['shinken']['fake_hosts']['check_period']."'");
-         foreach ($a_calendars as $calendar) {
-            if ($this->_addTimeperiod(0, $calendar['id'])) {
-               $a_hosts[$i] = $this->add_value_type(
-                       self::shinkenFilter($calendar['name'].$timeperiodsuffix),
-                       'check_period', $a_hosts[$i]);
-            }
-         }
-
-         if (self::$shinkenParameters['shinken']['fake_contacts']['build']) {
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['fake_contacts']['contact_name'],
-                    'contacts', $a_hosts[$i]);
-         } else {
-            $a_hosts[$i] = $this->add_value_type('', 'contacts', $a_hosts[$i]);
-         }
-         if (! empty(self::$shinkenParameters['shinken']['fake_hosts']['use'])) {
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['fake_hosts']['use'],
-                    'use', $a_hosts[$i]);
-         }
-
-         $extrapram = array(
-            'process_perf_data',
-            'notification_period',
-            'notification_options',
-            'notification_interval',
-            'notes',
-            'notes_url',
-            'action_url',
-            'icon_image',
-            'icon_image_alt',
-            'vrml_image',
-            'statusmap_image'
-         );
-         foreach ($extrapram as $parm) {
-            if (isset($default_host[$parm])) {
-               $a_hosts[$i] = $this->add_value_type(
-                       $default_host[$parm], $parm, $a_hosts[$i]);
-            }
-         }
-         $a_hosts[$i] = $this->properties_list_to_string($a_hosts[$i]);
-         $i++;
-
-         $a_entities_allowed = $pmEntity->getEntitiesByTag($tag);
-         $a_entities_list = array();
-         foreach ($a_entities_allowed as $entity) {
-            // @ddurieux: should array_merge ($a_entities_list and getSonsOf("glpi_entities", $entity)) ?
-            $a_entities_list = getSonsOf("glpi_entities", $entity);
-         }
-         $where = '';
-         if (! isset($a_entities_allowed['-1'])) {
-            $where = getEntitiesRestrictRequest("WHERE", "glpi_entities", '', $a_entities_list);
-         }
-
-         $query = "SELECT
-            `glpi_entities`.`id` AS entityId, `glpi_entities`.`name` AS entityName
-            FROM `glpi_entities` $where";
-         $result = $DB->query($query);
-         while ($dataEntity=$DB->fetch_array($result)) {
-            // Hostgroup name : used as host name for parents ...
-            $fake_host_name = self::shinkenFilter($dataEntity['entityName']);
-            $fake_host_name = preg_replace("/[ ]/","_",$fake_host_name);
-
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['fake_hosts']['name_prefix'] . $fake_host_name,
-                    'host_name', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                     PluginMonitoringCommand::$command_prefix . self::$shinkenParameters['shinken']['fake_hosts']['check_command'],
-                    'check_command', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                    $this->shinkenFilter($dataEntity['entityName']), 'alias', $a_hosts[$i]);
-            // $a_hosts[$i]['_HOSTID'] = '0';
-            // $a_hosts[$i]['_ITEMSID'] = '0';
-            // $a_hosts[$i]['_ITEMTYPE'] = 'Computer';
-            $a_hosts[$i] = $this->add_value_type(
-                    '127.0.0.1', 'address', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['fake_hosts']['name_prefix'] . self::$shinkenParameters['shinken']['fake_hosts']['root_parent'],
-                    'parents', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['fake_hosts']['hostgroup_name'],
-                    'hostgroups', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                    '60', 'check_interval', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                    '1', 'retry_interval', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                    '1', 'max_check_attempts', $a_hosts[$i]);
-            $a_hosts[$i] = $this->add_value_type(
-                    '24x7', 'check_period', $a_hosts[$i]);
-            // Check period is defined by the current entity !
-            $a_hosts[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['fake_hosts']['check_period'],
-                    'check_period', $a_hosts[$i]);
-            // Host entity jetlag ...
-            $timeperiodsuffix = '_'.$pmHostconfig->getValueAncestor('jetlag', $dataEntity['entityId']);
-            if ($timeperiodsuffix == '_0') {
-               $timeperiodsuffix = '';
-            }
-            $calendar = new Calendar();
-            $a_calendars = $calendar->find("`name`='".self::$shinkenParameters['shinken']['fake_hosts']['check_period']."'");
-            foreach ($a_calendars as $calendar) {
-               if ($this->_addTimeperiod(0, $calendar['id'])) {
-                  $a_hosts[$i] = $this->add_value_type(
-                          self::shinkenFilter($calendar['name'].$timeperiodsuffix),
-                          'check_period', $a_hosts[$i]);
-               }
-            }
-
-            if (self::$shinkenParameters['shinken']['fake_contacts']['build']) {
-               $a_hosts[$i] = $this->add_value_type(
-                       self::$shinkenParameters['shinken']['fake_contacts']['contact_name'],
-                       'contacts', $a_hosts[$i]);
+            $a_contacts_entities[$data['items_id']][$data['users_id']] = $contactentities;
+        }
+        // Prepare groups contacts
+        $group = new Group();
+        $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringComponentscatalog' AND `groups_id`>0");
+        foreach ($a_list_contact as $data) {
+            $group->getFromDB($data['groups_id']);
+            if ($group->fields['is_recursive'] == 1) {
+                $contactentities = getSonsOf('glpi_entities', $group->fields['entities_id']);
             } else {
-               $a_hosts[$i] = $this->add_value_type(
-                       '', 'contacts', $a_hosts[$i]);
+                $contactentities = [$group->fields['entities_id'] => $group->fields['entities_id']];
             }
-            if (! empty(self::$shinkenParameters['shinken']['fake_hosts']['use'])) {
-               $a_hosts[$i] = $this->add_value_type(
-                       self::$shinkenParameters['shinken']['fake_hosts']['use'],
-                       'use', $a_hosts[$i]);
+            $queryg = "SELECT * FROM `glpi_groups_users` WHERE `groups_id`='" . $data['groups_id'] . "'";
+            if ($resultg = $DB->query($queryg)) {
+                while ($datag = $DB->fetch_array($resultg)) {
+                    if (isset($a_contacts_entities[$data['items_id']][$datag['users_id']])) {
+                        $contactentities = array_merge($contactentities, $a_contacts_entities[$data['items_id']][$datag['users_id']]);
+                    }
+                    $a_contacts_entities[$data['items_id']][$datag['users_id']] = $contactentities;
+                }
             }
-            $extrapram = array(
-               'process_perf_data',
-               'notification_period',
-               'notification_options',
-               'notification_interval',
-               'notes',
-               'notes_url',
-               'action_url',
-               'icon_image',
-               'icon_image_alt',
-               'vrml_image',
-               'statusmap_image'
-            );
-            foreach ($extrapram as $parm) {
-               if (isset($default_host[$parm])) {
-                  $a_hosts[$i] = $this->add_value_type(
-                          $default_host[$parm], $parm, $a_hosts[$i]);
-               }
-            }
-            $a_hosts[$i] = $this->properties_list_to_string($a_hosts[$i]);
-            $i++;
-         }
-         PluginMonitoringToolbox::logIfExtradebug(
-            "End generateHostgroupsCfg\n"
-         );
-      }
+        }
 
-      // Check if parents all exist in hosts config
-      foreach ($a_parents_found as $host => $num) {
-         if (!isset($a_hosts_found[$host])) {
-            // Delete parents not added in hosts config
-            foreach ($a_hosts as $id=>$data) {
-               if (isset($data['parents'])
-                       && $data['parents'] == $host) {
-                  $a_hosts[$id] = $this->add_value_type(
-                          '', 'parents', $a_hosts[$id]);
-               }
-            }
-         }
-      }
+        // Get all necessary objects!
+        $a_components = $pmComponent->find();
+        $componentscatalog_hosts = $pmComponentscatalog_Host->find();
+//        $timeperiodsuffixes = [];
+//        foreach ($_SESSION['plugin_monitoring']['allowed_entities'] as $entities_id) {
+//            $timeperiodsuffixes[$entities_id] = '_' . $pmHostconfig->getValueAncestor('jetlag', $entities_id);
+//        }
+        $a_commands = $pMonitoringCommand->find();
+        $a_checks = $pMonitoringCheck->find();
+        $a_calendars = $calendar->find();
 
+        // --------------------------------------------------
+        // "Normal" services ....
+        $query = "SELECT * FROM `glpi_plugin_monitoring_services` $where";
+        PluginMonitoringToolbox::logIfDebug("generateServicesCfg, query: " . $query);
+        if ($result = $DB->query($query)) {
+            PluginMonitoringToolbox::log("generateServicesCfg, huge query execution, got " . $DB->numrows($result) . " rows, duration: " . $TIMER_DEBUG->getTime());
+            while ($data = $DB->fetch_array($result)) {
+                PluginMonitoringToolbox::logIfDebug(" - service: {$data['id']} - {$data['name']}");
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         "End generateHostsCfg\n"
-      );
+                // Service component
+                $a_component = $a_components[$data['plugin_monitoring_components_id']];
+                if (!isset($a_components[$data['plugin_monitoring_components_id']]) or empty($a_component)) {
+                    PluginMonitoringToolbox::log("[ERROR] service: {$data['id']} - no associated component !");
+                    continue;
+                }
 
-      if ($file == "1") {
-         $config = "# Generated by plugin monitoring for GLPI\n# on ".date("Y-m-d H:i:s")."\n\n";
+                // Service component catalog host
+                $cc_host = $componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']];
+                if (!isset($componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']]) or empty($cc_host)) {
+                    PluginMonitoringToolbox::log("[ERROR] service: {$data['id']} - no associated CC host !");
+                    continue;
+                }
 
-         foreach ($a_hosts as $data) {
-            $config .= $this->writeFile("host", $data);
-         }
-         return array('hosts.cfg', $config);
+                /* @var CommonDBTM $my_host_item */
+                $my_host_type = $cc_host['itemtype'];
+                $my_host_item = new $my_host_type;
+                if (!$my_host_item->getFromDB($cc_host['items_id'])) {
+                    PluginMonitoringToolbox::log('[ERROR] Host item not found: ' . print_r($data, true));
+                    continue;
+                }
 
-      } else {
-         return $a_hosts;
-      }
-   }
+                $my_service = [];
 
+                // Monitoring host name
+                $my_host_name = self::monitoringFilter($my_host_item->getName());
+                $this->set_value($my_host_name, 'host_name', $my_service);
+                if ($PM_CONFIG['append_id_hostname'] == 1) {
+                    $my_host_name = self::monitoringFilter($my_host_item->getName() . '-' . $my_host_item->getID());
+                    $this->set_value($my_host_name, 'host_name', $my_service);
+                }
 
+                $notadd = 0;
+                $notadddescription = '';
 
-   function generateServicesCfg($file=0, $tag='') {
-      global $DB;
+                $computerTypes_id = 0;
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         "Starting generateServicesCfg services ($tag) ...\n"
-      );
-      $pMonitoringCommand      = new PluginMonitoringCommand();
-      $pmEventhandler          = new PluginMonitoringEventhandler();
-      $pMonitoringCheck        = new PluginMonitoringCheck();
-      $pmComponent             = new PluginMonitoringComponent();
-      $pmEntity                = new PluginMonitoringEntity();
-      $pmContact_Item          = new PluginMonitoringContact_Item();
-      $networkPort             = new NetworkPort();
-      $pmService               = new PluginMonitoringService();
-      $pmComponentscatalog     = new PluginMonitoringComponentscatalog();
-      $pmComponentscatalog_Host= new PluginMonitoringComponentscatalog_Host();
-      $pmHostconfig            = new PluginMonitoringHostconfig();
-      $calendar                = new Calendar();
-      $user                    = new User();
-      $profile_User            = new Profile_User();
-      $pmConfig                = new PluginMonitoringConfig();
-      $computerType            = new ComputerType();
+                PluginMonitoringToolbox::logIfDebug(" - fetching service: {$data['id']} ({$a_component['name']} - {$a_component['id']}) - {$cc_host['itemtype']} - {$cc_host['items_id']} -> {$my_service['host_name']}");
+                $entities_id = $my_host_item->fields['entities_id'];
+                if ($my_host_type == 'Computer') {
+                    $computerTypes_id = $my_host_item->fields['computertypes_id'];
+                }
 
-      $a_services = array();
-      $i=0;
+                if (isset($_SESSION['plugin_monitoring']['servicetemplates'][$a_component['id']])) {
+                    $this->set_value($_SESSION['plugin_monitoring']['servicetemplates'][$a_component['id']], 'use', $my_service);
+                } else {
+                    // TODO - Service has no defined template!
+                }
+                $this->set_value($cc_host['items_id'], '_HOSTITEMSID', $my_service);
+                $this->set_value($cc_host['itemtype'], '_HOSTITEMTYPE', $my_service);
 
-      // Get computer type contener / VM
-      $conteners = $computerType->find("`name`='BSDJail'");
+                // service_description and display name
+                $this->set_value($a_component['name'], 'display_name', $my_service);
+                if (!empty($a_component['description'])) {
+                    $this->set_value($a_component['description'], 'service_description', $my_service);
+                } else {
+                    $this->set_value(self::monitoringFilter($a_component['name']), 'service_description', $my_service);
+                }
 
-      $pmConfig->getFromDB(1);
+                // TODO: NE
+                // In case we have multiple networkt ports, we must have different description, else it will be dropped by shinken
+                if ($data['networkports_id'] > 0) {
+                    $networkPort->getFromDB($data['networkports_id']);
+                    $this->set_value($my_service['service_description'] . '-' . self::monitoringFilter($networkPort->fields['name'])
+                        , 'service_description', $hn);
+                    $this->set_value($a_component['name'] . '-' . self::monitoringFilter($networkPort->fields['name']), 'display_name', $my_service);
+                }
+                PluginMonitoringToolbox::logIfDebug(" - adding service " . $my_service['service_description'] . " on " . $my_service['host_name']);
 
-      // TODO: only contacts in allowed entities ...
-      // Prepare individual contacts
-      $a_contacts_entities = array();
-      $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringComponentscatalog'
-         AND `users_id`>0");
-      foreach ($a_list_contact as $data) {
-         $contactentities = getSonsOf('glpi_entities', $data['entities_id']);
-         if (isset($a_contacts_entities[$data['items_id']][$data['users_id']])) {
-            $contactentities = array_merge($contactentities, $a_contacts_entities[$data['items_id']][$data['users_id']]);
-         }
-         $a_contacts_entities[$data['items_id']][$data['users_id']] = $contactentities;
-      }
-      // Prepare groups contacts
-      $group = new Group();
-      $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringComponentscatalog'
-         AND `groups_id`>0");
-      foreach ($a_list_contact as $data) {
-         $group->getFromDB($data['groups_id']);
-         if ($group->fields['is_recursive'] == 1) {
-            $contactentities = getSonsOf('glpi_entities', $group->fields['entities_id']);
-         } else {
-            $contactentities = array($group->fields['entities_id'] => $group->fields['entities_id']);
-         }
-         $queryg = "SELECT * FROM `glpi_groups_users`
-            WHERE `groups_id`='".$data['groups_id']."'";
-         $resultg = $DB->query($queryg);
-         while ($datag=$DB->fetch_array($resultg)) {
-            if (isset($a_contacts_entities[$data['items_id']][$datag['users_id']])) {
-               $contactentities = array_merge($contactentities, $a_contacts_entities[$data['items_id']][$datag['users_id']]);
-            }
-            $a_contacts_entities[$data['items_id']][$datag['users_id']] = $contactentities;
-         }
-      }
+                if (isset(self::$default['glpi']['entityId'])) {
+                    $this->set_value($my_host_item->fields['entities_id'], self::$default['glpi']['entityId'], $my_service);
+                }
+                if (isset(self::$default['glpi']['itemType'])) {
+                    $this->set_value('Service', self::$default['glpi']['itemType'], $my_service);
+                }
+                if (isset(self::$default['glpi']['itemId'])) {
+                    $this->set_value($data['id'], self::$default['glpi']['itemId'], $my_service);
+                }
 
+                // Check command
+                $a_command = $a_commands[$a_component['plugin_monitoring_commands_id']];
+                // Manage arguments
+                $array = [];
+                preg_match_all("/\\$(ARG\d+)\\$/", $a_command['command_line'], $array);
+                sort($array[0]);
+                $a_arguments = importArrayFromDB($a_component['arguments']);
+                $a_argumentscustom = importArrayFromDB($data['arguments']);
+                foreach ($a_argumentscustom as $key => $value) {
+                    $a_arguments[$key] = $value;
+                }
+                foreach ($a_arguments as $key => $value) {
+                    $a_arguments[$key] = str_replace('!', '\!', html_entity_decode($value));
+                }
+                $args = '';
+                foreach ($array[0] as $arg) {
+                    if (in_array($arg, ['$PLUGINSDIR$', '$NAGIOSPLUGINSDIR$', '$HOSTADDRESS$', '$MYSQLUSER$', '$MYSQLPASSWORD$'])) {
+                        continue;
+                    }
 
+                    $arg = str_replace('$', '', $arg);
+                    if (!isset($a_arguments[$arg])) {
+                        $args .= '!';
+                    } else {
+                        if (strstr($a_arguments[$arg], "[[HOSTNAME]]")) {
+                            $a_arguments[$arg] = str_replace("[[HOSTNAME]]", $my_host_name, $a_arguments[$arg]);
 
-      $a_entities_allowed = $pmEntity->getEntitiesByTag($tag);
-      $a_entities_list = array();
-      foreach ($a_entities_allowed as $entity) {
-         // @ddurieux: should array_merge ($a_entities_list and getSonsOf("glpi_entities", $entity)) ?
-         $a_entities_list = getSonsOf("glpi_entities", $entity);
-      }
-      $where = '';
-      if (! isset($a_entities_allowed['-1'])) {
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_plugin_monitoring_services", '', $a_entities_list);
-      }
-
-      $a_components = $pmComponent->find();
-      $a_componentscatalogs = $pmComponentscatalog->find();
-      $componentscatalog_hosts = $pmComponentscatalog_Host->find();
-      $timeperiodsuffixes = array();
-      foreach ($a_entities_list as $entities_id) {
-         $timeperiodsuffixes[$entities_id] = '_'.$pmHostconfig->getValueAncestor('jetlag', $entities_id);
-      }
-      $a_commands = $pMonitoringCommand->find();
-      $a_checks = $pMonitoringCheck->find();
-      $a_calendars = $calendar->find();
-      $a_users = array();
-
-      // --------------------------------------------------
-      // "Normal" services ....
-      $query = "SELECT * FROM `glpi_plugin_monitoring_services` $where";
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
-         PluginMonitoringToolbox::logIfExtradebug(
-            " - fetching service: {$data['id']}\n"
-         );
-
-         $notadd = 0;
-         $notadddescription = '';
-         $a_component= array();
-         if (isset($a_components[$data['plugin_monitoring_components_id']])) {
-            $a_component = $a_components[$data['plugin_monitoring_components_id']];
-         }
-         if (empty($a_component)) {
-            PluginMonitoringToolbox::logIfExtradebug(
-               " *** fetching service: {$data['id']} - no associated component !\n"
-            );
-            continue;
-         }
-         $a_hostname        = array();
-         $a_hostname_single = array();
-         $a_hostname_type   = array();
-         $a_hostname_id     = array();
-         $hostname = '';
-         $plugin_monitoring_componentscatalogs_id = 0;
-         $computerTypes_id = 0;
-         $entities_id = 0;
-         if (isset($componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']])) {
-            $datah = $componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']];
-            $itemtype = $datah['itemtype'];
-            $item = new $itemtype();
-            if (! $item->getFromDB($datah['items_id'])) {
-               PluginMonitoringToolbox::logIfExtradebug(
-                  " *** fetching service: {$data['id']} - no itemtype/items_id found !\n"
-               );
-               continue;
-            }
-
-            // Fix if hostname is not defined ...
-            if (empty($item->fields['name'])) {
-               PluginMonitoringToolbox::logIfExtradebug(
-                  " *** fetching service: {$data['id']} - no item name found !\n"
-               );
-               continue;
-            }
-
-            if (!isset($a_services[$i])) {
-               $a_services[$i] = array();
-            }
-
-            PluginMonitoringToolbox::logIfExtradebug(
-               " - fetching service: {$data['id']} ({$a_component['name']} - {$a_component['id']}) - {$datah['itemtype']} - {$datah['items_id']} -> {$item->fields['name']}\n"
-            );
-            $h = self::shinkenFilter($item->fields['name']);
-            $a_hostname_single[] = $h;
-            if ($pmConfig->fields['append_id_hostname'] == 1) {
-               $h .= "-".$datah['items_id'];
-            }
-            $a_hostname[] = $h;
-            $a_hostname_type[] = $datah['itemtype'];
-            $a_hostname_id[] = $datah['items_id'];
-            $hostname = $item->fields['name'];
-            $entities_id = $item->fields['entities_id'];
-            $plugin_monitoring_componentscatalogs_id = $datah['plugin_monitoring_componentscalalog_id'];
-            if ($itemtype == 'Computer') {
-               $computerTypes_id = $item->fields['computertypes_id'];
-            }
-         }
-         if (count($a_hostname) > 0) {
-            if (isset($_SESSION['plugin_monitoring']['servicetemplates'][$a_component['id']])) {
-               $a_services[$i] = $this->add_value_type(
-                       $_SESSION['plugin_monitoring']['servicetemplates'][$a_component['id']],
-                       'use', $a_services[$i]);
-            }
-            $a_services[$i] = $this->add_value_type(
-                    implode(",", array_unique($a_hostname)),
-                    'host_name', $a_services[$i]);
-            $a_services[$i] = $this->add_value_type(
-                    implode(",", array_unique($a_hostname_id)),
-                    '_HOSTITEMSID', $a_services[$i]);
-            $a_services[$i] = $this->add_value_type(
-                    implode(",", array_unique($a_hostname_type)),
-                    '_HOSTITEMTYPE', $a_services[$i]);
-
-            // Define display_name / service_description
-            if (!empty($a_component['description'])) {
-               $a_services[$i] = $this->add_value_type(
-                       $a_component['description'],
-                       'service_description', $a_services[$i]);
-            } else {
-               $a_services[$i] = $this->add_value_type(
-                       self::shinkenFilter($a_component['name']),
-                       'service_description', $a_services[$i]);
-            }
-            // In case have multiple networkt port, may have description different, else be dropped by shinken
-            if ($data['networkports_id'] > 0) {
-               $networkPort->getFromDB($data['networkports_id']);
-               $hn = array();
-               $hn = $this->add_value_type(self::shinkenFilter($networkPort->fields['name'])
-                       , 'service_description', $hn);
-               $a_services[$i]['service_description'] .= "-".$hn['service_description'];
-            }
-            $a_services[$i]['display_name'] = $this->shinkenFilter($a_component['name']);
-            PluginMonitoringToolbox::logIfExtradebug(
-               " - add service ".$a_services[$i]['service_description']." on ".$a_services[$i]['host_name']."\n"
-            );
-
-            if (isset(self::$shinkenParameters['glpi']['entityId'])) {
-               $a_services[$i] = $this->add_value_type(
-                       $item->fields['entities_id'],
-                       self::$shinkenParameters['glpi']['entityId'],
-                       $a_services[$i]);
-            }
-            if (isset(self::$shinkenParameters['glpi']['itemType'])) {
-               $a_services[$i] = $this->add_value_type(
-                       'Service',
-                       self::$shinkenParameters['glpi']['itemType'],
-                       $a_services[$i]);
-            }
-            if (isset(self::$shinkenParameters['glpi']['itemId'])) {
-               $a_services[$i] = $this->add_value_type(
-                       $data['id'],
-                       self::$shinkenParameters['glpi']['itemId'],
-                       $a_services[$i]);
-            }
-
-            $a_command = $a_commands[$a_component['plugin_monitoring_commands_id']];
-            // Manage arguments
-            $array = array();
-            preg_match_all("/\\$(ARG\d+)\\$/", $a_command['command_line'], $array);
-            sort($array[0]);
-            $a_arguments = importArrayFromDB($a_component['arguments']);
-            $a_argumentscustom = importArrayFromDB($data['arguments']);
-            foreach ($a_argumentscustom as $key=>$value) {
-               $a_arguments[$key] = $value;
-            }
-            foreach ($a_arguments as $key=>$value) {
-               $a_arguments[$key] = str_replace('!', '\!', html_entity_decode($value));
-            }
-            $args = '';
-            foreach ($array[0] as $arg) {
-               if ($arg != '$PLUGINSDIR$'
-                       AND $arg != '$NAGIOSPLUGINSDIR$'
-                       AND $arg != '$HOSTADDRESS$'
-                       AND $arg != '$MYSQLUSER$'
-                       AND $arg != '$MYSQLPASSWORD$') {
-                  $arg = str_replace('$', '', $arg);
-                  if (!isset($a_arguments[$arg])) {
-                     $args .= '!';
-                  } else {
-                     if (strstr($a_arguments[$arg], "[[HOSTNAME]]")) {
-                        $a_arguments[$arg] = str_replace("[[HOSTNAME]]", $hostname, $a_arguments[$arg]);
-                     } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTDESCR]]")){
+                            /* mohierf: disable this feature
+                    } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTDESCR]]")) {
                         if (class_exists("PluginFusioninventoryNetworkPort")) {
-                           $pfNetworkPort = new PluginFusioninventoryNetworkPort();
-                           $pfNetworkPort->loadNetworkport($data['networkports_id']);
-                           $descr = $pfNetworkPort->getValue("ifdescr");
-                           $a_arguments[$arg] = str_replace("[[NETWORKPORTDESCR]]", $descr, $a_arguments[$arg]);
+                            $pfNetworkPort = new PluginFusioninventoryNetworkPort();
+                            $pfNetworkPort->loadNetworkport($data['networkports_id']);
+                            $descr = $pfNetworkPort->getValue("ifdescr");
+                            $a_arguments[$arg] = str_replace("[[NETWORKPORTDESCR]]", $descr, $a_arguments[$arg]);
                         }
-                     } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTNUM]]")){
+                    } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTNUM]]")) {
                         $networkPort = new NetworkPort();
                         if (isset($data['networkports_id'])
-                                && $data['networkports_id'] > 0) {
-                           $networkPort->getFromDB($data['networkports_id']);
-                        } else if ($a_services[$i]['_HOSTITEMTYPE'] == 'Computer') {
-                           $networkPort = PluginMonitoringHostaddress::getNetworkport(
-                                   $a_services[$i]['_HOSTITEMSID'],
-                                   $a_services[$i]['_HOSTITEMTYPE']);
+                            && $data['networkports_id'] > 0) {
+                            $networkPort->getFromDB($data['networkports_id']);
+                        } else if ($my_service['_HOSTITEMTYPE'] == 'Computer') {
+                            $networkPort = PluginMonitoringHostaddress::getNetworkport(
+                                $my_service['_HOSTITEMSID'],
+                                $my_service['_HOSTITEMTYPE']);
                         }
                         if ($networkPort->getID() > 0) {
-                           $logicalnum = $networkPort->fields['logical_number'];
-                           $a_arguments[$arg] = str_replace("[[NETWORKPORTNUM]]", $logicalnum, $a_arguments[$arg]);
+                            $logicalnum = $networkPort->fields['logical_number'];
+                            $a_arguments[$arg] = str_replace("[[NETWORKPORTNUM]]", $logicalnum, $a_arguments[$arg]);
                         }
-                     } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTNAME]]")){
+                    } elseif (strstr($a_arguments[$arg], "[[NETWORKPORTNAME]]")) {
                         $networkPort = new NetworkPort();
-                        if (isset($data['networkports_id'])
-                                && $data['networkports_id'] > 0) {
-                           $networkPort = new NetworkPort();
-                           $networkPort->getFromDB($data['networkports_id']);
-                        } else if ($a_services[$i]['_HOSTITEMTYPE'] == 'Computer') {
-                           $networkPort = PluginMonitoringHostaddress::getNetworkport(
-                                   $a_services[$i]['_HOSTITEMSID'],
-                                   $a_services[$i]['_HOSTITEMTYPE']);
+                        if (isset($data['networkports_id']) and $data['networkports_id'] > 0) {
+                            $networkPort = new NetworkPort();
+                            $networkPort->getFromDB($data['networkports_id']);
+                        } else if ($my_service['_HOSTITEMTYPE'] == 'Computer') {
+                            $networkPort = PluginMonitoringHostaddress::getNetworkport(
+                                $my_service['_HOSTITEMSID'],
+                                $my_service['_HOSTITEMTYPE']);
                         }
                         if ($networkPort->getID() > 0) {
-                          $portname = $networkPort->fields['name'];
-                          $a_arguments[$arg] = str_replace("[[NETWORKPORTNAME]]", $portname, $a_arguments[$arg]);
+                            $portname = $networkPort->fields['name'];
+                            $a_arguments[$arg] = str_replace("[[NETWORKPORTNAME]]", $portname, $a_arguments[$arg]);
                         }
-                     } else if (strstr($a_arguments[$arg], '[[IP]]')) {
-                        $split = explode('-', current($a_hostname));
-                        $ip = PluginMonitoringHostaddress::getIp(
-                                $a_hostname_id[0], $a_hostname_type[0], '');
-                        $a_arguments[$arg] = str_replace("[[IP]]", $ip, $a_arguments[$arg]);
-                     } else if (strstr($a_arguments[$arg], "[")) {
-                        $a_arguments[$arg] = PluginMonitoringService::convertArgument($data['id'], $a_arguments[$arg]);
-                     }
-                     if ($a_arguments == '') {
-                        $notadd = 1;
-                        if ($notadddescription != '') {
-                           $notadddescription .= ", ";
+                        */
+
+                        } else if (strstr($a_arguments[$arg], '[[IP]]')) {
+                            $ip = PluginMonitoringHostaddress::getIp($cc_host['items_id'], $cc_host['itemtype'], '');
+                            $a_arguments[$arg] = str_replace("[[IP]]", $ip, $a_arguments[$arg]);
+                        } else if (strstr($a_arguments[$arg], "[")) {
+                            $a_arguments[$arg] = PluginMonitoringService::convertArgument($data['id'], $a_arguments[$arg]);
                         }
-                        $notadddescription .= "Argument ".$a_arguments[$arg]." do not have value";
-                     }
-                     $args .= '!'.$a_arguments[$arg];
-                     if ($a_arguments[$arg] == ''
-                             AND $a_component['alias_command'] != '') {
-                        $args .= $a_component['alias_command'];
-                     }
-                  }
-               }
-            }
-            // End manage arguments
-            if ($a_component['remotesystem'] == 'nrpe') {
-               if ($a_component['alias_command'] != '') {
-                  $alias_command = $a_component['alias_command'];
-                  if (strstr($alias_command, '[[IP]]')) {
-                     $split = explode('-', current($a_hostname));
-                     $ip = PluginMonitoringHostaddress::getIp(
-                             $a_hostname_id[0], $a_hostname_type[0], '');
-                     $alias_command = str_replace("[[IP]]", $ip, $alias_command);
-                  }
-                  if (current($a_hostname_type) == 'Computer') {
-                     if ($pmConfig->fields['nrpe_prefix_container'] == 1) {
-                        if (isset($conteners[$computerTypes_id])) {
-                           // get Host of contener/VM
-                           $where = "LOWER(`uuid`)".  ComputerVirtualMachine::getUUIDRestrictRequest($item->fields['uuid']);
-                           $hosts = getAllDatasFromTable('glpi_computervirtualmachines', $where);
-                           if (!empty($hosts)) {
-                              $host = current($hosts);
-//                                 $ip = PluginMonitoringHostaddress::getIp($host['computers_id'], 'Computer', '');
-                              $alias_command = current($a_hostname_single)."_".$alias_command;
-                           }
+                        if (empty($a_arguments)) {
+                            $notadd = 1;
+                            if ($notadddescription != '') {
+                                $notadddescription .= ", ";
+                            }
+                            $notadddescription .= "Argument " . $a_arguments[$arg] . " do not have value";
                         }
-                     }
-                  }
-                  $a_services[$i] = $this->add_value_type(
-                          PluginMonitoringCommand::$command_prefix . "check_nrpe!".$alias_command,
-                          'check_command', $a_services[$i]);
-               } else {
-                  $a_services[$i] = $this->add_value_type(
-                          PluginMonitoringCommand::$command_prefix . "check_nrpe!".$a_command['command_name'],
-                          'check_command', $a_services[$i]);
-               }
-            } else {
-               $a_services[$i] = $this->add_value_type(
-                       PluginMonitoringCommand::$command_prefix . $a_command['command_name'].$args,
-                       'check_command', $a_services[$i]);
-            }
-
-            // * Manage event handler
-            if ($a_component['plugin_monitoring_eventhandlers_id'] > 0) {
-               if ($pmEventhandler->getFromDB($a_component['plugin_monitoring_eventhandlers_id'])) {
-                  $a_services[$i] = $this->add_value_type(
-                          PluginMonitoringCommand::$command_prefix . $pmEventhandler->fields['command_name'],
-                          'event_handler', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type('1',
-                          'event_handler_enabled', $a_services[$i]);
-               } else {
-                  $a_services[$i] = $this->add_value_type('0',
-                          'event_handler_enabled', $a_services[$i]);
-               }
-            } else {
-               $a_services[$i] = $this->add_value_type('0',
-                       'event_handler_enabled', $a_services[$i]);
-            }
-
-            // * Contacts
-            $a_services[$i]['contacts'] = array();
-            $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringComponentscatalog'
-               AND `items_id`='".$plugin_monitoring_componentscatalogs_id."'");
-            foreach ($a_list_contact as $data_contact) {
-               if ($data_contact['users_id'] > 0) {
-                  if (isset($a_contacts_entities[$plugin_monitoring_componentscatalogs_id][$data_contact['users_id']])) {
-                     if (in_array($data['entities_id'], $a_contacts_entities[$plugin_monitoring_componentscatalogs_id][$data_contact['users_id']])) {
-                        if (!isset($a_users[$data_contact['users_id']])) {
-                           $user->getFromDB($data_contact['users_id']);
-                           $a_users[$data_contact['users_id']] = $user->fields['name'];
+                        $args .= '!' . $a_arguments[$arg];
+                        if ($a_arguments[$arg] == '' and $a_component['alias_command'] != '') {
+                            $args .= $a_component['alias_command'];
                         }
-                        $a_services[$i] = $this->add_value_type(
-                                $a_users[$data_contact['users_id']],
-                                'contacts', $a_services[$i]);
-                     }
-                  }
-               } else if ($data_contact['groups_id'] > 0) {
-                  $queryg = "SELECT * FROM `glpi_groups_users`
-                     WHERE `groups_id`='".$data_contact['groups_id']."'";
-                  $resultg = $DB->query($queryg);
-                  while ($datag=$DB->fetch_array($resultg)) {
-                     if (in_array($data['entities_id'], $a_contacts_entities[$plugin_monitoring_componentscatalogs_id][$datag['users_id']])) {
-                        if (!isset($a_users[$datag['users_id']])) {
-                           $user->getFromDB($datag['users_id']);
-                           $a_users[$datag['users_id']] = $user->fields['name'];
+                    }
+                }
+                // End manage arguments
+                if ($a_component['remotesystem'] == 'nrpe') {
+                    if (!empty($a_component['alias_command'])) {
+                        $alias_command = $a_component['alias_command'];
+                        if (strstr($alias_command, '[[IP]]')) {
+                            $ip = PluginMonitoringHostaddress::getIp($cc_host['items_id'], $cc_host['itemtype'], '');
+                            $alias_command = str_replace("[[IP]]", $ip, $alias_command);
                         }
-                        $a_services[$i] = $this->add_value_type(
-                                $a_users[$datag['users_id']],
-                                'contacts', $a_services[$i]);
-                     }
-                  }
-               }
+                        if ($my_host_type == 'Computer'
+                            and $pmConfig->fields['nrpe_prefix_container'] == 1
+                            and isset($conteners[$computerTypes_id])) {
+                            // get Host of contener/VM
+                            $where = "LOWER(`uuid`)" . ComputerVirtualMachine::getUUIDRestrictRequest($my_host_item->fields['uuid']);
+                            $hosts = getAllDatasFromTable('glpi_computervirtualmachines', $where);
+                            if (!empty($hosts)) {
+                                $alias_command = $my_host_name . "_" . $alias_command;
+                            }
+                        }
+                        $this->set_value(PluginMonitoringCommand::$command_prefix . "check_nrpe!" . $alias_command, 'check_command', $my_service);
+                    } else {
+                        $this->set_value(PluginMonitoringCommand::$command_prefix . "check_nrpe!" . $a_command['command_name'], 'check_command', $my_service);
+                    }
+                } else {
+                    if (! empty($a_command['command_name'])) {
+                        $this->set_value(PluginMonitoringCommand::$command_prefix . $a_command['command_name'] . $args, 'check_command', $my_service);
+                    }
+                }
+
+                // Manage event handler
+                $this->set_value('0', 'event_handler_enabled', $my_service);
+                if ($a_component['plugin_monitoring_eventhandlers_id'] > 0
+                    and $pmEventhandler->getFromDB($a_component['plugin_monitoring_eventhandlers_id'])) {
+                    $this->set_value(PluginMonitoringCommand::$command_prefix . $pmEventhandler->fields['command_name'], 'event_handler', $my_service);
+                    $this->set_value('1', 'event_handler_enabled', $my_service);
+                }
+
+                // * Contacts
+                // The service will be configured with the contacts of its related host!
+
+                // If a service template has not been defined :
+                if (!isset($_SESSION['plugin_monitoring']['servicetemplates'][$a_component['id']])) {
+                    // Get the entity jet lag ...
+                    $tz_suffix = '';
+                    if (isset($_SESSION['plugin_monitoring']['entities'][$entities_id])) {
+                        $tz_suffix = '_' . $_SESSION['plugin_monitoring']['entities'][$entities_id]['jet_lag'];
+                        if ($tz_suffix == '_0') {
+                            $tz_suffix = '';
+                        }
+                    }
+
+                    $a_check = $a_checks[$a_component['plugin_monitoring_checks_id']];
+                    $this->set_value($a_check['check_interval'], 'check_interval', $my_service);
+                    $this->set_value($a_check['retry_interval'], 'retry_interval', $my_service);
+                    $this->set_value($a_check['max_check_attempts'], 'max_check_attempts', $my_service);
+                    if (isset($a_calendars[$a_component['calendars_id']]) && $this->_addTimeperiod($entities_id, $a_component['calendars_id'])) {
+                        $this->set_value(self::monitoringFilter($a_calendars[$a_component['calendars_id']]['name'] . $tz_suffix), 'check_period', $my_service);
+                    } else {
+                        $this->set_value(self::$default['shinken']['services']['check_period'], 'check_period', $my_service);
+                    }
+                    $elements = [
+                        'notification_interval' => 30,
+                        'notification_period' => "24x7",
+                        'notification_options' => 'w,u,c,r,f,s',
+                        'first_notification_delay' => 0,
+                        'process_perf_data' => 1,
+//                        'active_checks_enabled' => 1,
+//                        'passive_checks_enabled' => 1,
+                        'parallelize_check' => 1,
+                        'obsess_over_service' => 0,
+                        'check_freshness' => 1,
+                        'freshness_threshold' => 3600,
+                        'notifications_enabled' => 1
+                    ];
+                    foreach ($elements as $key => $val) {
+                        $this->set_value($val, $key, $my_service);
+                    }
+                }
+
+                if ($notadd == '1') {
+                    unset($my_service);
+                    $input = [];
+                    $input['id'] = $data['id'];
+                    $input['event'] = $notadddescription;
+                    $input['state'] = "CRITICAL";
+                    $input['state_type'] = "HARD";
+                    $pmService->update($input);
+                } else {
+                    $a_services[] = $this->properties_list_to_string($my_service);
+                }
             }
+        }
 
-            if (count($a_services[$i]['contacts']) == 0) {
-               if (self::$shinkenParameters['shinken']['fake_contacts']['build']) {
-                  $a_services[$i] = $this->add_value_type(
-                          self::$shinkenParameters['shinken']['fake_contacts']['contact_name'],
-                          'contacts', $a_services[$i]);
-               } else {
-                  $a_services[$i] = $this->add_value_type('', 'contacts', $a_services[$i]);
-               }
+        PluginMonitoringToolbox::log("Found " . count($a_services) . " services");
+        PluginMonitoringToolbox::logIfDebug("End generateServicesCfg services");
+
+        if ($PM_CONFIG['build_files']) {
+            $config = "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+            $config .= "# ---\n";
+            $config .= "# Services\n";
+            $config .= "# ---\n";
+
+            foreach ($a_services as $data) {
+                $config .= $this->writeFile("service", $data);
             }
+            $filename = PLUGIN_MONITORING_CFG_DIR . '/' . $tag . '-services.cfg';
+            file_put_contents($filename, $config);
+            PluginMonitoringToolbox::logIfDebug("Written file: " . $filename);
 
-            $timeperiodsuffix = $timeperiodsuffixes[$entities_id];
-            if ($timeperiodsuffix == '_0') {
-               $timeperiodsuffix = '';
-            }
-            // ** If service template has not been defined :
-            if (! isset($_SESSION['plugin_monitoring']['servicetemplates'][$a_component['id']])) {
-               $a_check = $a_checks[$a_component['plugin_monitoring_checks_id']];
-               $a_services[$i] = $this->add_value_type(
-                       $a_check['check_interval'], 'check_interval',
-                       $a_services[$i]);
-               $a_services[$i] = $this->add_value_type(
-                       $a_check['retry_interval'], 'retry_interval',
-                       $a_services[$i]);
-               $a_services[$i] = $this->add_value_type(
-                       $a_check['max_check_attempts'], 'max_check_attempts',
-                       $a_services[$i]);
-               if (isset($a_calendars[$a_component['calendars_id']]) && $this->_addTimeperiod($entities_id, $a_component['calendars_id'])) {
-                  $a_services[$i] = $this->add_value_type(
-                          self::shinkenFilter($a_calendars[$a_component['calendars_id']]['name'].$timeperiodsuffix),
-                          'check_period', $a_services[$i]);
-               } else {
-                  $a_services[$i] = $this->add_value_type(
-                          self::$shinkenParameters['shinken']['services']['check_period'],
-                          'check_period', $a_services[$i]);
-               }
-               $elements = array(
-                  'notification_interval'  => 30,
-                  'notification_period'    => "24x7",
-                  'notification_options'   => 'w,u,c,r,f,s',
-                  'process_perf_data'      => 1,
-                  'active_checks_enabled'  => 1,
-                  'passive_checks_enabled' => 1,
-                  'parallelize_check'      => 1,
-                  'obsess_over_service'    => 0,
-                  'check_freshness'        => 1,
-                  'freshness_threshold'    => 3600,
-                  'notifications_enabled'  => 1
-               );
-               foreach ($elements as $key=>$val) {
-                  $a_services[$i] = $this->add_value_type(
-                          $val, $key, $a_services[$i]);
-               }
+            if ($file) return $config;
+        }
 
-               if (! empty(self::$shinkenParameters['shinken']['services']['business_impact'])) {
-                  $a_services[$i] = $this->add_value_type(
-                          self::$shinkenParameters['shinken']['services']['business_impact'],
-                          'business_impact', $a_services[$i]);
-               } else {
-                  $a_services[$i] = $this->add_value_type(
-                          '0', 'business_impact', $a_services[$i]);
-               }
+        return $a_services;
+    }
 
-               if (isset($a_services[$i]['event_handler'])) {
-                  $a_services[$i] = $this->add_value_type(
-                          '1', 'event_handler_enabled', $a_services[$i]);
-               } else {
-                  $a_services[$i] = $this->add_value_type(
-                          '0', 'event_handler_enabled', $a_services[$i]);
-               }
-               // $a_services[$i]['flap_detection_enabled'] = '1';
-               // $a_services[$i]['failure_prediction_enabled'] = '1';
 
-               // Persist service status
-               // $a_services[$i]['retain_status_information'] = '1';
-               // $a_services[$i]['retain_nonstatus_information'] = '1';
-            } else {
-               $default_service = self::$shinkenParameters['shinken']['services'];
-               // Default parameters
-               $extrapram = array(
-                  'process_perf_data',
-                  'notes',
-                  'notes_url',
-                  'action_url',
-                  'icon_image',
-                  'icon_image_alt'
-               );
-               foreach ($extrapram as $parm) {
-                  if (isset($default_service[$parm])) {
-                     $a_services[$i] = $this->add_value_type(
-                             $default_service[$parm], $parm, $a_services[$i]);
-                  }
-               }
+    function generateServicesTemplatesCfg($tag = '', $file = false)
+    {
+        global $DB, $PM_CONFIG;
 
-               // Notification options / interval
-               $a_componentscatalog = $a_componentscatalogs[$plugin_monitoring_componentscatalogs_id];
+        if (!isset($_SESSION['plugin_monitoring'])) {
+            $_SESSION['plugin_monitoring'] = [];
+        }
+        if (!isset($_SESSION['plugin_monitoring']['servicetemplates'])) {
+            $_SESSION['plugin_monitoring']['servicetemplates'] = [];
+        }
 
-               PluginMonitoringToolbox::logIfExtradebug(
-                     "generateServicesCfg - CC, service: {$a_services[$i]['service_description']}/{$a_services[$i]['host_name']} in {$a_componentscatalog['name']}\n"
-               );
-               $pmSNTemplate = new PluginMonitoringServicenotificationtemplate();
-               if ((! isset ($a_componentscatalog['servicesnotification_id']))
-                  ||  (! $pmSNTemplate->getFromDB($a_componentscatalog['servicesnotification_id']))) {
-                  // No notifications defined for service, use defaults ...
-                  $extrapram = array(
-                     'notifications_enabled',
-                     'notification_period',
-                     'notification_options',
-                     'notification_interval'
-                  );
-                  foreach ($extrapram as $parm) {
-                     if (isset($default_service[$parm])) {
-                        $a_services[$i] = $this->add_value_type(
-                                $default_service[$parm], $parm, $a_services[$i]);
-                     }
-                  }
+        PluginMonitoringToolbox::logIfDebug("Starting generateServicesTemplatesCfg ($tag) ...");
+        $pMonitoringCheck = new PluginMonitoringCheck();
 
-                  PluginMonitoringToolbox::logIfExtradebug(
-                           "generateServicesCfg - CC, service: {$a_services[$i]['service_description']}/{$a_services[$i]['host_name']} in {$a_componentscatalog['name']}, no notifications.\n"
-                  );
-               } else {
-                  $a_SN = $pmSNTemplate->fields;
+        $a_servicetemplates = [];
 
-                  PluginMonitoringToolbox::logIfExtradebug(
-                           "generateServicesCfg - CC, service: {$a_services[$i]['service_description']}/{$a_services[$i]['host_name']} in {$a_componentscatalog['name']}, notification template: {$a_SN['name']}.\n"
-                  );
+        // Build a Shinken service template for each declared component ...
+        // Fix service template association bug: #191
+        $query = "SELECT * FROM `glpi_plugin_monitoring_components` ORDER BY `id`";
+        // Select components with some grouping ...
+        // $query = "SELECT * FROM `glpi_plugin_monitoring_components`
+        // GROUP BY `plugin_monitoring_checks_id`, `active_checks_enabled`,
+        // `passive_checks_enabled`, `freshness_count`, `freshness_type`, `calendars_id`, `business_impact`
+        // ORDER BY `id`";
+        if ($result = $DB->query($query)) {
+            if ($DB->numrows($result) != 0) {
+                while ($data = $DB->fetch_array($result)) {
 
-                  if ($a_SN['service_notifications_enabled'] == 0) {
-                     // No notifications for service
-                     $a_services[$i] = $this->add_value_type(
-                             '0', 'notifications_enabled', $a_services[$i]);
-                     $a_services[$i] = $this->add_value_type(
-                             '24x7', 'notification_period', $a_services[$i]);
-                     $a_services[$i] = $this->add_value_type(
-                             '', 'notification_options', $a_services[$i]);
-                     $a_services[$i] = $this->add_value_type(
-                             '0', 'notification_interval', $a_services[$i]);
-
-                     PluginMonitoringToolbox::logIfExtradebug(
-                                 "generateServicesCfg - CC, service: {$a_services[$i]['service_description']}/{$a_services[$i]['host_name']} in {$a_componentscatalog['name']}, no notifications.\n"
-                     );
-                  } else {
-                     if (! isset($a_SN['service_notification_period']) ||
-                           ! $a_SN['service_notifications_enabled']) {
-                        // No notifications for service
-                        $a_services[$i] = $this->add_value_type(
-                                '0', 'notifications_enabled', $a_services[$i]);
-                        $a_services[$i] = $this->add_value_type(
-                                '24x7', 'notification_period', $a_services[$i]);
-                        $a_services[$i] = $this->add_value_type(
-                                '', 'notification_options', $a_services[$i]);
-                        $a_services[$i] = $this->add_value_type(
-                                '0', 'notification_interval', $a_services[$i]);
-
-                        PluginMonitoringToolbox::logIfExtradebug(
-                                       "generateServicesCfg - CC, service: {$a_services[$i]['service_description']}/{$a_services[$i]['host_name']} in {$a_componentscatalog['name']}, no notifications.\n"
-                        );
-                     } else {
-                        // Notifications enabled for service
-                        $a_services[$i] = $this->add_value_type(
-                                '1', 'notifications_enabled', $a_services[$i]);
-
-                        // Notification period
-                        if (isset($a_calendars[$a_SN['service_notification_period']]) && $this->_addTimeperiod($entities_id, $a_SN['service_notification_period'])) {
-                           $a_services[$i] = $this->add_value_type(
-                                   self::shinkenFilter($a_calendars[$a_SN['service_notification_period']]['name'].$timeperiodsuffix),
-                                   'notification_period', $a_services[$i]);
+                    $my_service_tpl = [];
+                    PluginMonitoringToolbox::logIfDebug(" - add template " . 'template' . $data['id'] . ' - service');
+                    // Fix service template association bug: #191
+                    // $my_service_tpl = $this->add_value_type(
+                    // self::shinkenFilter('stag - '.$data['id']),
+                    // 'name', $my_service_tpl);
+                    $this->set_value(self::monitoringFilter($data['name']), 'name', $my_service_tpl);
+                    // Alias is not used by Shinken !
+                    $this->set_value($data['description'] . ' / ' . $data['name'], 'alias', $my_service_tpl);
+                    if (isset ($data['business_impact'])) {
+                        $this->set_value($data['business_impact'], 'business_impact', $my_service_tpl);
+                    } else {
+                        if (!empty(self::$default['shinken']['services']['business_impact'])) {
+                            $this->set_value(self::$default['shinken']['services']['business_impact'], 'business_impact', $my_service_tpl);
                         } else {
-                           if (! empty(self::$shinkenParameters['shinken']['services']['notification_period']))
-                              $a_services[$i] = $this->add_value_type(
-                                      self::$shinkenParameters['shinken']['services']['notification_period'],
-                                      'notification_period', $a_services[$i]);
+                            $this->set_value('0', 'business_impact', $my_service_tpl);
                         }
+                    }
+                    $pMonitoringCheck->getFromDB($data['plugin_monitoring_checks_id']);
+                    $this->set_value($pMonitoringCheck->fields['check_interval'], 'check_interval', $my_service_tpl);
+                    $this->set_value($pMonitoringCheck->fields['retry_interval'], 'retry_interval', $my_service_tpl);
+                    $this->set_value($pMonitoringCheck->fields['max_check_attempts'], 'max_check_attempts', $my_service_tpl);
 
-                        // Notification options
-                        if ($a_SN['service_notification_options_w'] == 1) {
-                           $a_services[$i] = $this->add_value_type(
-                                   'w', 'notification_options', $a_services[$i]);
-                        }
-                        if ($a_SN['service_notification_options_u'] == 1) {
-                           $a_services[$i] = $this->add_value_type(
-                                   'u', 'notification_options', $a_services[$i]);
-                        }
-                        if ($a_SN['service_notification_options_c'] == 1) {
-                           $a_services[$i] = $this->add_value_type(
-                                   'c', 'notification_options', $a_services[$i]);
-                        }
-                        if ($a_SN['service_notification_options_r'] == 1) {
-                           $a_services[$i] = $this->add_value_type(
-                                   'r', 'notification_options', $a_services[$i]);
-                        }
-                        if ($a_SN['service_notification_options_f'] == 1) {
-                           $a_services[$i] = $this->add_value_type(
-                                   'f', 'notification_options', $a_services[$i]);
-                        }
-                        if ($a_SN['service_notification_options_s'] == 1) {
-                           $a_services[$i] = $this->add_value_type(
-                                   's', 'notification_options', $a_services[$i]);
-                        }
-                        if ($a_SN['service_notification_options_n'] == 1) {
-                           $a_services[$i] = $this->add_value_type(
-                                   'n', 'notification_options', $a_services[$i]);
-                        }
-                        if (count($a_services[$i]['notification_options']) == 0) {
-                           if (isset($a_services[$i]['notification_options'])) {
-                              unset($a_services[$i]['notification_options']);
-                           }
-                           $a_services[$i] = $this->add_value_type(
-                                   'n', 'notification_options', $a_services[$i]);
-                        }
+                    // check_period, defined in each service ...
 
-                        // Notification interval
-                        if (isset ($a_componentscatalog['notification_interval']) ) {
-                           $a_services[$i] = $this->add_value_type(
-                                   $a_componentscatalog['notification_interval'],
-                                   'notification_interval', $a_services[$i]);
-                        } else {
-                           if (! empty(self::$shinkenParameters['shinken']['hosts']['notification_interval'])) {
-                              $a_services[$i] = $this->add_value_type(
-                                      self::$shinkenParameters['shinken']['hosts']['notification_interval'],
-                                      'notification_interval', $a_services[$i]);
-                           }
-                        }
-                     }
-                  }
-               }
+                    // notification parameters, defined in each service ...
+                    // $my_service_tpl['notification_interval'] = '30';
+                    // $my_service_tpl['notification_period'] = "24x7";
+                    // $my_service_tpl['notification_options'] = 'w,u,c,r,f,s';
+                    // $my_service_tpl['process_perf_data'] = '1';
+                    $this->set_value($data['active_checks_enabled'], 'active_checks_enabled', $my_service_tpl);
+                    $this->set_value($data['passive_checks_enabled'], 'passive_checks_enabled', $my_service_tpl);
+                    $this->set_value('1', 'parallelize_check', $my_service_tpl);
+                    $this->set_value('0', 'obsess_over_service', $my_service_tpl);
 
-               // Calendar ...
-               $a_services[$i]['check_period'] = '24x7';
-               $timeperiodsuffix = $timeperiodsuffixes[$entities_id];
-               if ($timeperiodsuffix == '_0') {
-                  $timeperiodsuffix = '';
-               }
-               // Use the calendar defined for the service (host) entity ...
-               $calendar = new Calendar();
-               $cid = Entity::getUsedConfig('calendars_id', $item->fields['entities_id'], '', 0);
-               if ($calendar->getFromDB($cid) && $this->_addTimeperiod($item->fields['entities_id'], $cid)) {
-                  $a_services[$i] = $this->add_value_type(
-                          self::shinkenFilter($calendar->fields['name'].$timeperiodsuffix),
-                          'check_period', $a_services[$i]);
-               }
-               // @mohierf@ : test, service get its host check period ... when default timeperiod is empty !
-               if (self::$shinkenParameters['shinken']['services']['check_period'] != '') {
-                  // @mohierf@ : service get its own check period ...
-                  if (isset ($a_componentscatalog['calendars_id']) ) {
-                    if (isset($a_calendars[$a_componentscatalog['calendars_id']])
-                            && $this->_addTimeperiod($entities_id, $a_componentscatalog['calendars_id'])) {
-                        $a_services[$i] = $this->add_value_type(
-                                self::shinkenFilter($a_calendars[$a_componentscatalog['calendars_id']]['name'].$timeperiodsuffix),
-                                'check_period', $a_services[$i]);
-                     } else {
-                        $a_services[$i] = $this->add_value_type(
-                                self::$shinkenParameters['shinken']['services']['check_period'],
-                                'check_period', $a_services[$i]);
-                     }
-                  } else {
-                     if (isset($a_calendars[$a_component['calendars_id']])
-                             && $this->_addTimeperiod($entities_id, $a_component['calendars_id'])) {
-                        $a_services[$i] = $this->add_value_type(
-                                self::shinkenFilter($a_calendars[$a_component['calendars_id']]['name'].$timeperiodsuffix),
-                                'check_period', $a_services[$i]);
-                     } else {
-                        $a_services[$i] = $this->add_value_type(
-                                self::$shinkenParameters['shinken']['services']['check_period'],
-                                'check_period', $a_services[$i]);
-                     }
-                  }
-               }
+                    // Manage freshness
+                    // $my_service_tpl['check_freshness'] = '1';
+                    // $my_service_tpl['freshness_threshold'] = '3600';
+                    if ($data['freshness_count'] == 0) {
+                        $this->set_value('0', 'check_freshness', $my_service_tpl);
+                        $this->set_value('3600', 'freshness_threshold', $my_service_tpl);
+                    } else {
+                        $multiple = 1;
+                        if ($data['freshness_type'] == 'seconds') {
+                            $multiple = 1;
+                        } else if ($data['freshness_type'] == 'minutes') {
+                            $multiple = 60;
+                        } else if ($data['freshness_type'] == 'hours') {
+                            $multiple = 3600;
+                        } else if ($data['freshness_type'] == 'days') {
+                            $multiple = 86400;
+                        }
+                        $this->set_value('1', 'check_freshness', $my_service_tpl);
+                        $this->set_value(($data['freshness_count'] * $multiple), 'freshness_threshold', $my_service_tpl);
+                    }
+                    $this->set_value('1', 'notifications_enabled', $my_service_tpl);
+                    $this->set_value('0', 'event_handler_enabled', $my_service_tpl);
+                    $this->set_value(self::$default['shinken']['services']['stalking_options'], 'stalking_options', $my_service_tpl);
+
+                    if (isset(self::$default['shinken']['services']['flap_detection_enabled'])) {
+                        $this->set_value(self::$default['shinken']['services']['flap_detection_enabled'], 'flap_detection_enabled', $my_service_tpl);
+                        $this->set_value(self::$default['shinken']['services']['flap_detection_options'], 'flap_detection_options', $my_service_tpl);
+                        $this->set_value(self::$default['shinken']['services']['low_flap_threshold'], 'low_flap_threshold', $my_service_tpl);
+                        $this->set_value(self::$default['shinken']['services']['high_flap_threshold'], 'high_flap_threshold', $my_service_tpl);
+                    }
+                    $this->set_value(self::$default['shinken']['services']['failure_prediction_enabled'], 'failure_prediction_enabled', $my_service_tpl);
+
+                    $this->set_value('0', 'is_volatile', $my_service_tpl);
+
+                    // This is a template!
+                    $this->set_value('0', 'register', $my_service_tpl);
+
+                    // Manage user interface ...
+//                    $this->set_value('service', 'icon_set', $my_service_tpl);
+
+                    // Fix service template association bug: #191
+                    // And simplify code !
+                    // $queryc = "SELECT * FROM `glpi_plugin_monitoring_components`
+                    // WHERE `plugin_monitoring_checks_id`='".$data['plugin_monitoring_checks_id']."'
+                    // AND `active_checks_enabled`='".$data['active_checks_enabled']."'
+                    // AND `passive_checks_enabled`='".$data['passive_checks_enabled']."'
+                    // AND `calendars_id`='".$data['calendars_id']."'";
+                    // $resultc = $DB->query($queryc);
+                    // while ($datac=$DB->fetch_array($resultc)) {
+                    // $a_templatesdef[$datac['id']] = $my_service_tpl['name'];
+                    // }
+                    if (!isset($_SESSION['plugin_monitoring']['servicetemplates'][$data['id']])) {
+                        $_SESSION['plugin_monitoring']['servicetemplates'][$data['id']] = $my_service_tpl['name'];
+                    }
+
+                    $a_servicetemplates[] = $this->properties_list_to_string($my_service_tpl);
+                }
             }
+        }
 
-            // WebUI user interface ...
-            if (isset(self::$shinkenParameters['webui']['serviceIcons']['name'])) {
-               $a_services[$i] = $this->add_value_type(
-                       self::$shinkenParameters['webui']['serviceIcons']['value'],
-                       self::$shinkenParameters['webui']['serviceIcons']['name'],
-                       $a_services[$i]);
+        PluginMonitoringToolbox::log("Found " . count($a_servicetemplates) . " services templates");
+        PluginMonitoringToolbox::logIfDebug("End generateServicesTemplatesCfg");
+
+        if ($PM_CONFIG['build_files']) {
+            $config = "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+            $config .= "# ---\n";
+            $config .= "# Services templates\n";
+            $config .= "# ---\n";
+
+            foreach ($a_servicetemplates as $data) {
+                $config .= $this->writeFile("service", $data);
             }
+            $filename = PLUGIN_MONITORING_CFG_DIR . '/' . $tag . '-services_templates.cfg';
+            file_put_contents($filename, $config);
+            PluginMonitoringToolbox::logIfDebug("Written file: " . $filename);
 
-            if ($notadd == '1') {
-               unset($a_services[$i]);
-               $input = array();
-               $input['id'] = $data['id'];
-               $input['event'] = $notadddescription;
-               $input['state'] = "CRITICAL";
-               $input['state_type'] = "HARD";
-               $pmService->update($input);
-            } else {
-               $a_services[$i] = $this->properties_list_to_string($a_services[$i]);
-               $i++;
-            }
-         }
-      }
+            if ($file) return $config;
+        }
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End generateServicesCfg services\n"
-      );
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "Starting generateServicesCfg business rules ...\n"
-      );
-
-      // --------------------------------------------------
-      // Business rules services ...
-      $pmServicescatalog = new PluginMonitoringServicescatalog();
-      $pmBusinessrulegroup = new PluginMonitoringBusinessrulegroup();
-      $pmBusinessrule = new PluginMonitoringBusinessrule();
-      $pmBusinessrule_component = new PluginMonitoringBusinessrule_component();
-      // Prepare individual contacts
-      $a_contacts_entities = array();
-      $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringServicescatalog'
-         AND `users_id`>0");
-      foreach ($a_list_contact as $data) {
-         $contactentities = getSonsOf('glpi_entities', $data['entities_id']);
-         if (isset($a_contacts_entities[$data['items_id']][$data['users_id']])) {
-            $contactentities = array_merge($contactentities, $a_contacts_entities[$data['items_id']][$data['users_id']]);
-         }
-         $a_contacts_entities[$data['items_id']][$data['users_id']] = $contactentities;
-      }
-      // Prepare groups contacts
-      $group = new Group();
-      $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringServicescatalog'
-         AND `groups_id`>0");
-      foreach ($a_list_contact as $data) {
-         $group->getFromDB($data['groups_id']);
-         if ($group->fields['is_recursive'] == 1) {
-            $contactentities = getSonsOf('glpi_entities', $group->fields['entities_id']);
-         } else {
-            $contactentities = array($group->fields['entities_id'] => $group->fields['entities_id']);
-         }
-         $queryg = "SELECT * FROM `glpi_groups_users`
-            WHERE `groups_id`='".$data['groups_id']."'";
-         $resultg = $DB->query($queryg);
-         while ($datag=$DB->fetch_array($resultg)) {
-            if (isset($a_contacts_entities[$data['items_id']][$datag['users_id']])) {
-               $contactentities = array_merge($contactentities, $a_contacts_entities[$data['items_id']][$datag['users_id']]);
-            }
-            $a_contacts_entities[$data['items_id']][$datag['users_id']] = $contactentities;
-         }
-      }
-
-      // Services catalogs
-      $a_listBA = $pmServicescatalog->find("`is_generic`='0'");
-      foreach ($a_listBA as $dataBA) {
-
-         if (isset($a_entities_allowed['-1'])
-                 OR isset($a_entities_allowed[$dataBA['entities_id']])) {
-
-            $a_grouplist = $pmBusinessrulegroup->find("`plugin_monitoring_servicescatalogs_id`='".$dataBA['id']."'");
-            $a_group = array();
-            foreach ($a_grouplist as $gdata) {
-
-               $pmBusinessrule_component->replayDynamicServices($gdata['id']);
-               $a_listBR = $pmBusinessrule->find(
-                       "`plugin_monitoring_businessrulegroups_id`='".$gdata['id']."'");
-               foreach ($a_listBR as $dataBR) {
-                  if ($pmService->getFromDB($dataBR['plugin_monitoring_services_id'])) {
-                     if ($pmService->getHostName() != '') {
-                        $hostname = self::shinkenFilter($pmService->getHostName());
-
-                        if ($gdata['operator'] == 'and'
-                                OR $gdata['operator'] == 'or'
-                                OR strstr($gdata['operator'], ' of:')) {
-
-                           $operator = '|';
-                           if ($gdata['operator'] == 'and') {
-                              $operator = '&';
-                           }
-                           if (!isset($a_group[$gdata['id']])) {
-                              $a_group[$gdata['id']] = '';
-                              if (strstr($gdata['operator'], ' of:')) {
-                                 $a_group[$gdata['id']] = $gdata['operator'];
-                              }
-                              $a_group[$gdata['id']] .= $hostname.",".self::shinkenFilter($pmService->getName(array('shinken'=>true)));
-                           } else {
-                              $a_group[$gdata['id']] .= $operator.$hostname.",".self::shinkenFilter($pmService->getName(array('shinken'=>true)));
-                           }
-                        } else {
-                           $a_group[$gdata['id']] = $gdata['operator']." ".$hostname.",".self::shinkenFilter($item->getName());
-                        }
-                     }
-                  }
-                  PluginMonitoringToolbox::logIfExtradebug(
-                           "   - SC group : ".$a_group[$gdata['id']]."\n"
-                  );
-               }
-            }
-            if (count($a_group) > 0) {
-               if (isset($a_checks[$dataBA['plugin_monitoring_checks_id']])) {
-                  $a_services[$i] = array();
-                  $a_check = $a_checks[$dataBA['plugin_monitoring_checks_id']];
-                  $a_services[$i] = $this->add_value_type(
-                          $a_check['check_interval'],
-                          'check_interval', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $a_check['retry_interval'],
-                          'retry_interval', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $a_check['max_check_attempts'],
-                          'max_check_attempts', $a_services[$i]);
-                  if (isset($a_calendars[$dataBA['calendars_id']])) {
-                     $a_services[$i] = $this->add_value_type(
-                             $a_calendars[$dataBA['calendars_id']]['name'],
-                             'check_period', $a_services[$i]);
-                  }
-                  $a_services[$i] = $this->add_value_type(
-                          self::$shinkenParameters['shinken']['fake_hosts']['name_prefix'] . self::$shinkenParameters['shinken']['fake_bp_hosts']['hostname'],
-                          'host_name', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $dataBA['business_priority'],
-                          'business_impact', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          self::shinkenFilter($dataBA['name']),
-                          'service_description', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $dataBA['id'], '_ENTITIESID', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $dataBA['id'], '_ITEMSID', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          'ServiceCatalog', '_ITEMTYPE', $a_services[$i]);
-                  $command = "bp_rule!";
-
-                  foreach ($a_group as $key=>$value) {
-                     if (!strstr($value, "&")
-                             AND !strstr($value, "|")) {
-                        $a_group[$key] = trim($value);
-                     } else {
-                        $a_group[$key] = "(".trim($value).")";
-                     }
-                  }
-                  $a_services[$i] = $this->add_value_type(
-                          $command.implode("&", $a_group),
-                          'check_command', $a_services[$i]);
-                  if ($dataBA['notification_interval'] != '30') {
-                     $a_services[$i] = $this->add_value_type(
-                             $dataBA['notification_interval'],
-                             'notification_interval', $a_services[$i]);
-                  } else {
-                     $a_services[$i] = $this->add_value_type(
-                             '30', 'notification_interval', $a_services[$i]);
-                  }
-                  $elements = array(
-                     'notification_period'          => "24x7",
-                     'notification_options'         => 'w,u,c,r,f,s',
-//                     'active_checks_enabled'        => 1,
-                     'process_perf_data'            => 1,
-                     'active_checks_enabled'        => 1,
-                     'passive_checks_enabled'       => 1,
-                     'parallelize_check'            => 1,
-                     'obsess_over_service'          => 0,
-                     'check_freshness'              => 1,
-                     'freshness_threshold'          => 3600,
-                     'notifications_enabled'        => 1,
-                     'event_handler_enabled'        => 0,
-                     'flap_detection_enabled'       => 1,
-                     'failure_prediction_enabled'   => 1,
-                     'retain_status_information'    => 1,
-                     'retain_nonstatus_information' => 1,
-                  );
-                  foreach ($elements as $key=>$val) {
-                     $a_services[$i] = $this->add_value_type(
-                             $val, $key, $a_services[$i]);
-                  }
-
-                  // * Contacts
-                  $a_services[$i]['contacts'] = array();
-                  $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringServicescatalog'
-                     AND `items_id`='".$dataBA['id']."'");
-                  foreach ($a_list_contact as $data_contact) {
-                     if ($data_contact['users_id'] > 0) {
-                        if (isset($a_contacts_entities[$dataBA['id']][$data_contact['users_id']])) {
-                           if (in_array($data['entities_id'], $a_contacts_entities[$dataBA['id']][$data_contact['users_id']])) {
-                              if (!isset($a_users[$data_contact['users_id']])) {
-                                 $user->getFromDB($data_contact['users_id']);
-                                 $a_users[$data_contact['users_id']] = $user->fields['name'];
-                              }
-                              $a_services[$i] = $this->add_value_type(
-                                      $a_users[$data_contact['users_id']],
-                                      'contacts', $a_services[$i]);
-                           }
-                        }
-                     } else if ($data_contact['groups_id'] > 0) {
-                        $queryg = "SELECT * FROM `glpi_groups_users`
-                           WHERE `groups_id`='".$data_contact['groups_id']."'";
-                        $resultg = $DB->query($queryg);
-                        while ($datag=$DB->fetch_array($resultg)) {
-                           if (in_array($data['entities_id'], $a_contacts_entities[$dataBA['id']][$datag['users_id']])) {
-                              if (!isset($a_users[$datag['users_id']])) {
-                                 $user->getFromDB($datag['users_id']);
-                                 $a_users[$datag['users_id']] = $user->fields['name'];
-                              }
-                              $a_services[$i] = $this->add_value_type(
-                                      $a_users[$datag['users_id']],
-                                      'contacts', $a_services[$i]);
-                           }
-                        }
-                     }
-                  }
-                  $a_services[$i] = $this->properties_list_to_string($a_services[$i]);
-                  $i++;
-               }
-            }
-         }
-      }
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End generateServicesCfg business rules\n"
-      );
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "Starting generateServicesCfg business rules templates ...\n"
-      );
-
-      // Services catalogs templates
-      // TODO : correctly test and improve it !
-      $a_listBA = $pmServicescatalog->find("`is_generic`='1'");
-      foreach ($a_listBA as $dataBA) {
-         PluginMonitoringToolbox::logIfExtradebug(
-            'pm-shinken',
-            "   - SC : ".$dataBA['id']."\n"
-         );
-
-         if (isset($a_entities_allowed['-1'])
-                 OR isset($a_entities_allowed[$dataBA['entities_id']])) {
-
-            $pmServicescatalog->getFromDB($dataBA['id']);
-
-            $a_entitiesServices = $pmServicescatalog->getGenericServicesEntities();
-            foreach ($a_entitiesServices as $idEntity=>$a_entityServices) {
-               // New entity ... so new business rule !
-               PluginMonitoringToolbox::logIfExtradebug(
-                     "   - SC templated services for an entity : ".$idEntity."\n"
-               );
-
-               $pmDerivatedSC = new PluginMonitoringServicescatalog();
-               $a_derivatedSC = $pmDerivatedSC->find("`entities_id`='$idEntity' AND `name` LIKE '".$dataBA['name']."%'");
-               foreach ($a_derivatedSC as $a_derivated) {
-                  PluginMonitoringToolbox::logIfExtradebug(
-                           "   - a_derivated : ".$a_derivated['name']."\n"
-                  );
-                  $a_derivatedSC = $a_derivated;
-               }
-
-               $a_group = array();
-               foreach ($a_entityServices as $services) {
-                  if ($pmService->getFromDB($services['serviceId'])) {
-                     // Toolbox::logInFile("pm-shinken", "   - SC templated service entity : ".$services['entityId'].", service :  ".$pmService->getName(true)." on ".$pmService->getHostName()."\n");
-                     if ($pmService->getHostName() != '') {
-                        $hostname = self::shinkenFilter($pmService->getHostName());
-
-                        $serviceFakeId = $services['entityId'];
-
-                        $pmBusinessrulegroup->getFromDB($services['BRgroupId']);
-                        $BRoperator = $pmBusinessrulegroup->getField('operator');
-                        if ($BRoperator == 'and'
-                                OR $BRoperator == 'or'
-                                OR strstr($BRoperator, ' of:')) {
-
-                           $operator = '|';
-                           if ($BRoperator == 'and') {
-                              $operator = '&';
-                           }
-                           if (!isset($a_group[$serviceFakeId])) {
-                              $a_group[$serviceFakeId] = '';
-                              if (strstr($BRoperator, ' of:')) {
-                                 $a_group[$serviceFakeId] = $BRoperator;
-                              }
-                              $a_group[$serviceFakeId] .= $hostname.",".self::shinkenFilter($pmService->getName(array('shinken'=>true)));
-                           } else {
-                              $a_group[$serviceFakeId] .= $operator.$hostname.",".self::shinkenFilter($pmService->getName(array('shinken'=>true)));
-                           }
-                        } else {
-                           $a_group[$serviceFakeId] = $BRoperator." ".$hostname.",".self::shinkenFilter($pmService->getHostName());
-                        }
-                        // Toolbox::logInFile("pm-shinken", "   - SCT group : ".$a_group[$serviceFakeId]."\n");
-                     }
-                  }
-               }
-               if (count($a_group) > 0) {
-                  $a_check = $a_checks[$a_derivatedSC['plugin_monitoring_checks_id']];
-                  $a_services[$i] = $this->add_value_type(
-                          $a_check['check_interval'],
-                          'check_interval', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $a_check['retry_interval'],
-                          'retry_interval', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $a_check['max_check_attempts'],
-                          'max_check_attempts', $a_services[$i]);
-                  if (isset($a_calendars[$a_derivatedSC['calendars_id']])) {
-                     $a_services[$i] = $this->add_value_type(
-                             $a_calendars[$a_derivatedSC['calendars_id']]['name'],
-                             'check_period', $a_services[$i]);
-                  }
-                  $a_services[$i] = $this->add_value_type(
-                          self::$shinkenParameters['shinken']['fake_hosts']['name_prefix'] . self::$shinkenParameters['shinken']['fake_hosts']['bp_host'],
-                          'host_name', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $a_derivatedSC['business_priority'],
-                          'business_impact', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          self::shinkenFilter($a_derivatedSC['name']),
-                          'service_description', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $a_derivatedSC['entities_id'],
-                          '_ENTITIESID', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          $a_derivatedSC['id'], '_ITEMSID', $a_services[$i]);
-                  $a_services[$i] = $this->add_value_type(
-                          'ServiceCatalog', '_ITEMTYPE', $a_services[$i]);
-                  $command = "bp_rule!";
-
-                  foreach ($a_group as $key=>$value) {
-                     if (!strstr($value, "&")
-                             AND !strstr($value, "|")) {
-                        $a_group[$key] = trim($value);
-                     } else {
-                        $a_group[$key] = "(".trim($value).")";
-                     }
-                  }
-                  $a_services[$i] = $this->add_value_type(
-                          $command.implode("&", $a_group),
-                          'check_command', $a_services[$i]);
-                  if ($a_derivatedSC['notification_interval'] != 30) {
-                     $a_services[$i] = $this->add_value_type(
-                             $a_derivatedSC['notification_interval'],
-                             'notification_interval', $a_services[$i]);
-                  } else {
-                     $a_services[$i] = $this->add_value_type(
-                             '30', 'notification_interval', $a_services[$i]);
-                  }
-                  $elements = array(
-                     'notification_period'          => "24x7",
-                     'notification_options'         => 'w,u,c,r,f,s',
-//                     'active_checks_enabled'        => 1,
-                     'process_perf_data'            => 1,
-                     'active_checks_enabled'        => 1,
-                     'passive_checks_enabled'       => 1,
-                     'parallelize_check'            => 1,
-                     'obsess_over_service'          => 0,
-                     'check_freshness'              => 1,
-                     'freshness_threshold'          => 3600,
-                     'notifications_enabled'        => 1,
-                     'event_handler_enabled'        => 0,
-                     'flap_detection_enabled'       => 1,
-                     'failure_prediction_enabled'   => 1,
-                     'retain_status_information'    => 1,
-                     'retain_nonstatus_information' => 1,
-                  );
-                  foreach ($elements as $key=>$val) {
-                     $a_services[$i] = $this->add_value_type(
-                             $val, $key, $a_services[$i]);
-                  }
-
-                  // * Contacts
-                  $a_services[$i]['contacts'] = array();
-                  $a_list_contact = $pmContact_Item->find("`itemtype`='PluginMonitoringServicescatalog'
-                     AND `items_id`='".$dataBA['id']."'");
-                  foreach ($a_list_contact as $data_contact) {
-                     if ($data_contact['users_id'] > 0) {
-                        if (isset($a_contacts_entities[$dataBA['id']][$data_contact['users_id']])) {
-                           if (in_array($data['entities_id'], $a_contacts_entities[$dataBA['id']][$data_contact['users_id']])) {
-                              if (!isset($a_users[$data_contact['users_id']])) {
-                                 $user->getFromDB($data_contact['users_id']);
-                                 $a_users[$data_contact['users_id']] = $user->fields['name'];
-                              }
-                              $a_services[$i] = $this->add_value_type(
-                                      $a_users[$data_contact['users_id']],
-                                      'contacts', $a_services[$i]);
-                           }
-                        }
-                     } else if ($data_contact['groups_id'] > 0) {
-                        $queryg = "SELECT * FROM `glpi_groups_users`
-                           WHERE `groups_id`='".$data_contact['groups_id']."'";
-                        $resultg = $DB->query($queryg);
-                        while ($datag=$DB->fetch_array($resultg)) {
-                           if (in_array($data['entities_id'], $a_contacts_entities[$dataBA['id']][$datag['users_id']])) {
-                              if (!isset($a_users[$datag['users_id']])) {
-                                 $user->getFromDB($datag['users_id']);
-                                 $a_users[$datag['users_id']] = $user->fields['name'];
-                              }
-                              $a_services[$i] = $this->add_value_type(
-                                      $a_users[$datag['users_id']],
-                                      'contacts', $a_services[$i]);
-                           }
-                        }
-                     }
-                  }
-                  $a_services[$i] = $this->properties_list_to_string($a_services[$i]);
-                  $i++;
-               }
-            }
-         }
-      }
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End generateServicesCfg business rules templates\n"
-      );
-
-      if ($file == "1") {
-         $config = "# Generated by plugin monitoring for GLPI\n# on ".date("Y-m-d H:i:s")."\n\n";
-
-         foreach ($a_services as $data) {
-            $config .= $this->writeFile("service", $data);
-         }
-         return array('services.cfg', $config);
-
-      } else {
-         return $a_services;
-      }
-   }
+        return $a_servicetemplates;
+    }
 
 
+    function generateHostgroupsCfg($tag = '', $file = false)
+    {
+        global $DB, $TIMER_DEBUG, $PM_CONFIG;
 
-   function generateTemplatesCfg($file=0, $tag='') {
-      global $DB;
+        PluginMonitoringToolbox::logIfDebug("Starting generateHostgroupsCfg ($tag) ...");
+        $entity = new Entity();
 
-      if (!isset($_SESSION['plugin_monitoring'])) {
-         $_SESSION['plugin_monitoring'] = array();
-      }
+        $a_hostgroups = [];
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "Starting generateTemplatesCfg ($tag) ...\n"
-      );
-      $pMonitoringCheck = new PluginMonitoringCheck();
+        // Get entities concerned by the provided tag
+        $where = '';
+        if (!empty($_SESSION['plugin_monitoring']['allowed_entities'])) {
+            $where = getEntitiesRestrictRequest("WHERE",
+                "glpi_entities", '',
+                $_SESSION['plugin_monitoring']['allowed_entities']);
+        }
 
-      $a_servicetemplates = array();
-      $i=0;
-      $a_templatesdef = array();
-
-      // Build a Shinken service template for each declare component ...
-      // Fix service template association bug: #191
-      $query = "SELECT * FROM `glpi_plugin_monitoring_components` ORDER BY `id`";
-      // Select components with some grouping ...
-      // $query = "SELECT * FROM `glpi_plugin_monitoring_components`
-         // GROUP BY `plugin_monitoring_checks_id`, `active_checks_enabled`,
-            // `passive_checks_enabled`, `freshness_count`, `freshness_type`, `calendars_id`, `business_priority`
-         // ORDER BY `id`";
-      $result = $DB->query($query);
-      if ($DB->numrows($result) != 0) {
-      while ($data=$DB->fetch_array($result)) {
-
-         $a_servicetemplates[$i] = array();
-         PluginMonitoringToolbox::logIfExtradebug(
-            'pm-shinken',
-            " - add template ".'template'.$data['id'].'-service'."\n"
-         );
-         // Fix service template association bug: #191
-         // $a_servicetemplates[$i] = $this->add_value_type(
-                 // self::shinkenFilter('stag-'.$data['id']),
-                 // 'name', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 self::shinkenFilter($data['name']),
-                 'name', $a_servicetemplates[$i]);
-         // Alias is not used by Shinken !
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 $data['description'].' / '.$data['name'],
-                 'alias', $a_servicetemplates[$i]);
-         if (isset ($data['business_priority'])) {
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    $data['business_priority'],
-                    'business_impact', $a_servicetemplates[$i]);
-         } else {
-            if (! empty(self::$shinkenParameters['shinken']['services']['business_impact'])) {
-               $a_servicetemplates[$i] = $this->add_value_type(
-                       self::$shinkenParameters['shinken']['services']['business_impact'],
-                       'business_impact', $a_servicetemplates[$i]);
-            } else {
-               $a_servicetemplates[$i] = $this->add_value_type(
-                       '0', 'business_impact', $a_servicetemplates[$i]);
-            }
-         }
-         $pMonitoringCheck->getFromDB($data['plugin_monitoring_checks_id']);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 $pMonitoringCheck->fields['check_interval'],
-                 'check_interval', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 $pMonitoringCheck->fields['retry_interval'],
-                 'retry_interval', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 $pMonitoringCheck->fields['max_check_attempts'],
-                 'max_check_attempts', $a_servicetemplates[$i]);
-         // check_period, defined in each service ...
-         // if ($calendar->getFromDB($data['calendars_id'])) {
-            // $a_servicetemplates[$i]['check_period'] = $calendar->fields['name'];
-         // }
-         // notification parameters, defined in each service ...
-         // $a_servicetemplates[$i]['notification_interval'] = '30';
-         // $a_servicetemplates[$i]['notification_period'] = "24x7";
-         // $a_servicetemplates[$i]['notification_options'] = 'w,u,c,r,f,s';
-         // $a_servicetemplates[$i]['process_perf_data'] = '1';
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 $data['active_checks_enabled'],
-                 'active_checks_enabled', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 $data['passive_checks_enabled'],
-                 'passive_checks_enabled', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 '1', 'parallelize_check', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 '0', 'obsess_over_service', $a_servicetemplates[$i]);
-         // Manage freshness
-         // $a_servicetemplates[$i]['check_freshness'] = '1';
-         // $a_servicetemplates[$i]['freshness_threshold'] = '3600';
-         if ($data['freshness_count'] == 0) {
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    '0', 'check_freshness', $a_servicetemplates[$i]);
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    '3600', 'freshness_threshold', $a_servicetemplates[$i]);
-         } else {
-            $multiple = 1;
-            if ($data['freshness_type'] == 'seconds') {
-               $multiple = 1;
-            } else if ($data['freshness_type'] == 'minutes') {
-               $multiple = 60;
-            } else if ($data['freshness_type'] == 'hours') {
-               $multiple = 3600;
-            } else if ($data['freshness_type'] == 'days') {
-               $multiple = 86400;
-            }
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    '1', 'check_freshness', $a_servicetemplates[$i]);
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    ($data['freshness_count'] * $multiple),
-                    'freshness_threshold', $a_servicetemplates[$i]);
-         }
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 '1', 'notifications_enabled', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 '0', 'event_handler_enabled', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['services']['stalking_options'],
-                 'stalking_options', $a_servicetemplates[$i]);
-
-         if (isset(self::$shinkenParameters['shinken']['services']['flap_detection_enabled'])) {
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['services']['flap_detection_enabled'],
-                    'flap_detection_enabled', $a_servicetemplates[$i]);
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['services']['flap_detection_options'],
-                    'flap_detection_options', $a_servicetemplates[$i]);
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['services']['low_flap_threshold'],
-                    'low_flap_threshold', $a_servicetemplates[$i]);
-            $a_servicetemplates[$i] = $this->add_value_type(
-                    self::$shinkenParameters['shinken']['services']['high_flap_threshold'],
-                    'high_flap_threshold', $a_servicetemplates[$i]);
-         }
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['services']['failure_prediction_enabled'],
-                 'failure_prediction_enabled', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['services']['retain_status_information'],
-                 'retain_status_information', $a_servicetemplates[$i]);
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['services']['retain_nonstatus_information'],
-                 'retain_nonstatus_information', $a_servicetemplates[$i]);
-
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 '0', 'is_volatile', $a_servicetemplates[$i]);
-/* Fred: Previous line should be commented and this comment should be removed ... but there is a bug in Shinken notifications with volatile services !
-         if ($data['passive_checks_enabled'] == '1' && $data['active_checks_enabled'] == '0') {
-            $a_servicetemplates[$i]['is_volatile'] = '1';
-         } else {
-            $a_servicetemplates[$i]['is_volatile'] = '0';
-         }
-*/
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 '0', 'register', $a_servicetemplates[$i]);
-
-         // Manage user interface ...
-         $a_servicetemplates[$i] = $this->add_value_type(
-                 'service', 'icon_set', $a_servicetemplates[$i]);
-
-         // Fix service template association bug: #191
-         // And simplify code !
-         // $queryc = "SELECT * FROM `glpi_plugin_monitoring_components`
-            // WHERE `plugin_monitoring_checks_id`='".$data['plugin_monitoring_checks_id']."'
-               // AND `active_checks_enabled`='".$data['active_checks_enabled']."'
-               // AND `passive_checks_enabled`='".$data['passive_checks_enabled']."'
-               // AND `calendars_id`='".$data['calendars_id']."'";
-         // $resultc = $DB->query($queryc);
-         // while ($datac=$DB->fetch_array($resultc)) {
-            // $a_templatesdef[$datac['id']] = $a_servicetemplates[$i]['name'];
-         // }
-         $a_templatesdef[$data['id']] = $a_servicetemplates[$i]['name'];
-
-         $a_servicetemplates[$i] = $this->properties_list_to_string($a_servicetemplates[$i]);
-         $i++;
-      }
-      }
-      $_SESSION['plugin_monitoring']['servicetemplates'] = $a_templatesdef;
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End generateTemplatesCfg\n"
-      );
-
-      if ($file == "1") {
-         $config = "# Generated by plugin monitoring for GLPI\n# on ".date("Y-m-d H:i:s")."\n\n";
-
-         foreach ($a_servicetemplates as $data) {
-            $config .= $this->writeFile("service", $data);
-         }
-         return array('servicetemplates.cfg', $config);
-
-      } else {
-         return $a_servicetemplates;
-      }
-   }
-
-
-
-   function generateHostgroupsCfg($file=0, $tag='') {
-      global $DB;
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "Starting generateHostgroupsCfg ($tag) ...\n"
-      );
-      $pmEntity      = new PluginMonitoringEntity();
-
-      $a_hostgroups = array();
-      $i=0;
-
-      $a_entities_allowed = $pmEntity->getEntitiesByTag($tag);
-      $a_entities_list = array();
-      foreach ($a_entities_allowed as $entity) {
-         // @ddurieux: should array_merge ($a_entities_list and getSonsOf("glpi_entities", $entity)) ?
-         $a_entities_list = getSonsOf("glpi_entities", $entity);
-      }
-      $where = '';
-      if (! isset($a_entities_allowed['-1'])) {
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_entities", '', $a_entities_list);
-      }
-
-      $query = "SELECT
-         `glpi_entities`.`id` AS entityId, `glpi_entities`.`name` AS entityName, `glpi_entities`.`level` AS entityLevel
-         , `glpi_entities`.`comment` AS comment
-         , `glpi_entities`.`address` AS address , `glpi_entities`.`postcode` AS postcode, `glpi_entities`.`town` AS town, `glpi_entities`.`state` AS state, `glpi_entities`.`country` AS country
-         , `glpi_entities`.`website` AS website , `glpi_entities`.`fax` AS fax, `glpi_entities`.`email` AS email, `glpi_entities`.`phonenumber` AS phonenumber
+        $query = "SELECT
+            `id` AS entityId, 
+            `name` AS entityName, 
+            `level` AS entityLevel, 
+            `comment`, `address`, `postcode`, `town`, 
+            `state` AS state, 
+            `country` AS country, 
+            `website` AS website , 
+            `fax` AS fax, 
+            `email` AS email, 
+            `phonenumber` AS phonenumber
          FROM `glpi_entities` $where";
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
-/*
-Nagios configuration file :
-   define hostgroup{
-      hostgroup_name	hostgroup_name
-      alias	alias
-      members	hosts
-      hostgroup_members	hostgroups
-      notes	note_string
-      notes_url	url
-      action_url	url
-   }
-*/
-         $a_hostgroups[$i] = array();
-         // Hostgroup name
-         $hostgroup_name = strtolower(self::shinkenFilter($data['entityName']));
-         $hostgroup_name = preg_replace("/[ ]/","_",$hostgroup_name);
 
-         PluginMonitoringToolbox::logIfExtradebug(
-            'pm-shinken',
-            " - add group $hostgroup_name ...\n"
-         );
+        if ($result = $DB->query($query)) {
+            PluginMonitoringToolbox::log("generateHostgroupsCfg, huge query execution, got " . $DB->numrows($result) . " rows, duration: " . $TIMER_DEBUG->getTime());
+            while ($data = $DB->fetch_array($result)) {
+                /*
+                 * Nagios configuration file :
+                   define hostgroup{
+                      hostgroup_name	hostgroup_name
+                      alias	alias
+                      members	hosts
+                      hostgroup_members	hostgroups
+                      notes	note_string
+                      notes_url	url
+                      action_url	url
+                   }
+                 */
+                $my_group = [];
+                // Hostgroup name
+                $hostgroup_name = self::monitoringFilter($data['entityName']);
+                $hostgroup_name = preg_replace("/\s/", "_", $hostgroup_name);
 
-         $a_hostgroups[$i] = $this->add_value_type(
-                 $hostgroup_name, 'hostgroup_name', $a_hostgroups[$i]);
-         $a_hostgroups[$i] = $this->add_value_type(
-                 $data['entityName'], 'alias', $a_hostgroups[$i]);
+                PluginMonitoringToolbox::log(" - add group $hostgroup_name ...");
 
-         // Custom variable are ignored for hostgroups ... simple information for debug purpose !
-         // $a_hostgroups[$i] = $this->add_value_type(
-                 // $data['entityLevel'], '_GROUP_LEVEL', $a_hostgroups[$i]);
-         // $a_hostgroups[$i] = $this->add_value_type(
-                 // $data['entityLevel'], 'level', $a_hostgroups[$i]);
+                $this->set_value($hostgroup_name, 'hostgroup_name', $my_group);
+                $this->set_value($data['entityName'], 'alias', $my_group);
 
-         // Host group members
-         $a_sons_list = getSonsOf("glpi_entities", $data['entityId']);
-         if (count($a_sons_list) > 1) {
-            // $a_hostgroups[$i] = $this->add_value_type(
-                    // '', 'hostgroup_members', $a_hostgroups[$i]);
-            $first_member = true;
-            foreach ($a_sons_list as $son_entity) {
-               if ($son_entity == $data['entityId']) continue;
-               if (! in_array ($son_entity, $a_entities_list)) continue;
+                // Host group members
+                $a_sons_list = getSonsOf("glpi_entities", $data['entityId']);
+                if (count($a_sons_list) > 1) {
+                    $first_member = true;
+                    foreach ($a_sons_list as $son_entity) {
+                        if ($son_entity == $data['entityId']) continue;
 
-               $pmEntity = new Entity();
-               $pmEntity->getFromDB($son_entity);
-               // Only immediate sub level are considered as hostgroup members
-               if ($data['entityLevel']+1 != $pmEntity->fields['level']) continue;
+                        $entity->getFromDB($son_entity);
+                        // Only immediate sub level are considered as hostgroup members
+                        if ($data['entityLevel'] + 1 != $entity->fields['level']) continue;
 
-               $hostgroup_name = self::shinkenFilter($pmEntity->getField('name'));
-               $hostgroup_name = preg_replace("/[ ]/","_",$hostgroup_name);
+                        $hostgroup_name = self::monitoringFilter($entity->getName());
+                        $hostgroup_name = preg_replace("/\s/", "_", $hostgroup_name);
 
-               $a_hostgroups[$i] = $this->add_value_type(
-                       $hostgroup_name, 'hostgroup_members', $a_hostgroups[$i]);
-               if ($first_member) $first_member = false;
+                        $this->set_value($hostgroup_name, 'hostgroup_members', $my_group);
+                        if ($first_member) $first_member = false;
+                    }
+                }
+
+                // Comments in notes ...
+                // PluginMonitoringToolbox::logIfDebug(" - location:{$data['locationName']} - {$data['locationComment']}");
+                $notes = [];
+                if (! empty($data['comment'])) {
+                    $notes[] = str_replace("\r\n", "<br>", $data['comment']);
+                }
+                if (! empty($data['address'])) {
+                    $notes[] = str_replace("\r\n", "<br>", $data['address']);
+                    if (!empty($data['postcode']) && !empty($data['town'])) {
+                        $notes[] = $data['postcode'] . " " . $data['town'];
+                    } else if (!empty($data['postcode'])) {
+                        $notes[] = $data['postcode'];
+                    } else if (!empty($data['town'])) {
+                        $notes[] = $data['town'];
+                    }
+
+                    if (!empty($data['state']) && !empty($data['country'])) {
+                        $notes[] = $data['state'] . " - " . $data['country'];
+                    } else if (!empty($data['state'])) {
+                        $notes[] = $data['state'];
+                    } else if (!empty($data['country'])) {
+                        $notes[] = $data['country'];
+                    }
+
+                    $notes[] = "";
+                    if (!empty($data['phonenumber'])) {
+                        $notes[] = "<i class='fa fa-phone'></i>&nbsp;: " . $data['phonenumber'];
+                    }
+                    if (!empty($data['fax'])) {
+                        $notes[] = "<i class='fa fa-fax'></i>&nbsp;: " . $data['fax'];
+                    }
+                    if (!empty($data['email'])) {
+                        $notes[] = "<i class='fa fa-envelope'></i>&nbsp;: " . $data['email'];
+                    }
+                    if (!empty($data['website'])) {
+                        $notes[] = "<i class='fa fa-globe'></i>&nbsp;: " . $data['website'];
+                    }
+                }
+                if (count($notes) > 0) {
+                    $this->set_value(implode("<br>", $notes), 'notes', $my_group);
+                }
+
+                $my_group = $this->properties_list_to_string($my_group);
+                $a_hostgroups[] = $my_group;
             }
-         }
+        }
 
-         // Comments in notes ...
-         // PluginMonitoringToolbox::logIfExtradebug(
-            // 'pm-shinken',
-            // " - location:{$data['locationName']} - {$data['locationComment']}\n"
-         // );
-         $notes = array();
-         if (isset($data['comment'])) {
-            $comment = str_replace("\r\n", "<br/>", $data['comment']);
-            $notes[] = "Comment,,comment::{$comment}";
-         }
-         if (isset($data['address'])) {
-            $address  = str_replace("\r\n", "<br/>", $data['address']);
-            if (! empty($data['postcode']) && ! empty($data['town'])) {
-               $address .= "<br/>" . $data['postcode'] . " " . $data['town'];
-            } else if (! empty($data['postcode'])) {
-               $address .= "<br/>" . $data['postcode'];
-            } else if (! empty($data['town'])) {
-               $address .= "<br/>" . $data['town'];
+//        // Add an hostgroup for fake hosts
+//        if (self::$default['shinken']['fake_hosts']['build']) {
+//            $my_group['hostgroup_name'] = self::$default['shinken']['fake_hosts']['hostgroup_name'];
+//            $my_group['alias'] = self::$default['shinken']['fake_hosts']['hostgroup_alias'];
+//        }
+
+        PluginMonitoringToolbox::logIfDebug("End generateHostgroupsCfg");
+
+        if ($PM_CONFIG['build_files']) {
+            $config = "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+            $config .= "# ---\n";
+            $config .= "# Hosts groups\n";
+            $config .= "# ---\n";
+
+            foreach ($a_hostgroups as $data) {
+                $config .= $this->writeFile("hostgroup", $data);
             }
-            if (! empty($data['state']) && ! empty($data['country'])) {
-               $address .= "<br/>" . $data['state'] . " - " . $data['country'];
-            } else if (! empty($data['state'])) {
-               $address .= "<br/>" . $data['state'];
-            } else if (! empty($data['country'])) {
-               $address .= "<br/>" . $data['country'];
+            $filename = PLUGIN_MONITORING_CFG_DIR . '/' . $tag . '-hostgroups.cfg';
+            file_put_contents($filename, $config);
+            PluginMonitoringToolbox::logIfDebug("Written file: " . $filename);
+
+            if ($file) return $config;
+        }
+
+        return $a_hostgroups;
+    }
+
+
+    function generateContactsCfg($tag = '', $file = false)
+    {
+        global $DB, $TIMER_DEBUG, $PM_CONFIG;
+
+        PluginMonitoringToolbox::logIfDebug("Starting generateContactsCfg ($tag) ...");
+
+        $a_users_used = [];
+        $a_contacts = [];
+
+        // Get entities concerned by the provided tag
+        $where = '';
+        if (!empty($_SESSION['plugin_monitoring']['allowed_entities'])) {
+            $where = getEntitiesRestrictRequest("WHERE",
+                "glpi_plugin_monitoring_contacts_items", '',
+                $_SESSION['plugin_monitoring']['allowed_entities'],
+                true);
+        }
+
+        $query = "SELECT * FROM `glpi_plugin_monitoring_contacts_items` $where";
+        PluginMonitoringToolbox::logIfDebug("generateContactsCfg, query: ". $query);
+        if ($result = $DB->query($query)) {
+            PluginMonitoringToolbox::log("generateContactsCfg, huge query execution, got " . $DB->numrows($result) . " rows, duration: " . $TIMER_DEBUG->getTime());
+            while ($data = $DB->fetch_array($result)) {
+                if ($data['users_id'] > 0) {
+                    if (!isset($a_users_used[$data['users_id']])) {
+                        if ($got_contact = $this->_getContactFromUser($data['users_id'], $file)) {
+                            $a_contacts[] = $got_contact;
+                            $a_users_used[$data['users_id']] = true;
+                        }
+                    }
+                } else if ($data['groups_id'] > 0) {
+                    $queryg = "SELECT * FROM `glpi_groups_users` WHERE `groups_id`='" . $data['groups_id'] . "'";
+                    if ($resultg = $DB->query($queryg)) {
+                        while ($datag = $DB->fetch_array($resultg)) {
+                            if (!isset($a_users_used[$datag['users_id']])) {
+                                if ($got_contact = $this->_getContactFromUser($datag['users_id'], $file)) {
+                                    $a_contacts[] = $got_contact;
+                                    $a_users_used[$datag['users_id']] = true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            $address .= "<br/>";
-            if (! empty($data['phonenumber'])) {
-               $address .= "<br/><i class='fa fa-phone'></i>&nbsp;: " . $data['phonenumber'];
+        }
+
+        // Add default monitoring user
+        $user = new User();
+        if ($user->getFromDBByCrit(['name' => PluginMonitoringContact::$default_user])) {
+            PluginMonitoringToolbox::logIfDebug("Default user: " . print_r($user, true));
+            if (!isset($a_users_used[$user->getID()])) {
+                if ($got_contact = $this->_getContactFromUser($user->getID(), $file)) {
+                    $a_contacts[] = $got_contact;
+                    $a_users_used[$user->getID()] = true;
+                }
             }
-            if (! empty($data['fax'])) {
-               $address .= "<br/><i class='fa fa-fax'></i>&nbsp;: " . $data['fax'];
+        }
+
+        PluginMonitoringToolbox::log("Found " . count($a_contacts) . " contacts");
+        PluginMonitoringToolbox::logIfDebug("End generateContactsCfg");
+
+        if ($PM_CONFIG['build_files']) {
+            $config = "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+            $config .= "# ---\n";
+            $config .= "# Contacts\n";
+            $config .= "# ---\n";
+
+            foreach ($a_contacts as $data) {
+                $config .= $this->writeFile("contact", $data);
             }
-            if (! empty($data['email'])) {
-               $address .= "<br/><i class='fa fa-envelope'></i>&nbsp;: " . $data['email'];
+            $filename = PLUGIN_MONITORING_CFG_DIR . '/' . $tag . '-contacts.cfg';
+            file_put_contents($filename, $config);
+            PluginMonitoringToolbox::logIfDebug("Written file: " . $filename);
+
+            if ($file) return $config;
+        }
+
+        return $a_contacts;
+    }
+
+
+    function _getContactFromUser($users_id, $file = false)
+    {
+        PluginMonitoringToolbox::logIfDebug("Get contact from user: " . $users_id);
+
+        $user = new User();
+        if (!$user->getFromDB($users_id)) {
+            PluginMonitoringToolbox::log("[ERROR] Unknown user: $users_id!");
+            return null;
+        }
+
+        $pmContactTemplate = new PluginMonitoringContacttemplate();
+        $fields = null;
+        if (isset($_SESSION['plugin_monitoring']['default_contact_template'])) {
+            $fields = $_SESSION['plugin_monitoring']['default_contact_template'];
+        }
+
+        // Get the monitoring contact and its contact template
+        $pmContact = new PluginMonitoringContact();
+        if (!$pmContact->getFromDBByCrit(['users_id' => $users_id])) {
+            // Use the default contact template
+            PluginMonitoringToolbox::log("[ERROR] {$user->getName()} is not configured for monitoring... using the default contact template");
+            $fields = $_SESSION['plugin_monitoring']['default_contact_template'];
+        } else {
+            if (!$pmContactTemplate->getFromDB($pmContact->getField('plugin_monitoring_contacttemplates_id'))) {
+                // Use the default contact template
+                PluginMonitoringToolbox::log("[ERROR] using the default contact template");
+                $fields = $_SESSION['plugin_monitoring']['default_contact_template'];
+            } else {
+                $fields = $pmContactTemplate->fields;
             }
-            if (! empty($data['website'])) {
-               $address .= "<br/><i class='fa fa-globe'></i>&nbsp;: " . $data['website'];
-            }
-            $notes[] = "Address,,envelope::{$address}";
-         }
-         if (count($notes) > 0) {
-            $a_hostgroups[$i] = $this->add_value_type(
-                    implode("|", $notes), 'notes', $a_hostgroups[$i]);
-         }
-
-         $a_hostgroups[$i] = $this->properties_list_to_string($a_hostgroups[$i]);
-         $i++;
-      }
-
-      // Add an hostgroup for fake hosts
-      if (self::$shinkenParameters['shinken']['fake_hosts']['build']) {
-         $a_hostgroups[$i]['hostgroup_name'] = self::$shinkenParameters['shinken']['fake_hosts']['hostgroup_name'];
-         $a_hostgroups[$i]['alias'] = self::$shinkenParameters['shinken']['fake_hosts']['hostgroup_alias'];
-      }
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End generateHostgroupsCfg\n"
-      );
-
-      if ($file == "1") {
-         $config = "# Generated by plugin monitoring for GLPI\n# on ".date("Y-m-d H:i:s")."\n\n";
-
-         foreach ($a_hostgroups as $data) {
-            $config .= $this->writeFile("hostgroup", $data);
-         }
-         return array('hostgroups.cfg', $config);
-
-      } else {
-         return $a_hostgroups;
-      }
-   }
-
-
-
-   function generateContactsCfg($file=0, $tag='') {
-      global $DB;
-
-      $pmEntity      = new PluginMonitoringEntity();
-      $calendar      = new Calendar();
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "Starting generateContactsCfg ($tag) ...\n"
-      );
-
-      $a_users_used = array();
-      $a_contacts = array();
-      // Add default contact 'monitoring' for fake hosts
-//      $a_calendars = current($calendar->find("", "", 1));
-//      $cal = '24x7';
-//      if (isset($a_calendars['name'])) {
-//         $cal = $a_calendars['name'];
-//      }
-//      $a_contacts[-1] = array(
-//          'contact_name'                   => 'monitoring',
-//          'alias'                          => 'monitoring',
-//          'host_notifications_enabled'     => '0',
-//          'service_notifications_enabled'  => '0',
-//          'service_notification_period'    => $cal,
-//          'host_notification_period'       => $cal,
-//          'service_notification_options' => '',
-//          'host_notification_options'    => '',
-//          'service_notification_commands'  => '',
-//          'host_notification_commands'     => '',
-//          'email'                          => '',
-//          'pager'                          => '',
-//      );
-
-
-      $a_entities_allowed = $pmEntity->getEntitiesByTag($tag);
-      $a_entities_list = array();
-      foreach ($a_entities_allowed as $entity) {
-         // @ddurieux: should array_merge ($a_entities_list and getSonsOf("glpi_entities", $entity)) ?
-         $a_entities_list = getSonsOf("glpi_entities", $entity);
-      }
-      // Always add root entity contacts
-      $a_entities_list[] = '0';
-      $where = '';
-      if (! isset($a_entities_allowed['-1'])) {
-         $where = getEntitiesRestrictRequest("WHERE", "glpi_plugin_monitoring_contacts_items", '', $a_entities_list);
-      }
-
-
-      $i=0;
-
-      $query = "SELECT * FROM `glpi_plugin_monitoring_contacts_items` $where";
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
-         if ($data['users_id'] > 0) {
-            if ((!isset($a_users_used[$data['users_id']]))) {
-               $a_contacts = $this->_addContactUser($a_contacts, $data['users_id'], $i);
-               $i++;
-               $a_users_used[$data['users_id']] = 1;
-            }
-         } else if ($data['groups_id'] > 0) {
-            $queryg = "SELECT * FROM `glpi_groups_users`
-               WHERE `groups_id`='".$data['groups_id']."'";
-            $resultg = $DB->query($queryg);
-            while ($datag=$DB->fetch_array($resultg)) {
-               if ((!isset($a_users_used[$datag['users_id']]))) {
-                  $a_contacts = $this->_addContactUser($a_contacts, $datag['users_id'], $i);
-                  $i++;
-                  $a_users_used[$datag['users_id']] = 1;
-               }
-            }
-         }
-      }
-      // Add default monitoring user
-      $user = new User();
-      $a_monit_user = current($user->find("`name`='monitoring'", '', 1));
-      if ((!isset($a_users_used[$a_monit_user['id']]))) {
-         $a_contacts = $this->_addContactUser($a_contacts, $a_monit_user['id'], $i);
-      }
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End generateContactsCfg\n"
-      );
-
-      if ($file == "1") {
-         $config = "# Generated by plugin monitoring for GLPI\n# on ".date("Y-m-d H:i:s")."\n\n";
-
-         foreach ($a_contacts as $data) {
-            $config .= $this->writeFile("contact", $data);
-         }
-         return array('contacts.cfg', $config);
-
-      } else {
-         return $a_contacts;
-      }
-   }
-
-
-
-   function _addContactUser($a_contacts, $users_id, $i) {
-
-      $pmContact              = new PluginMonitoringContact();
-      $pmNotificationcommand  = new PluginMonitoringNotificationcommand();
-      $pmContacttemplate      = new PluginMonitoringContacttemplate();
-      $user                   = new User();
-      $calendar               = new Calendar();
-
-      $user->getFromDB($users_id);
-
-      // Get contact template
-      $a_pmcontact = current($pmContact->find("`users_id`='".$users_id."'", "", 1));
-      if (empty($a_pmcontact) OR
-              (isset($a_pmcontact['plugin_monitoring_contacttemplates_id'])
-              AND $a_pmcontact['plugin_monitoring_contacttemplates_id'] == '0')) {
-         // Use default template
-         $a_pmcontact = current($pmContacttemplate->find("`is_default`='1'", "", 1));
-      } else {
-         // Use contact defined template
-         $a_pmcontact = current($pmContacttemplate->find("`id`='".$a_pmcontact['plugin_monitoring_contacttemplates_id']."'", "", 1));
-      }
-      $a_contacts[$i] = array();
-      $a_contacts[$i] = $this->add_value_type(
-              $user->fields['name'], 'contact_name', $a_contacts[$i]);
-      $a_contacts[$i] = $this->add_value_type(
-              $user->getName(), 'alias', $a_contacts[$i]);
-      if (isset(self::$shinkenParameters['shinken']['contacts']['note'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['contacts']['note'] . $a_pmcontact['name'],
-                 'note', $a_contacts[$i]);
-      }
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "- generate contact '".$user->fields['name']."' - ".$user->getName()."\n"
-      );
-
-      if (!isset($a_pmcontact['host_notification_period'])) {
-         $a_calendars = current($calendar->find("", "", 1));
-         $cal = '24x7';
-         if (isset($a_calendars['name'])) {
-            $cal = $a_calendars['name'];
-         }
-         $a_pmcontact['host_notifications_enabled']     = 0;
-         $a_pmcontact['service_notifications_enabled']  = 0;
-         $a_pmcontact['service_notification_period']    = $cal;
-         $a_pmcontact['host_notification_period']       = $cal;
-         $a_pmcontact['service_notification_options_w'] = 0;
-         $a_pmcontact['service_notification_options_u'] = 0;
-         $a_pmcontact['service_notification_options_c'] = 0;
-         $a_pmcontact['service_notification_options_r'] = 0;
-         $a_pmcontact['service_notification_options_f'] = 0;
-         $a_pmcontact['service_notification_options_s'] = 0;
-         $a_pmcontact['service_notification_options_n'] = 0;
-         $a_pmcontact['host_notification_options_d']    = 0;
-         $a_pmcontact['host_notification_options_u']    = 0;
-         $a_pmcontact['host_notification_options_r']    = 0;
-         $a_pmcontact['host_notification_options_f']    = 0;
-         $a_pmcontact['host_notification_options_s']    = 0;
-         $a_pmcontact['host_notification_options_n']    = 0;
-         $a_pmcontact['service_notification_commands']  = 2;
-         $a_pmcontact['host_notification_commands']     = 1;
-      }
-      $a_contacts[$i] = $this->add_value_type(
-              $a_pmcontact['host_notifications_enabled'],
-              'host_notifications_enabled', $a_contacts[$i]);
-      $a_contacts[$i] = $this->add_value_type(
-              $a_pmcontact['service_notifications_enabled'],
-              'service_notifications_enabled', $a_contacts[$i]);
-
-      // Contact entity jetlag ...
-      $pmHostconfig  = new PluginMonitoringHostconfig();
-      $timeperiodsuffix = '_'.$pmHostconfig->getValueAncestor('jetlag', $user->fields['entities_id']);
-      if ($timeperiodsuffix == '_0') {
-         $timeperiodsuffix = '';
-      }
-
-      if ($calendar->getFromDB($a_pmcontact['service_notification_period']) && $this->_addTimeperiod($user->fields['entities_id'], $a_pmcontact['service_notification_period'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::shinkenFilter($calendar->fields['name'].$timeperiodsuffix),
-                 'service_notification_period', $a_contacts[$i]);
-      } else {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['contacts']['service_notification_period'],
-                 'service_notification_period', $a_contacts[$i]);
-      }
-
-      if ($calendar->getFromDB($a_pmcontact['host_notification_period']) && $this->_addTimeperiod($user->fields['entities_id'], $a_pmcontact['host_notification_period'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::shinkenFilter($calendar->fields['name'].$timeperiodsuffix),
-                 'host_notification_period', $a_contacts[$i]);
-      } else {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['contacts']['host_notification_period'],
-                 'host_notification_period', $a_contacts[$i]);
-      }
-
-      $a_contacts[$i]['service_notification_options'] = array();
-      if ($a_pmcontact['service_notification_options_w'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'w', 'service_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['service_notification_options_u'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'u', 'service_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['service_notification_options_c'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'c', 'service_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['service_notification_options_r'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'r', 'service_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['service_notification_options_f'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'f', 'service_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['service_notification_options_s'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 's', 'service_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['service_notification_options_n'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'n', 'service_notification_options', $a_contacts[$i]);
-      }
-      if (count($a_contacts[$i]['service_notification_options']) == 0) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'n', 'service_notification_options', $a_contacts[$i]);
-      }
-
-      $a_contacts[$i]['host_notification_options'] = array();
-      if ($a_pmcontact['host_notification_options_d'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'd', 'host_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['host_notification_options_u'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'u', 'host_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['host_notification_options_r'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'r', 'host_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['host_notification_options_f'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'f', 'host_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['host_notification_options_s'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 's', 'host_notification_options', $a_contacts[$i]);
-      }
-      if ($a_pmcontact['host_notification_options_n'] == 1) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'n', 'host_notification_options', $a_contacts[$i]);
-      }
-      if (count($a_contacts[$i]['host_notification_options']) == 0) {
-         $a_contacts[$i] = $this->add_value_type(
-                 'n', 'host_notification_options', $a_contacts[$i]);
-      }
-
-      $pmNotificationcommand->getFromDB($a_pmcontact['service_notification_commands']);
-      if (isset($pmNotificationcommand->fields['command_name'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 PluginMonitoringCommand::$command_prefix . $pmNotificationcommand->fields['command_name'],
-                 'service_notification_commands', $a_contacts[$i]);
-      } else {
-         $a_contacts[$i] = $this->add_value_type(
-                 '', 'service_notification_commands', $a_contacts[$i]);
-      }
-      $pmNotificationcommand->getFromDB($a_pmcontact['host_notification_commands']);
-      if (isset($pmNotificationcommand->fields['command_name'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 PluginMonitoringCommand::$command_prefix . $pmNotificationcommand->fields['command_name'],
-                 'host_notification_commands', $a_contacts[$i]);
-      } else {
-         $a_contacts[$i] = $this->add_value_type(
-                 '', 'host_notification_commands', $a_contacts[$i]);
-      }
-
-      // Get first email
-      $a_emails = UserEmail::getAllForUser($users_id);
-      $first = 0;
-      foreach ($a_emails as $email) {
-         if ($first == 0) {
-            $a_contacts[$i] = $this->add_value_type(
-                    $email, 'email', $a_contacts[$i]);
-         }
-         $first++;
-      }
-      if (!isset($a_contacts[$i]['email'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 '', 'email', $a_contacts[$i]);
-      }
-      $a_contacts[$i] = $this->add_value_type(
-              $user->fields['phone'], 'pager', $a_contacts[$i]);
-
-      // Persist contact status
-      if (isset(self::$shinkenParameters['shinken']['contacts']['retain_status_information'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['contacts']['retain_status_information'],
-                 'retain_status_information', $a_contacts[$i]);
-      }
-      if (isset(self::$shinkenParameters['shinken']['contacts']['retain_nonstatus_information'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['shinken']['contacts']['retain_nonstatus_information'],
-                 'retain_nonstatus_information', $a_contacts[$i]);
-      }
-      if (isset($a_pmcontact['shinken_administrator'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 $a_pmcontact['shinken_administrator'],
-                 'is_admin', $a_contacts[$i]);
-      } else {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['webui']['contacts']['is_admin'],
-                 'is_admin', $a_contacts[$i]);
-      }
-      if (isset($a_pmcontact['shinken_can_submit_commands'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 $a_pmcontact['shinken_can_submit_commands'],
-                 'can_submit_commands', $a_contacts[$i]);
-      } else {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['webui']['contacts']['can_submit_commands'],
-                 'can_submit_commands', $a_contacts[$i]);
-      }
-      if (empty($user->fields['password'])) {
-         $a_contacts[$i] = $this->add_value_type(
-                 self::$shinkenParameters['webui']['contacts']['password'],
-                 'password', $a_contacts[$i]);
-      } else {
-         $a_contacts[$i] = $this->add_value_type(
-                 $user->fields['password'],  'password', $a_contacts[$i]);
-      }
-
-      /*
-      TODO:
-      address1, address2, ..., address6 are available in Shinken
-      */
-      $a_contacts[$i] = $this->properties_list_to_string($a_contacts[$i]);
-      return $a_contacts;
-   }
-
-
-
-   function generateTimeperiodsCfg($file=0, $tag='') {
-
-      if (!isset($_SESSION['plugin_monitoring'])) {
-         $_SESSION['plugin_monitoring'] = array();
-      }
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "Starting generateTimeperiodsCfg ...\n"
-      );
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End generateTimeperiodsCfg\n"
-      );
-
-      if ($file == "1") {
-         $config = "# Generated by plugin monitoring for GLPI\n# on ".date("Y-m-d H:i:s")."\n\n";
-
-         if (isset($_SESSION['plugin_monitoring']['timeperiods'])) {
-            $config .= "#Time periods\n\n";
-            foreach ($_SESSION['plugin_monitoring']['timeperiods'] as $data) {
-               $config .= $this->writeFile("timeperiod", $data);
-            }
-         }
-         if (isset($_SESSION['plugin_monitoring']['holidays'])) {
-            $config .= "#Exclusion periods\n\n";
-            foreach ($_SESSION['plugin_monitoring']['holidays'] as $data) {
-               $config .= $this->writeFile("timeperiod", $data);
-            }
-         }
-         return array('timeperiods.cfg', $config);
-
-      } else {
-         $a_timeperiods = array();
-         $i=0;
-         if (isset($_SESSION['plugin_monitoring']['timeperiods'])) {
-            foreach ($_SESSION['plugin_monitoring']['timeperiods'] as $data) {
-               $a_timeperiods[$i] = array();
-               foreach ($data as $key=>$val) {
-                  $a_timeperiods[$i] = $this->add_value_type(
-                          $val, $key, $a_timeperiods[$i]);
-               }
-               PluginMonitoringToolbox::logIfExtradebug(
-                     " - ".serialize($data)."\n"
-               );
-               $a_timeperiods[$i] = $this->properties_list_to_string($a_timeperiods[$i]);
-               $i++;
-            }
-         }
-         if (isset($_SESSION['plugin_monitoring']['holidays'])) {
-            foreach ($_SESSION['plugin_monitoring']['holidays'] as $data) {
-               $a_timeperiods[$i] = array();
-               foreach ($data as $key=>$val) {
-                  $a_timeperiods[$i] = $this->add_value_type(
-                          $val, $key, $a_timeperiods[$i]);
-               }
-               PluginMonitoringToolbox::logIfExtradebug(
-                     " - ".serialize($data)."\n"
-               );
-               $a_timeperiods[$i] = $this->properties_list_to_string($a_timeperiods[$i]);
-               $i++;
-            }
-         }
-         return $a_timeperiods;
-      }
-   }
-
-
-   function _addHoliday($entities_id=-1, $holidays_id=-1) {
-
-      if (! isset($_SESSION['plugin_monitoring']['holidays'])) {
-         $_SESSION['plugin_monitoring']['holidays'] = array();
-      }
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "Starting _addHoliday: $entities_id / $holidays_id ...\n"
-      );
-      $calendar         = new Calendar();
-      $calendarSegment  = new CalendarSegment();
-      $calendar_Holiday = new Calendar_Holiday();
-      $holiday          = new Holiday();
-      $hostconfig       = new PluginMonitoringHostconfig();
-      $entity           = new Entity();
-
-      // Jetlag for required entity ...
-      if (!isset($_SESSION['plugin_monitoring']['jetlag'])) {
-         $_SESSION['plugin_monitoring']['jetlag'] = array();
-      }
-      if (!isset($_SESSION['plugin_monitoring']['jetlag'][$entities_id])) {
-         $_SESSION['plugin_monitoring']['jetlag'][$entities_id] =
-                        $hostconfig->getValueAncestor('jetlag', $entities_id);
-      }
-      $timeperiodsuffix = $_SESSION['plugin_monitoring']['jetlag'][$entities_id];
-      if ($timeperiodsuffix == '_0') {
-         $timeperiodsuffix = '';
-      }
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         " - entity: $entities_id, jetlag: $timeperiodsuffix\n"
-      );
-
-      if (! $holiday->getFromDB($holidays_id)) {
-         PluginMonitoringToolbox::logIfExtradebug(
-            'pm-shinken',
-            " - invalid holiday: $holidays_id ...\n"
-         );
-         return false;
-      }
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         " - holiday: $holidays_id, jetlag: $timeperiodsuffix\n"
-      );
-
-      $tmp = array();
-      if ($timeperiodsuffix == 0) {
-         $tmp['timeperiod_name'] = self::shinkenFilter($holiday->fields['name']);
-         $tmp['alias'] = $holiday->fields['name'];
-      } else {
-         $tmp['timeperiod_name'] = self::shinkenFilter($holiday->fields['name']."_".$timeperiodsuffix);
-         $tmp['alias'] = $holiday->fields['name']." (".$timeperiodsuffix.")";
-      }
-
-      // If timeperiod already exists in memory ...
-      if (isset($_SESSION['plugin_monitoring']['holidays'][ $tmp['timeperiod_name'] ])) {
-         return $tmp['timeperiod_name'];
-      }
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         " - _addHoliday, building TP '{$tmp['timeperiod_name']}' for entity: $entities_id\n"
-      );
-         // $holiday->getFromDB($a_choliday['holidays_id']);
-      if ($holiday->fields['is_perpetual'] == 1
-              && $holiday->fields['begin_date'] == $holiday->fields['end_date']) {
-         $datetime = strtotime($holiday->fields['begin_date']);
-         $tmp[strtolower(date('F', $datetime)).
-             ' '.date('j', $datetime)] = '00:00-24:00';
-      }
-
-
-      $days = array('sunday','monday','tuesday', 'wednesday','thursday',
-                    'friday', 'saturday');
-      $saturday = '';
-      $reportHours = 0;
-      $beforeday = 'saturday';
-      foreach ($days as $numday=>$day) {
-         if (isset($tmp[$day])) {
-            $splitDay = explode(',', $tmp[$day]);
-            $toAdd = '';
-            if ($reportHours > 0) {
-               $toAdd = '00:00-'.sprintf("%02s", $reportHours).':00';
-               $reportHours = 0;
-            }
-            foreach ($splitDay as $num=>$hourMinute) {
-               $previous_begin = 0;
-               $beginEnd = explode('-', $hourMinute);
-               // ** Begin **
-               $split = explode(':', $beginEnd[0]);
-               $split[0] .= $timeperiodsuffix;
-               if ($split[0] > 24) {
-                  //$reportHours = $split[0] - 24;
-                  unset($splitDay[$num]);
-               } else {
-                  if ($split[0] < 0) {
-                     $reportHours = $split[0];
-                     $previous_begin = 24 + $split[0];
-                     $split[0] = '00';
-                  }
-                  $beginEnd[0] = sprintf("%02s", $split[0]).':'.$split[1];
-                  // ** End **
-                  $split = explode(':', $beginEnd[1]);
-                  $split[0] .= $timeperiodsuffix;
-                  if ($split[0] < 0) {
-                     if ($numday-1 == -1) {
-                        $saturday .= ",".sprintf("%02s", $previous_begin).":00-".sprintf("%02s", (24 + $split[0])).":00";
-                     } else {
-                        $tmp[$days[($numday-1)]] .= ",".sprintf("%02s", $previous_begin).":00-".sprintf("%02s", (24 + $split[0])).":00";
-                     }
-                     unset($splitDay[$num]);
-                  } else {
-                     if ($split[0] > 24) {
-                        $reportHours = $split[0] - 24;
-                        $split[0] = 24;
-                     }
-                     $beginEnd[1] = sprintf("%02s", $split[0]).':'.$split[1];
-
-                     $hourMinute = implode('-', $beginEnd);
-                     $splitDay[$num] = $hourMinute;
-                  }
-               }
-            }
-            if ($reportHours < 0) {
-               $reportHours = 0;
-            }
-            if (!empty($toAdd)) {
-               array_unshift($splitDay, $toAdd);
-            }
-            $tmp[$day] = implode(',', $splitDay);
-         } else if ($reportHours > 0) {
-            //$tmp[$day] = '00:00-'.$reportHours.':00';
-            $reportHours = 0;
-         }
-         $beforeday = $day;
-      }
-      // Manage for report hours from saturday to sunday
-      if ($reportHours > 0) {
-         $splitDay = explode(',', $tmp['sunday']);
-         array_unshift($splitDay, '00:00-'.sprintf("%02s", $reportHours).':00');
-         $tmp['sunday'] = implode(',', $splitDay);
-      }
-      if ($saturday != '') {
-         if (isset($tmp['saturday'])) {
-            $tmp['saturday'] .= $saturday;
-         } else {
-            $tmp['saturday'] = $saturday;
-         }
-      }
-
-      // concatenate if needed
-      foreach ($days as $day) {
-         if (isset($tmp[$day])) {
-            $splitDay = explode(',', $tmp[$day]);
-            $beforeHour = '';
-            $beforeNum  = 0;
-            foreach ($splitDay as $num=>$data) {
-               if (substr($data, 0, 2) == $beforeHour) {
-                  $splitDay[$beforeNum] = substr($splitDay[$beforeNum], 0, 6).substr($data, 6, 5);
-                  $beforeHour = substr($data, 6, 2);
-                  unset($splitDay[$num]);
-               } else {
-                  $beforeHour = substr($data, 6, 2);
-                  $beforeNum = $num;
-               }
-            }
-            $tmp[$day] = implode(',', $splitDay);
-         }
-      }
-
-      $_SESSION['plugin_monitoring']['holidays'][ $tmp['timeperiod_name'] ] = $tmp;
-
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End _addHoliday: {$tmp['timeperiod_name']}\n"
-      );
-
-      return $tmp['timeperiod_name'];
-   }
-
-
-   function _addTimeperiod($entities_id=-1, $calendars_id=-1) {
-
-      if (! isset($_SESSION['plugin_monitoring']['timeperiods'])) {
-         $_SESSION['plugin_monitoring']['timeperiods'] = array();
-      }
-      if (! isset($_SESSION['plugin_monitoring']['timeperiodsmapping'])) {
-         $_SESSION['plugin_monitoring']['timeperiodsmapping'] = array();
-      }
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "Starting _addTimeperiod: $entities_id / $calendars_id ...\n"
-      );
-      $calendar         = new Calendar();
-      $calendarSegment  = new CalendarSegment();
-      $calendar_Holiday = new Calendar_Holiday();
-      $hostconfig       = new PluginMonitoringHostconfig();
-      $entity           = new Entity();
-
-      if (! $entity->getFromDB($entities_id)) {
-         PluginMonitoringToolbox::logIfExtradebug(
-            'pm-shinken',
-            " - invalid entity: $entities_id\n"
-         );
-         return false;
-      }
-      // Jetlag for required entity ...
-      if (!isset($_SESSION['plugin_monitoring']['jetlag'])) {
-         $_SESSION['plugin_monitoring']['jetlag'] = array();
-      }
-      if (!isset($_SESSION['plugin_monitoring']['jetlag'][$entities_id])) {
-         $_SESSION['plugin_monitoring']['jetlag'][$entities_id] =
-                        $hostconfig->getValueAncestor('jetlag', $entities_id);
-      }
-      $timeperiodsuffix = $_SESSION['plugin_monitoring']['jetlag'][$entities_id];
-      if ($timeperiodsuffix == '_0') {
-         $timeperiodsuffix = '';
-      }
-
-      if (!isset($_SESSION['plugin_monitoring']['timeperiodsmapping'][$calendars_id])) {
-         if (! $calendar->getFromDB($calendars_id)) {
-            PluginMonitoringToolbox::logIfExtradebug(
-               " - invalid calendar: $calendars_id ...\n"
-            );
+        }
+        if (!$fields) {
+            PluginMonitoringToolbox::log("[ERROR] no contact template information found!");
             return false;
-         }
-         $_SESSION['plugin_monitoring']['timeperiodsmapping'][$calendars_id] = $calendar->fields['name'];
-      }
-      $tp_name = $_SESSION['plugin_monitoring']['timeperiodsmapping'][$calendars_id];
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         " - _addTimeperiod, entity: $entities_id, jetlag: $timeperiodsuffix\n"
-      );
+        }
 
-      $tmp = array();
-      if ($timeperiodsuffix == 0) {
-         $tmp['timeperiod_name'] = self::shinkenFilter($tp_name);
-         $tmp['alias'] = $tp_name;
-      } else {
-         $tmp['timeperiod_name'] = self::shinkenFilter($tp_name."_".$timeperiodsuffix);
-         $tmp['alias'] = $tp_name." (".$timeperiodsuffix.")";
-      }
+        $my_contact = [];
 
-      // If timeperiod already exists in memory ...
-      if (isset($_SESSION['plugin_monitoring']['timeperiods'][ $tmp['timeperiod_name'] ])) {
-         return true;
-      }
+        PluginMonitoringToolbox::logIfDebug("- build contact '" . $user->getName() . "' in entity: " . $user->fields['entities_id']);
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         " - _addTimeperiod, building calendar '{$tmp['timeperiod_name']}' for entity: $entities_id\n"
-      );
-      // $tmp['timeperiod_name'] = self::shinkenFilter($calendar->fields['name']);
-      // $tmp['alias'] = $calendar->fields['name'];
-      $a_listsegment = $calendarSegment->find("`calendars_id`='".$calendars_id."'");
-      $a_cal = array();
-      foreach ($a_listsegment as $datasegment) {
-         $begin = preg_replace("/:00$/", "", $datasegment['begin']);
-         $end = preg_replace("/:00$/", "", $datasegment['end']);
-         $day = "";
-         switch ($datasegment['day']) {
+        // For comments ...
+        if ($file) {
+            $this->set_value($user->getName(), 'file_comment', $my_contact);
+        }
 
-            case "0":
-               $day = "sunday";
-               break;
+        // For the framework configuration...
+        $this->set_value($user->fields['name'], 'contact_name', $my_contact);
+        $this->set_value($user->getName(), 'alias', $my_contact);
+        $this->set_value($user->getName(), 'display_name', $my_contact);
 
-            case "1":
-               $day = "monday";
-               break;
+        if (isset(self::$default['shinken']['contacts']['note'])) {
+            $this->set_value(self::$default['shinken']['contacts']['note'] . $pmContactTemplate->getName(), 'note', $my_contact);
+        }
 
-            case "2":
-               $day = "tuesday";
-               break;
+        $this->set_value($fields['hn_enabled'], 'host_notifications_enabled', $my_contact);
+        $this->set_value($fields['sn_enabled'], 'service_notifications_enabled', $my_contact);
 
-            case "3":
-               $day = "wednesday";
-               break;
+        // Get the contact entity jet lag ...
+        $tz_suffix = '';
+        if (isset($_SESSION['plugin_monitoring']['entities'][$user->fields['entities_id']])) {
+            $tz_suffix = '_' . $_SESSION['plugin_monitoring']['entities'][$user->fields['entities_id']]['jet_lag'];
+            if ($tz_suffix == '_0') {
+                $tz_suffix = '';
+            }
+        }
+//        // Contact entity jetlag ...
+//        $pmHostconfig = new PluginMonitoringHostconfig();
+//        // $user->fields['entities_id']
+//        $tz_suffix = '_' . $pmHostconfig->getValueAncestor('jetlag', $user->getEntityID());
+//        if ($tz_suffix == '_0') {
+//            $tz_suffix = '';
+//        }
+        PluginMonitoringToolbox::logIfDebug("- time zone: $tz_suffix");
 
-            case "4":
-               $day = "thursday";
-               break;
+        // Notification periods
+        $calendar = new Calendar();
+        if ($calendar->getFromDB($fields['sn_period']) and
+            $this->_addTimeperiod($user->getField('entities_id'), $fields['sn_period'])) {
+            $this->set_value(self::monitoringFilter($calendar->getName() . $tz_suffix),
+                'service_notification_period', $my_contact);
+        } else {
+            $this->set_value(self::$default['shinken']['contacts']['service_notification_period'],
+                'service_notification_period', $my_contact);
+        }
 
-            case "5":
-               $day = "friday";
-               break;
+        if ($calendar->getFromDB($fields['hn_period']) and
+            $this->_addTimeperiod($user->getField('entities_id'), $fields['hn_period'])) {
+            $this->set_value(self::monitoringFilter($calendar->getName() . $tz_suffix),
+                'host_notification_period', $my_contact);
+        } else {
+            $this->set_value(self::$default['shinken']['contacts']['host_notification_period'],
+                'host_notification_period', $my_contact);
+        }
 
-            case "6":
-               $day = "saturday";
-               break;
+        $my_contact['service_notification_options'] = [];
+        if ($fields['sn_options_w'] == 1) {
+            $this->set_value('w', 'service_notification_options', $my_contact);
+        }
+        if ($fields['sn_options_u'] == 1) {
+            $this->set_value('u', 'service_notification_options', $my_contact);
+        }
+        if ($fields['sn_options_c'] == 1) {
+            $this->set_value('c', 'service_notification_options', $my_contact);
+        }
+        if ($fields['sn_options_r'] == 1) {
+            $this->set_value('r', 'service_notification_options', $my_contact);
+        }
+        if ($fields['sn_options_f'] == 1) {
+            $this->set_value('f', 'service_notification_options', $my_contact);
+        }
+        if ($fields['sn_options_s'] == 1) {
+            $this->set_value('s', 'service_notification_options', $my_contact);
+        }
+        if ($fields['sn_options_n'] == 1) {
+            $this->set_value('n', 'service_notification_options', $my_contact);
+        }
+        if (empty($my_contact['service_notification_options'])) {
+            $this->set_value('n', 'service_notification_options', $my_contact);
+        }
 
-         }
-         $a_cal[$day][] = $begin."-".$end;
-      }
-      foreach ($a_cal as $day=>$a_times) {
-         $tmp[$day] = implode(',', $a_times);
-      }
-      $a_cholidays = $calendar_Holiday->find("`calendars_id`='".$calendars_id."'");
-      $a_excluded = array();
-      foreach ($a_cholidays as $a_choliday) {
-         PluginMonitoringToolbox::logIfExtradebug(
-            'pm-shinken',
-            " - _addTimeperiod, building holiday '{$a_choliday['holidays_id']}'\n"
-         );
-         $a_excluded[] = $this->_addHoliday($entities_id, $a_choliday['holidays_id']);
-         // $holiday->getFromDB($a_choliday['holidays_id']);
-         // if ($holiday->fields['is_perpetual'] == 1
-                 // && $holiday->fields['begin_date'] == $holiday->fields['end_date']) {
+        $my_contact['host_notification_options'] = [];
+        if ($fields['hn_options_d'] == 1) {
+            $this->set_value('d', 'host_notification_options', $my_contact);
+        }
+        if ($fields['hn_options_u'] == 1) {
+            $this->set_value('u', 'host_notification_options', $my_contact);
+        }
+        if ($fields['hn_options_r'] == 1) {
+            $this->set_value('r', 'host_notification_options', $my_contact);
+        }
+        if ($fields['hn_options_f'] == 1) {
+            $this->set_value('f', 'host_notification_options', $my_contact);
+        }
+        if ($fields['hn_options_s'] == 1) {
+            $this->set_value('s', 'host_notification_options', $my_contact);
+        }
+        if ($fields['hn_options_n'] == 1) {
+            $this->set_value('n', 'host_notification_options', $my_contact);
+        }
+        if (empty($my_contact['host_notification_options'])) {
+            $this->set_value('n', 'host_notification_options', $my_contact);
+        }
+
+        $pmNotificationcommand = new PluginMonitoringNotificationcommand();
+        if ($pmNotificationcommand->getFromDB($fields['sn_commands']) and
+            isset($pmNotificationcommand->fields['command_name'])) {
+            $this->set_value(PluginMonitoringCommand::$command_prefix . $pmNotificationcommand->getField('command_name'),
+                'service_notification_commands', $my_contact);
+        } else {
+            $this->set_value('', 'service_notification_commands', $my_contact);
+        }
+        if ($pmNotificationcommand->getFromDB($fields['hn_commands']) and
+            isset($pmNotificationcommand->fields['command_name'])) {
+            $this->set_value(PluginMonitoringCommand::$command_prefix . $pmNotificationcommand->getField('command_name'),
+                'host_notification_commands', $my_contact);
+        } else {
+            $this->set_value('', 'host_notification_commands', $my_contact);
+        }
+
+        // Get first email
+        $a_emails = UserEmail::getAllForUser($users_id);
+        foreach ($a_emails as $email) {
+            $this->set_value($email, 'email', $my_contact);
+            break;
+        }
+        if (!isset($my_contact['email'])) {
+            $this->set_value('', 'email', $my_contact);
+        }
+        $this->set_value($user->fields['phone'], 'pager', $my_contact);
+
+        $this->set_value($fields['ui_administrator'], 'is_admin', $my_contact);
+        $this->set_value($fields['ui_can_submit_commands'], 'can_submit_commands', $my_contact);
+        if (empty($user->fields['password'])) {
+            $this->set_value(self::$default['webui']['contacts']['password'], 'password', $my_contact);
+        } else {
+            $this->set_value($user->fields['password'], 'password', $my_contact);
+        }
+
+        $my_contact = $this->properties_list_to_string($my_contact);
+        PluginMonitoringToolbox::logIfDebug("- built: " . print_r($my_contact, true));
+
+        return $my_contact;
+    }
+
+
+    function generateTimeperiodsCfg($tag = '', $file = false)
+    {
+        global $PM_CONFIG;
+
+        PluginMonitoringToolbox::logIfDebug("Starting generateTimeperiodsCfg ...");
+
+        // Indeed, time periods are compiled 'on the fly' during the other objects building process!
+        $a_timeperiods = [];
+        if (isset($_SESSION['plugin_monitoring']['timeperiods'])) {
+            PluginMonitoringToolbox::logIfDebug("Time periods: ");
+            foreach ($_SESSION['plugin_monitoring']['timeperiods'] as $data) {
+                $my_timeperiod = [];
+                foreach ($data as $key => $val) {
+                    $this->set_value($val, $key, $my_timeperiod);
+                }
+                if (! empty($_SESSION['plugin_monitoring']['definition_order'])) {
+                    $this->set_value($_SESSION['plugin_monitoring']['definition_order'], 'definition_order', $my_timeperiod);
+                }
+                PluginMonitoringToolbox::logIfDebug(" - " . print_r($my_timeperiod, true));
+                $a_timeperiods[] = $this->properties_list_to_string($my_timeperiod);
+            }
+        }
+        if (isset($_SESSION['plugin_monitoring']['holidays'])) {
+            PluginMonitoringToolbox::logIfDebug("Exclusion periods: ");
+            foreach ($_SESSION['plugin_monitoring']['holidays'] as $data) {
+                $my_timeperiod = [];
+                foreach ($data as $key => $val) {
+                    $this->set_value($val, $key, $my_timeperiod);
+                }
+                if (! empty($_SESSION['plugin_monitoring']['definition_order'])) {
+                    $this->set_value($_SESSION['plugin_monitoring']['definition_order'], 'definition_order', $my_timeperiod);
+                }
+                PluginMonitoringToolbox::logIfDebug(" - " . print_r($my_timeperiod, true));
+                $a_timeperiods[] = $this->properties_list_to_string($my_timeperiod);
+            }
+        }
+
+        PluginMonitoringToolbox::log("Found " . count($a_timeperiods) . " time periods");
+        PluginMonitoringToolbox::logIfDebug("End generateTimeperiodsCfg");
+
+        if ($PM_CONFIG['build_files']) {
+            $config = "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+            $config .= "# ---\n";
+            $config .= "# Time periods\n";
+            $config .= "# ---\n";
+
+            foreach ($a_timeperiods as $data) {
+                $config .= $this->writeFile("contact", $data);
+            }
+            $filename = PLUGIN_MONITORING_CFG_DIR . '/' . $tag . '-timeperiods.cfg';
+            file_put_contents($filename, $config);
+            PluginMonitoringToolbox::logIfDebug("Written file: " . $filename);
+
+            if ($file) return $config;
+        }
+
+        return $a_timeperiods;
+    }
+
+
+    function _addHoliday($entities_id = -1, $holidays_id = -1)
+    {
+//        $hostconfig = new PluginMonitoringHostconfig();
+        $holiday = new Calendar();
+        if (!$holiday->getFromDB($holidays_id)) {
+            PluginMonitoringToolbox::log("[ERROR]  invalid holiday: $holidays_id ...");
+            return false;
+        }
+
+        if (!isset($_SESSION['plugin_monitoring']['holidays'])) {
+            $_SESSION['plugin_monitoring']['holidays'] = [];
+        }
+        PluginMonitoringToolbox::logIfDebug("Starting _addHoliday: $entities_id / $holidays_id ...");
+
+        // Get the contact entity jet lag ...
+        $tz_suffix = '';
+        if (isset($_SESSION['plugin_monitoring']['entities'][$entities_id])) {
+            $tz_suffix = '_' . $_SESSION['plugin_monitoring']['entities'][$entities_id]['jet_lag'];
+            if ($tz_suffix == '_0') {
+                $tz_suffix = '';
+            }
+        }
+
+//        // Jetlag for required entity ...
+//        if (!isset($_SESSION['plugin_monitoring']['jetlag'])) {
+//            $_SESSION['plugin_monitoring']['jetlag'] = [];
+//        }
+//        if (!isset($_SESSION['plugin_monitoring']['jetlag'][$entities_id])) {
+//            $_SESSION['plugin_monitoring']['jetlag'][$entities_id] =
+//                $hostconfig->getValueAncestor('jetlag', $entities_id);
+//        }
+//        $tz_suffix = $_SESSION['plugin_monitoring']['jetlag'][$entities_id];
+//        if ($tz_suffix == '_0') {
+//            $tz_suffix = '';
+//        }
+        PluginMonitoringToolbox::logIfDebug(" - entity: $entities_id, jetlag: $tz_suffix");
+
+        $tmp = [];
+        if ($tz_suffix == 0) {
+            $tmp['timeperiod_name'] = self::monitoringFilter($holiday->fields['name']);
+            $tmp['alias'] = $holiday->fields['name'];
+        } else {
+            $tmp['timeperiod_name'] = self::monitoringFilter($holiday->fields['name'] . "_" . $tz_suffix);
+            $tmp['alias'] = $holiday->fields['name'] . " (" . $tz_suffix . ")";
+        }
+
+        // If timeperiod already exists in memory ...
+        if (isset($_SESSION['plugin_monitoring']['holidays'][$tmp['timeperiod_name']])) {
+            return $tmp['timeperiod_name'];
+        }
+
+        PluginMonitoringToolbox::logIfDebug(" - _addHoliday, building TP '{$tmp['timeperiod_name']}' for entity: $entities_id");
+        // $holiday->getFromDB($a_choliday['holidays_id']);
+        if ($holiday->fields['is_perpetual'] == 1
+            && $holiday->fields['begin_date'] == $holiday->fields['end_date']) {
+            $datetime = strtotime($holiday->fields['begin_date']);
+            $tmp[strtolower(date('F', $datetime)) .
+            ' ' . date('j', $datetime)] = '00:00-24:00';
+        }
+
+        $days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday',
+            'friday', 'saturday'];
+        $saturday = '';
+        $reportHours = 0;
+//        $beforeday = 'saturday';
+        foreach ($days as $numday => $day) {
+            if (isset($tmp[$day])) {
+                $splitDay = explode(',', $tmp[$day]);
+                $toAdd = '';
+                if ($reportHours > 0) {
+                    $toAdd = '00:00-' . sprintf("%02s", $reportHours) . ':00';
+                    $reportHours = 0;
+                }
+                foreach ($splitDay as $num => $hourMinute) {
+                    $previous_begin = 0;
+                    $beginEnd = explode('-', $hourMinute);
+                    // ** Begin **
+                    $split = explode(':', $beginEnd[0]);
+                    $split[0] .= $tz_suffix;
+                    if ($split[0] > 24) {
+                        //$reportHours = $split[0]-24;
+                        unset($splitDay[$num]);
+                    } else {
+                        if ($split[0] < 0) {
+                            $reportHours = $split[0];
+                            $previous_begin = 24 + $split[0];
+                            $split[0] = '00';
+                        }
+                        $beginEnd[0] = sprintf("%02s", $split[0]) . ':' . $split[1];
+                        // ** End **
+                        $split = explode(':', $beginEnd[1]);
+                        $split[0] .= $tz_suffix;
+                        if ($split[0] < 0) {
+                            if ($numday - 1 == -1) {
+                                $saturday .= "," . sprintf("%02s", $previous_begin) . ":00-" . sprintf("%02s", (24 + $split[0])) . ":00";
+                            } else {
+                                $tmp[$days[($numday - 1)]] .= "," . sprintf("%02s", $previous_begin) . ":00-" . sprintf("%02s", (24 + $split[0])) . ":00";
+                            }
+                            unset($splitDay[$num]);
+                        } else {
+                            if ($split[0] > 24) {
+                                $reportHours = $split[0] - 24;
+                                $split[0] = 24;
+                            }
+                            $beginEnd[1] = sprintf("%02s", $split[0]) . ':' . $split[1];
+
+                            $hourMinute = implode('-', $beginEnd);
+                            $splitDay[$num] = $hourMinute;
+                        }
+                    }
+                }
+                if ($reportHours < 0) {
+                    $reportHours = 0;
+                }
+                if (!empty($toAdd)) {
+                    array_unshift($splitDay, $toAdd);
+                }
+                $tmp[$day] = implode(',', $splitDay);
+            } else if ($reportHours > 0) {
+                //$tmp[$day] = '00:00-'.$reportHours.':00';
+                $reportHours = 0;
+            }
+//            $beforeday = $day;
+        }
+        // Manage for report hours from saturday to sunday
+        if ($reportHours > 0) {
+            $splitDay = explode(',', $tmp['sunday']);
+            array_unshift($splitDay, '00:00-' . sprintf("%02s", $reportHours) . ':00');
+            $tmp['sunday'] = implode(',', $splitDay);
+        }
+        if ($saturday != '') {
+            if (isset($tmp['saturday'])) {
+                $tmp['saturday'] .= $saturday;
+            } else {
+                $tmp['saturday'] = $saturday;
+            }
+        }
+
+        // concatenate if needed
+        foreach ($days as $day) {
+            if (isset($tmp[$day])) {
+                $splitDay = explode(',', $tmp[$day]);
+                $beforeHour = '';
+                $beforeNum = 0;
+                foreach ($splitDay as $num => $data) {
+                    if (substr($data, 0, 2) == $beforeHour) {
+                        $splitDay[$beforeNum] = substr($splitDay[$beforeNum], 0, 6) . substr($data, 6, 5);
+                        $beforeHour = substr($data, 6, 2);
+                        unset($splitDay[$num]);
+                    } else {
+                        $beforeHour = substr($data, 6, 2);
+                        $beforeNum = $num;
+                    }
+                }
+                $tmp[$day] = implode(',', $splitDay);
+            }
+        }
+
+        $_SESSION['plugin_monitoring']['holidays'][$tmp['timeperiod_name']] = $tmp;
+
+        PluginMonitoringToolbox::logIfDebug("End _addHoliday: {$tmp['timeperiod_name']}");
+
+        return $tmp['timeperiod_name'];
+    }
+
+
+    function _addTimeperiod($entities_id = -1, $calendars_id = -1)
+    {
+        if (!isset($_SESSION['plugin_monitoring']['timeperiods'])) {
+            $_SESSION['plugin_monitoring']['timeperiods'] = [];
+        }
+//        if (!isset($_SESSION['plugin_monitoring']['timeperiodsmapping'])) {
+//            $_SESSION['plugin_monitoring']['timeperiodsmapping'] = [];
+//        }
+        PluginMonitoringToolbox::log("Starting _addTimeperiod: $entities_id / $calendars_id ...");
+
+        $calendar = new Calendar();
+//        $hostconfig = new PluginMonitoringHostconfig();
+        $entity = new Entity();
+
+        if (!$entity->getFromDB($entities_id)) {
+            PluginMonitoringToolbox::log("[ERROR] invalid entity: $entities_id");
+            return false;
+        }
+
+        if (!$calendar->getFromDB($calendars_id)) {
+            PluginMonitoringToolbox::log("[ERROR]  invalid calendar: $calendars_id ...");
+            return false;
+        }
+        
+        // Jetlag for required entity ...
+        $tz_suffix = 0;
+        if (isset($_SESSION['plugin_monitoring']['entities'][$entities_id])) {
+            $tz_suffix = (int)$_SESSION['plugin_monitoring']['entities'][$entities_id]['jet_lag'];
+        }
+
+        $tmp = [];
+        if (empty($tz_suffix)) {
+            $tmp['timeperiod_name'] = self::monitoringFilter($calendar->getName());
+            $tmp['alias'] = $calendar->getName();
+        } else {
+            $tmp['timeperiod_name'] = self::monitoringFilter($calendar->getName() . '_' . $tz_suffix);
+            $tmp['alias'] = $calendar->getName() . " (" . $tz_suffix . ")";
+        }
+
+        // If timeperiod already exists in memory ...
+        if (isset($_SESSION['plugin_monitoring']['timeperiods'][$tmp['timeperiod_name']])) {
+            PluginMonitoringToolbox::log(" - TP '{$tmp['timeperiod_name']}' is still available.");
+            return true;
+        }
+
+        PluginMonitoringToolbox::log(" - building TP '{$tmp['timeperiod_name']}', jet lag: $tz_suffix");
+
+        $calendarSegment = new CalendarSegment();
+        $a_listsegment = $calendarSegment->find("`calendars_id`='" . $calendars_id . "'");
+        $a_cal = [];
+        foreach ($a_listsegment as $datasegment) {
+            $begin = preg_replace("/:00$/", "", $datasegment['begin']);
+            $end = preg_replace("/:00$/", "", $datasegment['end']);
+            $day = "";
+            switch ($datasegment['day']) {
+                case "0":
+                    $day = "sunday";
+                    break;
+
+                case "1":
+                    $day = "monday";
+                    break;
+
+                case "2":
+                    $day = "tuesday";
+                    break;
+
+                case "3":
+                    $day = "wednesday";
+                    break;
+
+                case "4":
+                    $day = "thursday";
+                    break;
+
+                case "5":
+                    $day = "friday";
+                    break;
+
+                case "6":
+                    $day = "saturday";
+                    break;
+
+            }
+            $a_cal[$day][] = $begin . "-" . $end;
+        }
+        PluginMonitoringToolbox::logIfDebug(" - _addTimeperiod, building calendar '{$tmp['timeperiod_name']}': " . print_r($a_cal, true));
+        foreach ($a_cal as $day => $a_times) {
+            $tmp[$day] = implode(',', $a_times);
+        }
+
+        $calendar_Holiday = new Calendar_Holiday();
+        $a_cholidays = $calendar_Holiday->find("`calendars_id`='" . $calendars_id . "'");
+        $a_excluded = [];
+        foreach ($a_cholidays as $a_choliday) {
+            PluginMonitoringToolbox::logIfDebug(" - _addTimeperiod, building holiday '{$a_choliday['holidays_id']}'");
+            $a_excluded[] = $this->_addHoliday($entities_id, $a_choliday['holidays_id']);
+            // $holiday->getFromDB($a_choliday['holidays_id']);
+            // if ($holiday->fields['is_perpetual'] == 1
+            // && $holiday->fields['begin_date'] == $holiday->fields['end_date']) {
             // $datetime = strtotime($holiday->fields['begin_date']);
             // $tmp[strtolower(date('F', $datetime)).
-                // ' '.date('j', $datetime)] = '00:00-24:00';
-         // }
-      }
-      if (count($a_excluded) > 0) {
-         $tmp['exclude'] = implode(',', $a_excluded);
-      }
+            // ' '.date('j', $datetime)] = '00:00-24:00';
+            // }
+        }
+        if (count($a_excluded) > 0) {
+            $tmp['exclude'] = implode(',', $a_excluded);
+        }
 
+        $days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        $saturday = '';
+        $reportHours = 0;
+        foreach ($days as $numday => $day) {
+            if ($tz_suffix == 0 or !isset($tmp[$day])) {
+                if ($reportHours > 0) {
+                    $reportHours = 0;
+                }
+            }
 
-      // if ($timeperiodsuffix == 0) {
-         // $tmp['timeperiod_name'] = self::shinkenFilter($tmp['timeperiod_name']);
-      // } else {
-         // $tmp['timeperiod_name'] = self::shinkenFilter($tmp['timeperiod_name']."_".$timeperiodsuffix);
-         // $tmp['alias'] = $tmp['alias']." (".$timeperiodsuffix.")";
-      // }
-      $days = array('sunday','monday','tuesday', 'wednesday','thursday',
-                    'friday', 'saturday');
-      $saturday = '';
-      $reportHours = 0;
-      $beforeday = 'saturday';
-      foreach ($days as $numday=>$day) {
-         if (isset($tmp[$day])) {
             $splitDay = explode(',', $tmp[$day]);
             $toAdd = '';
             if ($reportHours > 0) {
-               $toAdd = '00:00-'.sprintf("%02s", $reportHours).':00';
-               $reportHours = 0;
+                $toAdd = '00:00-' . sprintf("%02s", $reportHours) . ':00';
+                $reportHours = 0;
             }
-            foreach ($splitDay as $num=>$hourMinute) {
-               $previous_begin = 0;
-               $beginEnd = explode('-', $hourMinute);
-               // ** Begin **
-               $split = explode(':', $beginEnd[0]);
-               $split[0] .= $timeperiodsuffix;
-               if ($split[0] > 24) {
-                  //$reportHours = $split[0] - 24;
-                  unset($splitDay[$num]);
-               } else {
-                  if ($split[0] < 0) {
-                     $reportHours = $split[0];
-                     $previous_begin = 24 + $split[0];
-                     $split[0] = '00';
-                  }
-                  $beginEnd[0] = sprintf("%02s", $split[0]).':'.$split[1];
-                  // ** End **
-                  $split = explode(':', $beginEnd[1]);
-                  $split[0] .= $timeperiodsuffix;
-                  if ($split[0] < 0) {
-                     if ($numday-1 == -1) {
-                        $saturday .= ",".sprintf("%02s", $previous_begin).":00-".sprintf("%02s", (24 + $split[0])).":00";
-                     } else {
-                        $tmp[$days[($numday-1)]] .= ",".sprintf("%02s", $previous_begin).":00-".sprintf("%02s", (24 + $split[0])).":00";
-                     }
-                     unset($splitDay[$num]);
-                  } else {
-                     if ($split[0] > 24) {
-                        $reportHours = $split[0] - 24;
-                        $split[0] = 24;
-                     }
-                     $beginEnd[1] = sprintf("%02s", $split[0]).':'.$split[1];
+            foreach ($splitDay as $num => $hourMinute) {
+                $previous_begin = 0;
+                $beginEnd = explode('-', $hourMinute);
 
-                     $hourMinute = implode('-', $beginEnd);
-                     $splitDay[$num] = $hourMinute;
-                  }
-               }
+                // ** Begin **, get 00:00
+                $split = explode(':', $beginEnd[0]);
+                $hour = (int)$split[0];
+                $hour += $tz_suffix;
+                if ($hour > 24) {
+                    //$reportHours = $split[0]-24;
+                    unset($splitDay[$num]);
+                } else {
+                    if ($hour < 0) {
+                        $reportHours = $hour;
+                        $previous_begin = 24 + $hour;
+                        $split[0] = '00';
+                    }
+                    $beginEnd[0] = sprintf("%02s", $hour) . ':' . $split[1];
+
+                    // ** End **
+                    $split = explode(':', $beginEnd[1]);
+                    $hour = (int)$split[0];
+                    $hour += $tz_suffix;
+                    if ($hour < 0) {
+                        if ($numday - 1 == -1) {
+                            $saturday .= "," . sprintf("%02s", $previous_begin) . ":00-" . sprintf("%02s", (24 + $hour)) . ":00";
+                        } else {
+                            $tmp[$days[($numday - 1)]] .= "," . sprintf("%02s", $previous_begin) . ":00-" . sprintf("%02s", (24 + $hour)) . ":00";
+                        }
+                        unset($splitDay[$num]);
+                    } else {
+                        if ($hour > 24) {
+                            $reportHours = $hour - 24;
+                            $hour = 24;
+                        }
+                        $beginEnd[1] = sprintf("%02s", $hour) . ':' . $split[1];
+
+                        $hourMinute = implode('-', $beginEnd);
+                        $splitDay[$num] = $hourMinute;
+                    }
+                }
             }
             if ($reportHours < 0) {
 //                     if (!isset($tmp[$beforeday])) {
-//                        $tmp[$beforeday] = array();
+//                        $tmp[$beforeday] = [];
 //                     }
 //                     $splitBeforeDay = explode(',', $tmp[$beforeday]);
 //                     $splitBeforeDay[] = sprintf("%02s", (24 + $reportHours)).':00-24:00';
 //                     $tmp[$beforeday] = implode(',', $splitBeforeDay);
-               $reportHours = 0;
+                $reportHours = 0;
             }
             if (!empty($toAdd)) {
-               array_unshift($splitDay, $toAdd);
+                array_unshift($splitDay, $toAdd);
             }
             $tmp[$day] = implode(',', $splitDay);
-         } else if ($reportHours > 0) {
-            //$tmp[$day] = '00:00-'.$reportHours.':00';
-            $reportHours = 0;
-         }
-         $beforeday = $day;
-      }
-      // Manage for report hours from saturday to sunday
-      if ($reportHours > 0) {
-         $splitDay = explode(',', $tmp['sunday']);
-         array_unshift($splitDay, '00:00-'.sprintf("%02s", $reportHours).':00');
-         $tmp['sunday'] = implode(',', $splitDay);
-      }
-      if ($saturday != '') {
-         if (isset($tmp['saturday'])) {
-            $tmp['saturday'] .= $saturday;
-         } else {
-            $tmp['saturday'] = $saturday;
-         }
-      }
+//            $beforeday = $day;
+        }
+        // Manage for report hours from saturday to sunday
+        if ($reportHours > 0) {
+            $splitDay = explode(',', $tmp['sunday']);
+            array_unshift($splitDay, '00:00-' . sprintf("%02s", $reportHours) . ':00');
+            $tmp['sunday'] = implode(',', $splitDay);
+        }
+        if (!empty($saturday)) {
+            if (isset($tmp['saturday'])) {
+                $tmp['saturday'] .= $saturday;
+            } else {
+                $tmp['saturday'] = $saturday;
+            }
+        }
 
-      // concatenate if needed
-      foreach ($days as $day) {
-         if (isset($tmp[$day])) {
+        // concatenate if needed
+        foreach ($days as $day) {
+            if (!isset($tmp[$day])) {
+                break;
+            }
             $splitDay = explode(',', $tmp[$day]);
             $beforeHour = '';
-            $beforeNum  = 0;
-            foreach ($splitDay as $num=>$data) {
-               if (substr($data, 0, 2) == $beforeHour) {
-                  $splitDay[$beforeNum] = substr($splitDay[$beforeNum], 0, 6).substr($data, 6, 5);
-                  $beforeHour = substr($data, 6, 2);
-                  unset($splitDay[$num]);
-               } else {
-                  $beforeHour = substr($data, 6, 2);
-                  $beforeNum = $num;
-               }
+            $beforeNum = 0;
+            foreach ($splitDay as $num => $data) {
+                if (substr($data, 0, 2) == $beforeHour) {
+                    $splitDay[$beforeNum] = substr($splitDay[$beforeNum], 0, 6) . substr($data, 6, 5);
+                    $beforeHour = substr($data, 6, 2);
+                    unset($splitDay[$num]);
+                } else {
+                    $beforeHour = substr($data, 6, 2);
+                    $beforeNum = $num;
+                }
             }
             $tmp[$day] = implode(',', $splitDay);
-         }
-      }
+        }
 
-      $_SESSION['plugin_monitoring']['timeperiods'][ $tmp['timeperiod_name'] ] = $tmp;
+        $_SESSION['plugin_monitoring']['timeperiods'][$tmp['timeperiod_name']] = $tmp;
 
-      PluginMonitoringToolbox::logIfExtradebug(
-         'pm-shinken',
-         "End _addTimeperiod: {$tmp['timeperiod_name']}\n"
-      );
+        PluginMonitoringToolbox::log(" - new TP: {$tmp['timeperiod_name']}");
+        PluginMonitoringToolbox::log(" - new TP: {$tmp['timeperiod_name']}: " . print_r($tmp, true));
 
-      return true;
-   }
+        return true;
+    }
+
+
+    function generateRealmsCfg($tag = '', $file = false)
+    {
+        global $PM_CONFIG;
+
+        if (!isset($_SESSION['plugin_monitoring'])) {
+            $_SESSION['plugin_monitoring'] = [];
+        }
+
+        PluginMonitoringToolbox::logIfDebug("Starting generateRealmsCfg ...");
+
+        // Get entities concerned by the provided tag and get the definition order of the highest entty
+        $where = '';
+        if (!empty($_SESSION['plugin_monitoring']['allowed_entities'])) {
+            $where = getEntitiesRestrictRequest("WHERE",
+                "glpi_entities", '',
+                $_SESSION['plugin_monitoring']['allowed_entities']);
+        }
+
+        // Indeed, realms are compiled 'on the fly' during the other objects building process!
+        $a_realms = [];
+        if (isset($_SESSION['plugin_monitoring']['realms'])) {
+            foreach ($_SESSION['plugin_monitoring']['realms'] as $data) {
+                $my_realm = [];
+                $this->set_value(self::monitoringFilter($data['name']), 'realm_name', $my_realm);
+                $this->set_value($data['comment'], 'notes', $my_realm);
+                if ($data['name'] != 'All') {
+                    $this->set_value('All', 'higher_realms', $my_realm);
+                }
+                if (! empty($_SESSION['plugin_monitoring']['definition_order'])) {
+                    $this->set_value($_SESSION['plugin_monitoring']['definition_order'], 'definition_order', $my_realm);
+                }
+                $this->set_value($data['is_default'], 'default', $my_realm);
+                $a_realms[] = $this->properties_list_to_string($my_realm);
+            }
+        }
+
+        PluginMonitoringToolbox::log("Found " . count($a_realms) . " realms");
+        PluginMonitoringToolbox::logIfDebug("End generateRealmsCfg");
+
+        if ($PM_CONFIG['build_files']) {
+            $config = "# Generated by the monitoring plugin for GLPI\n# on " . date("Y-m-d H:i:s") . "\n";
+            $config .= "# ---\n";
+            $config .= "# Realms\n";
+            $config .= "# ---\n";
+
+            foreach ($a_realms as $data) {
+                $config .= $this->writeFile("contact", $data);
+            }
+            $filename = PLUGIN_MONITORING_CFG_DIR . '/' . $tag . '-realms.cfg';
+            file_put_contents($filename, $config);
+            PluginMonitoringToolbox::logIfDebug("Written file: " . $filename);
+
+            if ($file) return $config;
+        }
+
+        return $a_realms;
+    }
+
+
+    function _addRealm(PluginMonitoringRealm $realm)
+    {
+
+        if (!isset($_SESSION['plugin_monitoring']['realms'])) {
+            $_SESSION['plugin_monitoring']['realms'] = [];
+        }
+
+        if (!isset($_SESSION['plugin_monitoring']['realms'][$realm->getID()])) {
+            $_SESSION['plugin_monitoring']['realms'][$realm->getID()] = $realm->fields;
+            PluginMonitoringToolbox::logIfDebug("Added realm: " . $realm->getName());
+        }
+
+        PluginMonitoringToolbox::logIfDebug("End _addRealm: " . print_r($realm->fields, true));
+    }
 
 
     /**
-     * Add value with the right type (str, int, bool, float)
+     * Set a property value with the right type (str, int, bool, float)
+     *
      * @param $val
      * @param $key
      * @param $data
-     * @return array
      */
-   function add_value_type($val, $key, $data) {
-      global $PM_EXPORTFOMAT;
+    function set_value($val, $key, &$data)
+    {
+        if ($this->_is_a_list_property($key)) {
+            // Properties that are lists are always strings lists...
+            if (!isset($data[$key])) {
+                $data[$key] = [];
+            }
+            $data[$key][] = (string)$val;
+        } else {
+            switch ($key) {
+                // boolean fields
+                case "active_checks_enabled":
+                case "broker_complete_links":
+                case "business_rule_downtime_as_ack":
+                case "business_rule_smart_notifications":
+                case "can_submit_commands":
+                case "check_freshness":
+                case "default":
+                case "enable_environment_macros":
+                case "event_handler_enabled":
+                case "expert":
+                case "explode_hostgroup":
+                case "failure_prediction_enabled":
+                case "flap_detection_enabled":
+                case "host_dependency_enabled":
+                case "host_notifications_enabled":
+                case "inherits_parent":
+                case "is_active":
+                case "is_admin":
+                case "is_volatile":
+                case "merge_host_contacts":
+                case "notifications_enabled":
+                case "obsess_over_host":
+                case "obsess_over_service":
+                case "parallelize_check":
+                case "passive_checks_enabled":
+                case "process_perf_data":
+                case "register":
+                case "retain_nonstatus_information":
+                case "retain_status_information":
+                case "service_notifications_enabled":
+                case "snapshot_enabled":
+                case "trigger_broker_raise_enabled":
+                    // Always a string value
+                    $data[$key] = (string)$val;
+                    break;
 
-      if ($this->is_property_list($key)) {
-         if (!isset($data[$key])) {
-            $data[$key] = array();
-         }
-         $data[$key][] = (string)$val;
-      } else {
-         switch ($key) {
+                // integer fields
+                case "business_impact":
+                case "check_interval":
+                case "discoveryrule_order":
+                case "first_notification":
+                case "first_notification_delay":
+                case "first_notification_time":
+                case "freshness_threshold":
+                case "high_flap_threshold":
+                case "id":
+                case "last_notification":
+                case "last_notification_time":
+                case "low_flap_threshold":
+                case "max_check_attempts":
+                case "min_business_impact":
+                case "notification_interval":
+                case "retry_interval":
+                case "snapshot_interval":
+                case "timeout":
+                case "time_to_orphanage":
+                    // Always a string value
+//                    $data[$key] = (int)$val;
+                    $data[$key] = (string)$val;
+                    break;
 
-            case "active_checks_enabled": // bool
-            case "broker_complete_links":
-            case "business_rule_downtime_as_ack":
-            case "business_rule_smart_notifications":
-            case "can_submit_commands":
-            case "check_freshness":
-            case "default":
-            case "enable_environment_macros":
-            case "event_handler_enabled":
-            case "expert":
-            case "explode_hostgroup":
-            case "failure_prediction_enabled":
-            case "flap_detection_enabled":
-            case "host_dependency_enabled":
-            case "host_notifications_enabled":
-            case "inherits_parent":
-            case "is_active":
-            case "is_admin":
-            case "is_volatile":
-            case "merge_host_contacts":
-            case "notifications_enabled":
-            case "obsess_over_host":
-            case "obsess_over_service":
-            case "parallelize_check":
-            case "passive_checks_enabled":
-            case "process_perf_data":
-            case "register":
-            case "retain_nonstatus_information":
-            case "retain_status_information":
-            case "service_notifications_enabled":
-            case "snapshot_enabled":
-            case "trigger_broker_raise_enabled":
-               if ($PM_EXPORTFOMAT == 'boolean') {
-                  $data[$key] = (bool)$val;
-                  if ($data[$key] == '') {
-                     $data[$key] = (bool)0;
-                  }
-               } else {
-                  $data[$key] = (int)$val;
-                  if ($data[$key] == '') {
-                     $data[$key] = (int)0;
-                  }
-               }
-               break;
-
-            case "business_impact": // int
-            case "check_interval":
-            case "discoveryrule_order":
-            case "first_notification":
-            case "first_notification_delay":
-            case "first_notification_time":
-            case "freshness_threshold":
-            case "high_flap_threshold":
-            case "id":
-            case "last_notification":
-            case "last_notification_time":
-            case "low_flap_threshold":
-            case "max_check_attempts":
-            case "min_business_impact":
-            case "notification_interval":
-            case "retry_interval":
-            case "snapshot_interval":
-            case "timeout":
-            case "time_to_orphanage":
-            // case "_ENTITIESID":
-            // case "_HOSTID":
-            // case "_ITEMSID":
-               $data[$key] = (int)$val;
-               break;
-
-           default: // string
-              $data[$key] = (string)$val;
-         }
-      }
-      return $data;
-   }
+                default: // string
+                    $data[$key] = (string)$val;
+            }
+        }
+    }
 
 
-   function properties_list_to_string($data) {
-      foreach ($data as $key=>$val) {
-         if ($this->is_property_list($key)) {
-               $data[$key] = implode(',', array_unique($val));
-         }
-      }
-      return $data;
-   }
+    function properties_list_to_string($data)
+    {
+        foreach ($data as $key => $val) {
+            if ($this->_is_a_list_property($key)) {
+                $data[$key] = implode(',', array_unique($val));
+            }
+        }
+        return $data;
+    }
 
 
-   function is_property_list($key) {
-
-      switch ($key) {
-
-         case "business_impact_modulations": // list
-         case "business_rule_host_notification_options":
-         case "business_rule_service_notification_options":
-         case "checkmodulations":
-         case "contacts":
-         case "contact_groups":
-         case "custom_views":
-         case "dateranges":
-         case "escalations":
-         case "escalation_options":
-         case "exclude":
-         case "execution_failure_criteria":
-         case "flap_detection_options":
-         case "higher_realms":
-         case "hostgroups":
-         case "hostgroup_members":
-         case "host_notification_commands":
-         case "host_notification_options":
-         case "labels":
-         case "macromodulations":
-         case "members":
-         case "modules":
-         case "notificationways":
-         case "notification_failure_criteria":
-         case "notification_options":
-         case "parents":
-         case "realm_members":
-         case "resultmodulations":
-         case "servicegroups":
-         case "service_dependencies":
-         case "service_excludes":
-         case "service_includes":
-         case "service_notification_commands":
-         case "service_notification_options":
-         case "service_overrides":
-         case "snapshot_criteria":
-         case "stalking_options":
-         case "trending_policies":
-         case "unknown_members":
-            return true;
-      }
-      return false;
-   }
+    function _is_a_list_property($key)
+    {
+        return in_array($key, [
+            '_DOCUMENTS',
+            "business_impact_modulations", "business_rule_host_notification_options",
+            "business_rule_service_notification_options", "checkmodulations", "contacts", "contact_groups",
+            "custom_views", "dateranges", "escalations", "escalation_options", "exclude", "execution_failure_criteria",
+            "flap_detection_options", "higher_realms", "hostgroups", "hostgroup_members", "host_notification_commands",
+            "host_notification_options", "labels", "macromodulations", "members", "modules", "notificationways",
+            "notification_failure_criteria", "notification_options", "parents", "realm_members", "resultmodulations",
+            "servicegroups", "service_dependencies", "service_excludes", "service_includes",
+            "service_notification_commands", "service_notification_options", "service_overrides", "snapshot_criteria",
+            "stalking_options", "trending_policies", "unknown_members", "use"
+        ]);
+    }
 }
-

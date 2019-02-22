@@ -49,7 +49,7 @@ if (isset ($_POST["add"])) {
         $category_name = Dropdown::getDropdownName("glpi_itilcategories", $_POST['itilcategories_id']);
         $track_name = __('Scheduled downtime', 'monitoring') . " / " . $category_name;
 
-        $fields = array();
+        $fields = [];
         $fields['content'] = "";
 
         // Find ticket template if available ...
@@ -111,7 +111,7 @@ if (isset ($_POST["add"])) {
 // Read or edit downtime ...
 if (isset($_GET['id']) || isset($_GET['host_id'])) {
     // If host_id is defined, use it ...
-    $data = array('id' => $_GET["id"]);
+    $data = ['id' => $_GET["id"]];
     if (isset($_GET['host_id'])) {
         $data['host_id'] = $_GET['host_id'];
     }

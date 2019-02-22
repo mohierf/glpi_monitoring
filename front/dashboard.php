@@ -30,93 +30,28 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
-   Session::checkCentralAccess();
-   Html::header(__('Monitoring - dashboard', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-                "PluginMonitoringDashboard", "dashboard");
+    Session::checkCentralAccess();
+    Html::header(__('Monitoring - dashboard', 'monitoring'),
+        "", "config", "pluginmonitoringmenu", "dashboard");
 } else {
-   Session::checkHelpdeskAccess();
-   Html::helpHeader(__('Monitoring - dashboard', 'monitoring'), $_SERVER['PHP_SELF']);
+    Session::checkHelpdeskAccess();
+    Html::helpHeader(__('Monitoring - dashboard', 'monitoring'), "");
 }
 
 Session::checkRight("plugin_monitoring_dashboard", READ);
 
-$pm = new PluginMonitoringComponentscatalog();
-//$pm->create_default_templates();
-
-$pmDisplay = new PluginMonitoringDisplay();
 $pmMessage = new PluginMonitoringMessage();
-
 $pmMessage->getMessages();
 
-$pmDisplay->menu();
+$pmDisplay = new PluginMonitoringDisplay();
+$pmDisplay->dashboard();
 
-
-$abc = new Alignak_Backend_Client($PM_CONFIG['alignak_backend_url']);
-PluginMonitoringUser::myToken($abc);
-
-$pmWebui = new PluginMonitoringWebui();
-$pmWebui->authentication($abc->token);
-
-echo "<table class='tab_cadre_fixe'>";
-
-echo '<tr>';
-echo "<td width='50%' style='vertical-align: top;'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_hosts_chart?widget_id=livestate_hosts_chart";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "<td width='50%' style='vertical-align: top;'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_hosts_history_chart?widget_id=livestate_hosts_history_chart";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "</tr>";
-
-echo '<tr>';
-echo "<td width='50%' style='vertical-align: top;'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_services_chart?widget_id=livestate_services_chart";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "<td width='50%' style='vertical-align: top;'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_services_history_chart?widget_id=livestate_services_history_chart";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "</tr>";
-
-echo '<tr>';
-echo "<td width='50%' style='vertical-align: top;'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_hosts_counters?widget_id=livestate_hosts_counters";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "<td width='50%' style='vertical-align: top;'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_services_counters?widget_id=livestate_services_counters";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "</tr>";
-
-echo '<tr>';
-echo "<td width='50%' style='vertical-align: top;'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_hosts_sla?widget_id=livestate_hosts_sla";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "<td width='50%' style='vertical-align: top;'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_services_sla?widget_id=livestate_services_sla";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "</tr>";
-
-echo '<tr>';
-echo "<td style='vertical-align: top;' colspan='2'>";
-$page = $PM_CONFIG['alignak_webui_url']."/external/widget/livestate_table?widget_id=livestate_table";
-$pmWebui->load_page($page);
-echo "</td>";
-echo "</tr>";
-echo "</table>";
 
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
-   Html::footer();
+    Html::footer();
 } else {
-   Html::helpFooter();
+    Html::helpFooter();
 }
-?>

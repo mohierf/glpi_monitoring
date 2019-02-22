@@ -453,8 +453,11 @@ class PluginMonitoringDisplayview extends CommonDBTM
         $rand = mt_rand();
         if ($canedit && $nb) {
             Html::openMassiveActionsForm('mass' . __CLASS__ . $rand);
-            $paramsma = array('container' => 'mass' . __CLASS__ . $rand,
-                'num_displayed' => $nb);
+            $paramsma = [
+                'container' => 'mass' . __CLASS__ . $rand,
+                'num_displayed' => $nb,
+                'specific_actions' => 'deleteitem'
+            ];
 
             if ($this->fields['users_id'] != Session::getLoginUserID()) {
                 $paramsma['confirm'] = __('Caution! You are not the author of this element. Delete targets can result in loss of access to that element.');
@@ -841,7 +844,7 @@ class PluginMonitoringDisplayview extends CommonDBTM
             }
 
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/service.php?hidesearch=1"
+                "/plugins/monitoring/front/status_services.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=" . $field_id . ""
                 . "&criteria[0][searchtype]=equals"

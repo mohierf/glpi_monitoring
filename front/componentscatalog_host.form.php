@@ -37,8 +37,8 @@ Session::checkRight("plugin_monitoring_componentscatalog", UPDATE);
 $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
 
 if (isset ($_POST["add"])) {
-   if (isset($_POST['items_id'])
-           AND $_POST['items_id'] != '0') {
+   if (isset($_POST['items_id']) AND isset($_POST['itemtype'])
+       AND $_POST['items_id'] != '0') {
       $pmComponentscatalog_Host->add($_POST);
    }
    Html::back();
@@ -50,5 +50,3 @@ if (isset ($_POST["add"])) {
 }
 
 Html::footer();
-
-?>

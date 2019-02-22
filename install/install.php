@@ -37,6 +37,7 @@ class PluginMonitoringInstall
 
     /**
      * Install the plugin
+     *
      * @param Migration $migration
      *
      * @return boolean
@@ -71,6 +72,7 @@ class PluginMonitoringInstall
 
     /**
      * Upgrade the plugin
+     *
      * @param Migration $migration
      *
      * @return boolean
@@ -218,12 +220,12 @@ class PluginMonitoringInstall
     {
         global $DB;
 
-        Toolbox::logInFile(PLUGIN_MONITORING_LOG, "Dropping the plugin tables:");
+        PluginMonitoringToolbox::log("Dropping the plugin tables:");
 
         // Drop tables of the plugin if they exist
         $result = $DB->query("SHOW TABLES LIKE 'glpi_plugin_monitoring_%'");
         while ($data = $DB->fetch_array($result)) {
-            Toolbox::logInFile(PLUGIN_MONITORING_LOG, "- dropping: {$data[0]}");
+            PluginMonitoringToolbox::log("- dropping: {$data[0]}");
             $DB->query("DROP TABLE " . $data[0] . " ");
         }
     }
@@ -241,6 +243,9 @@ class PluginMonitoringInstall
         if (!is_dir(PLUGIN_MONITORING_DOC_DIR . '/templates')) {
             mkdir(PLUGIN_MONITORING_DOC_DIR . "/templates");
         }
+        if (!is_dir(PLUGIN_MONITORING_DOC_DIR . '/configuration_files')) {
+            mkdir(PLUGIN_MONITORING_DOC_DIR . "/configuration_files");
+        }
 //        if (!is_dir(PLUGIN_MONITORING_DOC_DIR . '/weathermapbg')) {
 //            mkdir(PLUGIN_MONITORING_DOC_DIR . "/weathermapbg");
 //        }
@@ -257,7 +262,7 @@ class PluginMonitoringInstall
         $this->migration->displayMessage("Creating database items:");
 
         $user = new User();
-        if (! $user->getFromDBByCrit(['name' => "monitoring"])) {
+        if (!$user->getFromDBByCrit(['name' => "monitoring"])) {
             $this->migration->displayMessage("- monitoring user");
             $input = [];
             $input['name'] = 'monitoring';
@@ -268,11 +273,11 @@ class PluginMonitoringInstall
         }
 
         $calendar = new Calendar();
-        if (! $calendar->getFromDBByCrit(['name' => "24x7"])) {
+        if (!$calendar->getFromDBByCrit(['name' => "24x7"])) {
             $this->migration->displayMessage("- calendar 24x7");
             $input = [];
-            $input['name'] = '24x7';
-            $input['comment'] = 'Created by the monitoring plugin';
+            $input['name'] = "24x7";
+            $input['comment'] = "Always (24 hours a day, seven days a week)\nCreated by the monitoring plugin";
             $input['is_recursive'] = 1;
             $calendars_id = $calendar->add($input);
 
@@ -300,47 +305,110 @@ class PluginMonitoringInstall
             $this->migration->displayMessage("- calendar 24x7 is still existing");
         }
 
+        $calendar = new Calendar();
+        if (!$calendar->getFromDBByCrit(['name' => "monitoring-default"])) {
+            $this->migration->displayMessage("- calendar monitoring-default");
+            $input = [];
+            $input['name'] = "monitoring-default";
+            $input['comment'] = "Default monitoring check period (Every day, 08:00 - 20:00))\nCreated by the monitoring plugin";
+            $input['is_recursive'] = 1;
+            $calendars_id = $calendar->add($input);
+
+            $calendarSegment = new CalendarSegment();
+            $input = [];
+            $input['calendars_id'] = $calendars_id;
+            $input['is_recursive'] = 1;
+            $input['begin'] = '08:00:00';
+            $input['end'] = '20:00:00';
+            $input['day'] = '0';
+            $calendarSegment->add($input);
+            $input['day'] = '1';
+            $calendarSegment->add($input);
+            $input['day'] = '2';
+            $calendarSegment->add($input);
+            $input['day'] = '3';
+            $calendarSegment->add($input);
+            $input['day'] = '4';
+            $calendarSegment->add($input);
+            $input['day'] = '5';
+            $calendarSegment->add($input);
+            $input['day'] = '6';
+            $calendarSegment->add($input);
+        } else {
+            $this->migration->displayMessage("- calendar monitoring-default is still existing");
+        }
+
+        // Create default entities tags
+        $this->migration->displayMessage("- default entities tags");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/entity.class.php";
+        $pmCommand = new PluginMonitoringEntity();
+        $pmCommand->initialize($this->migration);
+
         // Create default realms
         $this->migration->displayMessage("- default realms");
         require_once GLPI_ROOT . "/plugins/monitoring/inc/realm.class.php";
         $pmCommand = new PluginMonitoringRealm();
-        $pmCommand->initialize();
+        $pmCommand->initialize($this->migration);
 
         // Create default check strategies
         $this->migration->displayMessage("- default check strategies");
         require_once GLPI_ROOT . "/plugins/monitoring/inc/check.class.php";
         $pmCommand = new PluginMonitoringCheck();
-        $pmCommand->initialize();
+        $pmCommand->initialize($this->migration);
 
         // Create default commands
         $this->migration->displayMessage("- default commands");
         require_once GLPI_ROOT . "/plugins/monitoring/inc/command.class.php";
         $pmCommand = new PluginMonitoringCommand();
-        $pmCommand->initialize();
+        $pmCommand->initialize($this->migration);
 
         // Create default notification commands
         $this->migration->displayMessage("- default notification commands");
         require_once GLPI_ROOT . "/plugins/monitoring/inc/notificationcommand.class.php";
         $pmCommand = new PluginMonitoringNotificationcommand();
-        $pmCommand->initialize();
+        $pmCommand->initialize($this->migration);
+
+        // Create default host templates
+        $this->migration->displayMessage("- default hosts templates");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/hosttemplate.class.php";
+        $pmCommand = new PluginMonitoringHosttemplate();
+        $pmCommand->initialize($this->migration);
 
         // Create default contact templates
-        $this->migration->displayMessage("- default contact templates");
+        $this->migration->displayMessage("- default contacts templates");
         require_once GLPI_ROOT . "/plugins/monitoring/inc/contacttemplate.class.php";
         $pmCommand = new PluginMonitoringContacttemplate();
-        $pmCommand->initialize();
+        $pmCommand->initialize($this->migration);
 
         // Create default host notifications templates
         $this->migration->displayMessage("- default host notifications templates");
         require_once GLPI_ROOT . "/plugins/monitoring/inc/hostnotificationtemplate.class.php";
         $pmCommand = new PluginMonitoringHostnotificationtemplate();
-        $pmCommand->initialize();
+        $pmCommand->initialize($this->migration);
 
         // Create default service notifications templates
         $this->migration->displayMessage("- default service notifications templates");
         require_once GLPI_ROOT . "/plugins/monitoring/inc/servicenotificationtemplate.class.php";
         $pmCommand = new PluginMonitoringServicenotificationtemplate();
-        $pmCommand->initialize();
+        $pmCommand->initialize($this->migration);
+
+        // Create default monitoring contact
+        $this->migration->displayMessage("- default monitoring contact");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/contact.class.php";
+        $pmCommand = new PluginMonitoringContact();
+        $pmCommand->initialize($this->migration);
+
+        // Create default components
+        $this->migration->displayMessage("- default components");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/component.class.php";
+        $pmCommand = new PluginMonitoringComponent();
+        $pmCommand->initialize($this->migration);
+
+        // Create default host configuration
+        $this->migration->displayMessage("- default host configuration");
+        require_once GLPI_ROOT . "/plugins/monitoring/inc/hostconfig.class.php";
+        $pmCommand = new PluginMonitoringHostconfig();
+        $pmCommand->initialize($this->migration);
     }
 
     /**
@@ -353,25 +421,57 @@ class PluginMonitoringInstall
 
         // TODO: some other are to be registered !
 
-        CronTask::Register('PluginMonitoringLog', 'cleanlogs', '96400',
-            array('mode' => 2, 'allowmode' => 3, 'logs_lifetime' => 30));
-        CronTask::Register('PluginMonitoringUnavailability', 'unavailability', '300',
-            array('mode' => 2, 'allowmode' => 3, 'logs_lifetime' => 30));
-        CronTask::Register('PluginMonitoringDisplayview_rule', 'replayallviewrules', '1200',
-            array('mode' => 2, 'allowmode' => 3, 'logs_lifetime' => 30));
+        CronTask::Register('PluginMonitoringLog', 'cleanlogs',
+            DAY_TIMESTAMP,
+            [
+                'comment' => __('Clean the monitoring log.', 'monitoring'),
+                'mode' => CronTask::MODE_EXTERNAL,
+                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
+                'hourmin' => 0, 'hourmax' => 24,
+                'logs_lifetime' => 30
+            ]
+        );
+        // Fred: do not manage unavailability
+//        CronTask::Register('PluginMonitoringUnavailability', 'unavailability',
+//            MINUTE_TIMESTAMP * 5,
+//            [
+//                'mode' => CronTask::MODE_EXTERNAL,
+//                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
+//                'hourmin' => 0, 'hourmax' => 24,
+//                'logs_lifetime' => 30
+//            ]
+//        );
+        CronTask::Register('PluginMonitoringDisplayview_rule', 'replayallviewrules',
+            MINUTE_TIMESTAMP * 30,
+            [
+                'comment' => __('Run the rules engine to compute information.', 'monitoring'),
+                'mode' => CronTask::MODE_EXTERNAL,
+                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
+                'hourmin' => 0, 'hourmax' => 24,
+                'logs_lifetime' => 30
+            ]
+        );
 
-        CronTask::Register('PluginMonitoringAlignak', 'AlignakBuild', DAY_TIMESTAMP, [
-            'comment' => __('Alignak - to be developed...', 'alignak'),
-            'mode' => CronTask::MODE_EXTERNAL,
-            'state' => CronTask::STATE_DISABLE,
-            'param' => 50
-        ]);
-        CronTask::Register('PluginMonitoringComputerTemplate', 'AlignakComputerTemplate', DAY_TIMESTAMP, [
-            'comment' => __('Alignak Send Counters-...', 'alignak'),
-            'mode' => CronTask::MODE_EXTERNAL,
-            'state' => CronTask::STATE_DISABLE,
-            'param' => 50
-        ]);
+//        CronTask::Register('PluginMonitoringAlignak', 'AlignakBuild',
+//            DAY_TIMESTAMP,
+//            [
+//                'comment' => __('Alignak - to be developed...', 'monitoring'),
+//                'mode' => CronTask::MODE_EXTERNAL,
+//                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
+//                'hourmin' => 0, 'hourmax' => 24,
+//                'param' => 50
+//            ]
+//        );
+//        CronTask::Register('PluginMonitoringComputerTemplate', 'AlignakComputerTemplate',
+//            DAY_TIMESTAMP,
+//            [
+//                'comment' => __('Alignak Send Counters-...', 'monitoring'),
+//                'mode' => CronTask::MODE_EXTERNAL,
+//                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
+//                'hourmin' => 0, 'hourmax' => 24,
+//                'param' => 50
+//            ]
+//        );
     }
 
     /**

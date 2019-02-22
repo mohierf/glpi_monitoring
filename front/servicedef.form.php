@@ -30,32 +30,30 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "servicedef");
+Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
+    "monitoring", "servicedef");
 
 $pmServicedef = new PluginMonitoringServicedef();
 if (isset($_POST["add"])) {
-   $pmServicedef->add($_POST);
-   Html::back();
+    $pmServicedef->add($_POST);
+    Html::back();
 } else if (isset ($_POST["update"])) {
-   $pmServicedef->update($_POST);
-   Html::back();
+    $pmServicedef->update($_POST);
+    Html::back();
 } else if (isset ($_POST["delete"])) {
-   $pmServicedef->delete($_POST);
-   Html::back();
+    $pmServicedef->delete($_POST);
+    Html::back();
 }
 
 
 if (isset($_GET["id"])) {
-   $pmServicedef->showForm($_GET["id"]);
+    $pmServicedef->showForm($_GET["id"]);
 } else {
-   $pmServicedef->showForm(0);
+    $pmServicedef->showForm(0);
 }
 
 Html::footer();
-
-?>

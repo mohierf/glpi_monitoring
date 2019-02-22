@@ -40,20 +40,24 @@ class PluginMonitoringHostnotificationtemplate extends CommonDBTM
 
     /**
      * Initialization called on plugin installation
+     * @param Migration $migration
      */
-    function initialize()
+    function initialize($migration)
+
     {
-        $check_period = -1;
+        $hn_period = -1;
         $calendar = new Calendar();
         if ($calendar->getFromDBByCrit(['name' => "24x7"])) {
-            $check_period = $calendar->getID();
+            $hn_period = $calendar->getID();
         }
 
         $input = [];
         $input['name'] = 'Default host notification';
         $input['hn_enabled'] = '0';
-        $input['hn_period'] = $check_period;
+        $input['hn_period'] = $hn_period;
         $this->add($input);
+
+        $migration->displayMessage("  created default host notification template");
     }
 
     static function getTypeName($nb = 0)

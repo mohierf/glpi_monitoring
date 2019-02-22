@@ -42,4 +42,3 @@ if (isset($_POST['generatepdf'])) {
 } else {
    Html::back();
 }
-?>

@@ -40,8 +40,9 @@ class PluginMonitoringCheck extends CommonDBTM
 
     /**
      * Initialization called on plugin installation
+     * @param Migration $migration
      */
-    function initialize()
+    function initialize($migration)
     {
         $input = [];
         $input['name'] = '5 minutes / 5 retries';
@@ -84,6 +85,8 @@ class PluginMonitoringCheck extends CommonDBTM
         $input['check_interval'] = '60';
         $input['retry_interval'] = '1';
         $this->add($input);
+
+        $migration->displayMessage("  created default check strategies");
     }
 
 
@@ -111,8 +114,9 @@ class PluginMonitoringCheck extends CommonDBTM
             'name' => __('Check strategies', 'monitoring')
         ];
 
+        $index = 1;
         $tab[] = [
-            'id' => '1',
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'name',
             'name' => __('Name'),
@@ -120,7 +124,7 @@ class PluginMonitoringCheck extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '2',
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'max_check_attempts',
             'datatype' => 'number',
@@ -128,7 +132,7 @@ class PluginMonitoringCheck extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '3',
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'check_interval',
             'datatype' => 'number',
@@ -136,7 +140,7 @@ class PluginMonitoringCheck extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '4',
+            'id' => $index,
             'table' => $this->getTable(),
             'field' => 'retry_interval',
             'datatype' => 'number',

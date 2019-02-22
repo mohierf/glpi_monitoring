@@ -37,6 +37,10 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringProfile extends Profile
 {
+    // Specific rights
+    const HOMEPAGE = 1024;
+    const DASHBOARD = 2048;
+
 
     /**
      * The right name for this class
@@ -49,8 +53,9 @@ class PluginMonitoringProfile extends Profile
     /**
      * Get the tab name used for item
      *
-     * @param  CommonGLPI $item the item object
+     * @param  CommonGLPI $item      the item object
      * @param  integer $withtemplate 1 if it is a template form
+     *
      * @return string name of the tab
      */
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
@@ -62,8 +67,8 @@ class PluginMonitoringProfile extends Profile
     /**
      * show Tab content
      *
-     * @param CommonGLPI $item Item on which the tab need to be displayed
-     * @param integer $tabnum tab number (default 1)
+     * @param CommonGLPI $item      Item on which the tab need to be displayed
+     * @param integer $tabnum       tab number (default 1)
      * @param integer $withtemplate is a template object ? (default 0)
      *
      * @return boolean
@@ -87,7 +92,7 @@ class PluginMonitoringProfile extends Profile
     static function uninstallProfile()
     {
         $pmProfile = new self();
-        Toolbox::logInFile(PLUGIN_MONITORING_LOG, "Removing plugin rights from the database\n");
+        PluginMonitoringToolbox::log("Removing plugin rights from the database");
         foreach ($pmProfile->getAllRights() as $data) {
             ProfileRight::deleteProfileRights([$data['field']]);
         }
@@ -115,6 +120,7 @@ class PluginMonitoringProfile extends Profile
      * - plugin_monitoring_central: display information on the central page
      *
      * @param bool $self_service
+     *
      * @return array
      */
     function getRightsGeneral($self_service = false)
@@ -134,13 +140,14 @@ class PluginMonitoringProfile extends Profile
 
             $rights[] = [
                 'rights' => [READ => __('Read'), UPDATE => __('Update')],
-                'itemtype' => 'PluginAlignakConfig',
+                'itemtype' => 'PluginMonitoringConfig',
                 'label' => __('Configuration', 'monitoring'),
                 'field' => 'plugin_monitoring_configuration'
             ];
 
             $rights[] = [
-                'itemtype' => 'PluginAlignakDashboard',
+                'rights' => [self::DASHBOARD => __('Dashboard')],
+                'itemtype' => 'PluginMonitoringDashboard',
                 'label' => __('Dashboards', 'monitoring'),
                 'field' => 'plugin_monitoring_dashboard'
             ];
@@ -153,6 +160,7 @@ class PluginMonitoringProfile extends Profile
      * Get rights for the plugin monitoring features
      *
      * @param bool $self_service
+     *
      * @return array
      */
     function getRightsMonitoring($self_service = false)
@@ -187,10 +195,6 @@ class PluginMonitoringProfile extends Profile
 //                'label' => __('Services catalog', 'monitoring'),
 //                'field' => 'plugin_monitoring_servicescatalog'
 //            ],
-//            ['itemtype' => 'PluginMonitoringWeathermap',
-//                'label' => __('Weathermap', 'monitoring'),
-//                'field' => 'plugin_monitoring_weathermap'
-//            ],
             ['itemtype' => 'PluginMonitoringComponentscatalog',
                 'label' => __('Components catalog', 'monitoring'),
                 'field' => 'plugin_monitoring_componentscatalog'
@@ -200,8 +204,8 @@ class PluginMonitoringProfile extends Profile
                 'field' => 'plugin_monitoring_component'
             ],
             ['itemtype' => 'PluginMonitoringContacttemplate',
-                'label' => __('Notifications', 'monitoring'),
-                'field' => 'plugin_monitoring_notification'
+                'label' => __('Contacts', 'monitoring'),
+                'field' => 'plugin_monitoring_contact'
             ],
             ['itemtype' => 'PluginMonitoringHostnotificationtemplate',
                 'label' => __('Notifications', 'monitoring'),
@@ -219,10 +223,10 @@ class PluginMonitoringProfile extends Profile
 //                'label' => __('Performance data', 'monitoring'),
 //                'field' => 'plugin_monitoring_perfdata'
 //            ],
-            ['itemtype' => 'PluginMonitoringEventhandler',
-                'label' => __('Event handler', 'monitoring'),
-                'field' => 'plugin_monitoring_eventhandler'
-            ],
+//            ['itemtype' => 'PluginMonitoringEventhandler',
+//                'label' => __('Event handler', 'monitoring'),
+//                'field' => 'plugin_monitoring_eventhandler'
+//            ],
             ['itemtype' => 'PluginMonitoringRealm',
                 'label' => __('Reamls', 'monitoring'),
                 'field' => 'plugin_monitoring_realm'
@@ -237,23 +241,25 @@ class PluginMonitoringProfile extends Profile
             ],
             ['rights' => [CREATE => __('Create')],
                 'label' => __('Restart Shinken', 'monitoring'),
-                'field' => 'plugin_monitoring_restartshinken'
+                'field' => 'plugin_monitoring_command_fmwk'
             ],
             ['itemtype' => 'PluginMonitoringService',
                 'label' => __('Services (ressources)', 'monitoring'),
                 'field' => 'plugin_monitoring_service'
             ],
-            ['itemtype' => 'PluginMonitoringSystem',
+            ['rights' => [self::DASHBOARD => __('Dashboard')],
+                'itemtype' => 'PluginMonitoringSystem',
                 'label' => __('System status', 'monitoring'),
                 'field' => 'plugin_monitoring_systemstatus'
             ],
-            ['itemtype' => 'PluginMonitoringHost',
+            ['rights' => [self::DASHBOARD => __('Dashboard')],
+                'itemtype' => 'PluginMonitoringHost',
                 'label' => __('Host status', 'monitoring'),
                 'field' => 'plugin_monitoring_hoststatus'
             ],
             ['rights' => [CREATE => __('Create')],
-                'label' => __('Host commands', 'monitoring'),
-                'field' => 'plugin_monitoring_hostcommand'
+                'label' => __('Host actions', 'monitoring'),
+                'field' => 'plugin_monitoring_host_actions'
             ],
         ];
         return $rights;
@@ -267,11 +273,11 @@ class PluginMonitoringProfile extends Profile
      * @param  boolean $openform
      * @param  boolean $closeform
      * @param  boolean $self_service : true if the profile is the self-service profile
+     *
      * @return true
      */
     function showForm($profiles_id = 0, $openform = true, $closeform = true, $self_service = false)
     {
-
         echo "<div class='firstbloc $self_service'>";
         if (($canedit = Session::haveRightsOr(self::$rightname, [CREATE, UPDATE, PURGE])) && $openform) {
             $profile = new Profile();
@@ -320,7 +326,7 @@ class PluginMonitoringProfile extends Profile
     {
         // Get current profile
         $profile = new self();
-        Toolbox::logInFile(PLUGIN_MONITORING_LOG, "Removing plugin rights from the session\n");
+        PluginMonitoringToolbox::log("Removing plugin rights from the session\n");
         foreach ($profile->getAllRights() as $right) {
             if (isset($_SESSION['glpiactiveprofile'][$right['field']])) {
                 unset($_SESSION['glpiactiveprofile'][$right['field']]);
@@ -336,14 +342,14 @@ class PluginMonitoringProfile extends Profile
      */
     static function initProfile()
     {
-        Toolbox::logInFile(PLUGIN_MONITORING_LOG, "Initializing plugin profile rights:\n");
+        PluginMonitoringToolbox::log("Initializing plugin profile rights:\n");
         // Add all plugin rights to the current user profile
         if (isset($_SESSION['glpiactiveprofile']) && isset($_SESSION['glpiactiveprofile']['id'])) {
             // Set the plugin profile rights for the currently used profile
             self::createFirstAccess($_SESSION['glpiactiveprofile']['id']);
         } else {
             // No current profile!
-            Toolbox::logInFile(PLUGIN_MONITORING_LOG, "No current profile in the session!\n");
+            PluginMonitoringToolbox::log("No current profile in the session!\n");
         }
     }
 
@@ -376,7 +382,7 @@ class PluginMonitoringProfile extends Profile
         // Get current profile
         $profile = new Profile();
         $profile->getFromDB($profiles_id);
-        Toolbox::logInFile(PLUGIN_MONITORING_LOG, "Add default rights for the profile: {$profile->getName()}\n");
+        PluginMonitoringToolbox::log("Add default rights for the profile: {$profile->getName()}\n");
 
         foreach ($rights as $right => $value) {
             // If it does not yet exists...
@@ -384,14 +390,14 @@ class PluginMonitoringProfile extends Profile
                 // Update the profile right
                 $myright['rights'] = $value;
                 $profileRight->update($myright);
-                Toolbox::logInFile(PLUGIN_MONITORING_LOG, "- updating: $right = $value\n");
+                PluginMonitoringToolbox::log("- updating: $right = $value\n");
             } else {
                 // Create the profile right
                 $myright['profiles_id'] = $profiles_id;
                 $myright['name'] = $right;
                 $myright['rights'] = $value;
                 $profileRight->add($myright);
-                Toolbox::logInFile(PLUGIN_MONITORING_LOG, "- added: $right = $value\n");
+                PluginMonitoringToolbox::log("- added: $right = $value\n");
             }
 
             // Update right in the current session

@@ -32,7 +32,7 @@
 
 include("../../../inc/includes.php");
 
-Session::checkRight("plugin_monitoring_eventhandler", READ);
+Session::checkRight("plugin_monitoring_command", READ);
 
 Html::header(__('Monitoring - event handlers', 'monitoring'),
     "", "config", "pluginmonitoringmenu", "eventhandler");

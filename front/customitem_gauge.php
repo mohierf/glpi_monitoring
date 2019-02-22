@@ -41,4 +41,3 @@ Html::header(__('Monitoring - gauge', 'monitoring'),$_SERVER["PHP_SELF"], "plugi
 Search::show('PluginMonitoringCustomitem_gauge');
 
 Html::footer();
-?>

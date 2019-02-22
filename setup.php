@@ -45,6 +45,14 @@ define('PLUGIN_MONITORING_GLPI_MIN_VERSION', '9.2');
 define('PLUGIN_MONITORING_NAME', 'monitoring plugin');
 define('PLUGIN_MONITORING_LOG', 'plugin-monitoring');
 
+/*
+ * Set to:
+ * - shinken for Shinken
+ * - alignak for Algnak (configuration files)
+ * - alignak_backend for Alignak backend connection (removed from initial source code!)
+ */
+define("PLUGIN_MONITORING_SYSTEM", "alignak");
+
 if (!defined("PLUGIN_MONITORING_DIR")) {
     define("PLUGIN_MONITORING_DIR", GLPI_ROOT . "/plugins/monitoring");
 }
@@ -54,12 +62,49 @@ if (!defined("PLUGIN_MONITORING_DOC_DIR")) {
 if (!file_exists(PLUGIN_MONITORING_DOC_DIR)) {
     mkdir(PLUGIN_MONITORING_DOC_DIR);
 }
+if (!defined("PLUGIN_MONITORING_CFG_DIR")) {
+    define("PLUGIN_MONITORING_CFG_DIR", PLUGIN_MONITORING_DOC_DIR . '/configuration_files');
+}
+if (!file_exists(PLUGIN_MONITORING_CFG_DIR)) {
+    mkdir(PLUGIN_MONITORING_CFG_DIR);
+}
 
 define('_MPDF_TEMP_PATH', PLUGIN_MONITORING_DOC_DIR . '/pdf/');
 
-// Used for use config values in 'cache'
-$PM_CONFIG = array();
-$PM_EXPORTFOMAT = 'boolean';
+// Used for cached configuration values
+$PM_CONFIG = [];
+
+// Used for cached monitoring framework livestate
+$PM_LIVESTATE = [
+    'hosts_total' => 0,
+    'hosts_not_monitored' => 0,
+    'hosts_up_hard' => 0,
+    'hosts_up_soft' => 0,
+    'hosts_down_hard' => 0,
+    'hosts_down_soft' => 0,
+    'hosts_unreachable_hard' => 0,
+    'hosts_unreachable_soft' => 0,
+    'hosts_problems' => 0,
+    'hosts_acknowledged' => 0,
+    'hosts_in_downtime' => 0,
+    'hosts_flapping' => 0,
+    'services_total' => 0,
+    'services_not_monitored' => 0,
+    'services_ok_hard' => 0,
+    'services_ok_soft' => 0,
+    'services_warning_hard' => 0,
+    'services_warning_soft' => 0,
+    'services_critical_hard' => 0,
+    'services_critical_soft' => 0,
+    'services_unknown_hard' => 0,
+    'services_unknown_soft' => 0,
+    'services_unreachable_hard' => 0,
+    'services_unreachable_soft' => 0,
+    'services_problems' => 0,
+    'services_acknowledged' => 0,
+    'services_in_downtime' => 0,
+    'services_flapping' => 0,
+];
 
 // Used to declare Alignak backend managed objects
 $PM_ALIGNAK_ELEMENTS = array();
@@ -72,8 +117,6 @@ $PM_ALIGNAK_ELEMENTS = array();
 function plugin_init_monitoring()
 {
     global $PLUGIN_HOOKS, $PM_CONFIG, $PM_ALIGNAK_ELEMENTS;
-
-    define("PLUGIN_MONITORING_SYSTEM", "alignak");
 
     $PLUGIN_HOOKS['csrf_compliant']['monitoring'] = true;
 
@@ -96,16 +139,23 @@ function plugin_init_monitoring()
         );
 
         // Classes registration
+        Plugin::registerClass('PluginMonitoringCommmand');
+        Plugin::registerClass('PluginMonitoringEventhandler');
+        Plugin::registerClass('PluginMonitoringComponent');
+
+        Plugin::registerClass('PluginMonitoringContact',
+            array('addtabon' => array('User')));
+
         Plugin::registerClass('PluginMonitoringEntity',
             array('addtabon' => array('Entity')));
         Plugin::registerClass('PluginMonitoringComponentscatalog',
             array('addtabon' => array('Central')));
-        Plugin::registerClass('PluginMonitoringUser',
-            array('addtabon' => array('User')));
         Plugin::registerClass('PluginMonitoringDisplayview',
             array('addtabon' => array('Central')));
         Plugin::registerClass('PluginMonitoringHost',
-            array('addtabon' => array('Central', 'Computer', 'Device', 'Printer', 'NetworkEquipment')));
+            array('addtabon' => array('Central', 'Computer')));
+//        Plugin::registerClass('PluginMonitoringHost',
+//            array('addtabon' => array('Central', 'Computer', 'Device', 'Printer', 'NetworkEquipment')));
         Plugin::registerClass('PluginMonitoringService',
             array('addtabon' => array('Central')));
         Plugin::registerClass('PluginMonitoringProfile',
@@ -118,6 +168,7 @@ function plugin_init_monitoring()
             array('addtabon' => array('Computer')));
         Plugin::registerClass('PluginMonitoringServiceevent',
             array('addtabon' => array('Computer')));
+
         Plugin::registerClass('PluginMonitoringRedirecthome',
             array('addtabon' => array('User')));
 
@@ -209,9 +260,6 @@ function plugin_init_monitoring()
         $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['PluginMonitoringRealm'] = 'front/realm.form.php?add=1';
         $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['PluginMonitoringRealm'] = 'front/realm.php';
 
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['weathermap'] = 'front/weathermap.form.php?add=1';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['weathermap'] = 'front/weathermap.php';
-
         $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['perfdata'] = 'front/perfdata.form.php?add=1';
         $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['perfdata'] = 'front/perfdata.php';
 
@@ -222,148 +270,88 @@ function plugin_init_monitoring()
         $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['customitem_counter'] = 'front/customitem_counter.php';
 
         $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/display.php';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/host.php';
+        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/status_hosts.php';
 
-//        if (isset($_SESSION["glpiname"])) {
-//            // Fil ariane
-//            // Still useful to declare all that stuff ? Menu is ok without this ...
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['componentscatalog']['title'] = __('Components catalog', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['componentscatalog']['page'] = '/plugins/monitoring/front/componentscatalog.php';
+        $rule_check = array('PluginMonitoringComponentscatalog_rule', 'doesThisItemVerifyRule');
+        $rule_check_networkport = array('PluginMonitoringComponentscatalog_rule', 'doesThisItemVerifyRuleNetworkport');
+//        $PLUGIN_HOOKS['item_add']['monitoring'] = [
+//            'Computer' => $rule_check,
+//            'NetworkEquipment' => $rule_check,
+//            'Printer' => $rule_check,
+//            'Peripheral' => $rule_check,
+//            'Phone' => $rule_check,
+//            'PluginMonitoringNetworkport' => $rule_check_networkport,
+//            'PluginMonitoringComponentscatalog_rule' => [
+//                'PluginMonitoringComponentscatalog_rule', 'getItemsDynamically'],
+//            'PluginMonitoringComponentscatalog_Host' => [
+//                'PluginMonitoringHost', 'addHost']];
 //
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['display']['title'] = __('Dashboard', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['display']['page'] = '/plugins/monitoring/front/display_servicescatalog.php';
-//
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['displayview']['title'] = __('Views', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['displayview']['page'] = '/plugins/monitoring/front/displayview.php';
-//
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['PluginMonitoringRealm']['title'] = __('Realms', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['PluginMonitoringRealm']['page'] = '/plugins/monitoring/front/realm.php';
-//
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['weathermap']['title'] = __('Weathermap', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['weathermap']['page'] = '/plugins/monitoring/front/weathermap.php';
-//
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['hostdailycounter']['title'] = __('Host daily counters', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['hostdailycounter']['page'] = '/plugins/monitoring/front/hostdailycounter.php';
-//
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['unavailability']['title'] = __('Unavailabilities', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['unavailability']['page'] = '/plugins/monitoring/front/unavailability.php';
-//
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['perfdata']['title'] = __('Graph templates', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['perfdata']['page'] = '/plugins/monitoring/front/perfdata.php';
-//
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['dashboard']['title'] = __('Dashboard', 'monitoring');
-//            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['dashboard']['page'] = '/plugins/monitoring/front/dashboard.php';
-//        }
+        $PLUGIN_HOOKS['item_add']['monitoring'] = [
+            'Computer' => $rule_check,
+            'PluginMonitoringComponentscatalog_rule' => [
+                'PluginMonitoringComponentscatalog_rule', 'getItemsDynamically'],
+            'PluginMonitoringComponentscatalog_Host' => [
+                'PluginMonitoringHost', 'addHost']];
 
-        $rule_check = array('PluginMonitoringComponentscatalog_rule', 'isThisItemCheckRule');
-        $rule_check_networkport = array('PluginMonitoringComponentscatalog_rule', 'isThisItemCheckRuleNetworkport');
-        $PLUGIN_HOOKS['item_add']['monitoring'] =
-            array('Computer' => $rule_check,
-                'NetworkEquipment' => $rule_check,
-                'Printer' => $rule_check,
-                'Peripheral' => $rule_check,
-                'Phone' => $rule_check,
-                'PluginMonitoringNetworkport' => $rule_check_networkport,
-                'PluginMonitoringComponentscatalog_rule' =>
-                    array('PluginMonitoringComponentscatalog_rule', 'getItemsDynamicly'),
-                'PluginMonitoringComponentscatalog_Host' =>
-                    array('PluginMonitoringHost', 'addHost'));
+//        $PLUGIN_HOOKS['item_update']['monitoring'] = [
+//            'Computer' => $rule_check,
+//            'NetworkEquipment' => $rule_check,
+//            'Printer' => $rule_check,
+//            'Peripheral' => $rule_check,
+//            'Phone' => $rule_check,
+//            'PluginMonitoringComponentscatalog' => [
+//                'PluginMonitoringComponentscatalog', 'replayRulesCatalog'],
+//            'PluginMonitoringComponentscatalog_rule' => [
+//                'PluginMonitoringComponentscatalog_rule', 'getItemsDynamically']];
+//
+        $PLUGIN_HOOKS['item_update']['monitoring'] = [
+            'Computer' => $rule_check,
+            'PluginMonitoringComponentscatalog' => [
+                'PluginMonitoringComponentscatalog', 'replayRulesCatalog'],
+            'PluginMonitoringComponentscatalog_rule' => [
+                'PluginMonitoringComponentscatalog_rule', 'getItemsDynamically']];
 
-        $PLUGIN_HOOKS['item_update']['monitoring'] =
-            array('Computer' => $rule_check,
-                'NetworkEquipment' => $rule_check,
-                'Printer' => $rule_check,
-                'Peripheral' => $rule_check,
-                'Phone' => $rule_check,
-                'PluginMonitoringComponentscatalog' =>
-                    array('PluginMonitoringComponentscatalog', 'replayRulesCatalog'),
-                'PluginMonitoringComponentscatalog_rule' =>
-                    array('PluginMonitoringComponentscatalog_rule', 'getItemsDynamicly'));
-
-        $PLUGIN_HOOKS['item_purge']['monitoring'] =
-            array('Computer' => $rule_check,
-                'NetworkEquipment' => $rule_check,
-                'Printer' => $rule_check,
-                'Peripheral' => $rule_check,
-                'Phone' => $rule_check,
-                'NetworkPort' => array('PluginMonitoringNetworkport', 'deleteNetworkPort'),
-                'PluginMonitoringNetworkport' => $rule_check_networkport,
-                'PluginMonitoringComponentscatalog_rule' =>
-                    array('PluginMonitoringComponentscatalog_rule', 'getItemsDynamicly'),
-                'PluginMonitoringComponentscatalog_Host' =>
-                    array('PluginMonitoringComponentscatalog_Host', 'unlinkComponentsToItem'),
-                'PluginMonitoringComponentscatalog' =>
-                    array('PluginMonitoringComponentscatalog', 'removeCatalog'),
-                'PluginMonitoringBusinessrulegroup' =>
-                    array('PluginMonitoringBusinessrule', 'removeBusinessruleonDeletegroup'));
+//        $PLUGIN_HOOKS['item_purge']['monitoring'] = [
+//            'Computer' => $rule_check,
+//            'NetworkEquipment' => $rule_check,
+//            'Printer' => $rule_check,
+//            'Peripheral' => $rule_check,
+//            'Phone' => $rule_check,
+//            'NetworkPort' => ['PluginMonitoringNetworkport', 'deleteNetworkPort'],
+//            'PluginMonitoringNetworkport' => $rule_check_networkport,
+//            'PluginMonitoringComponentscatalog_rule' => [
+//                'PluginMonitoringComponentscatalog_rule', 'getItemsDynamically'],
+//            'PluginMonitoringComponentscatalog_Host' => [
+//                'PluginMonitoringComponentscatalog_Host', 'unlinkComponents'],
+//            'PluginMonitoringComponentscatalog' => [
+//                'PluginMonitoringComponentscatalog', 'removeCatalog'],
+//            'PluginMonitoringBusinessrulegroup' => [
+//                'PluginMonitoringBusinessrule', 'removeBusinessruleonDeletegroup']];
+//
+        $PLUGIN_HOOKS['item_purge']['monitoring'] = [
+            'Computer' => $rule_check,
+            'PluginMonitoringComponentscatalog_rule' => [
+                'PluginMonitoringComponentscatalog_rule', 'getItemsDynamically'],
+            'PluginMonitoringComponentscatalog_Host' => [
+                'PluginMonitoringComponentscatalog_Host', 'unlinkComponents'],
+            'PluginMonitoringComponentscatalog' => [
+                'PluginMonitoringComponentscatalog', 'removeCatalog'],
+//            'PluginMonitoringBusinessrulegroup' => [
+//                'PluginMonitoringBusinessrule', 'removeBusinessruleonDeletegroup']
+        ];
 
         if (!isset($_SESSION['glpi_plugin_monitoring']['_refresh'])) {
             $_SESSION['glpi_plugin_monitoring']['_refresh'] = '60';
         }
         $PLUGIN_HOOKS['post_init']['monitoring'] = 'plugin_monitoring_postinit';
-        $PLUGIN_HOOKS['webservices']['monitoring'] = 'plugin_monitoring_registerMethods';
 
-        if (!isset($PM_CONFIG['alignak_webui_url'])) {
-            $pmConfig = new PluginMonitoringConfig();
-            $pmConfig->load_alignak_url();
+        // Register Web services
+        if (class_exists('PluginWebservicesClient')) {
+            $PLUGIN_HOOKS['webservices']['monitoring'] = 'plugin_monitoring_registerMethods';
+        } else {
+            PluginMonitoringToolbox::log("The Web services plugin is not installed! 
+            You should install to use all the available features.");
         }
-
-//        if (isset($_SESSION['glpiID'])
-//            && (strpos($_SERVER['PHP_SELF'], "alignak_element.php")
-//                || strpos($_SERVER['PHP_SELF'], "dashboard.php"))) {
-//            $url_js = $PM_CONFIG['alignak_webui_url'] . "/external/files/js_list";
-//            $url_css = $PM_CONFIG['alignak_webui_url'] . "/external/files/css_list";
-//
-//            $abc = new Alignak_Backend_Client($PM_CONFIG['alignak_backend_url']);
-//            $token = PluginMonitoringUser::myToken($abc);
-//            if ($token != '') {
-//                echo '<script>
-//    var request = new XMLHttpRequest();
-//    request.open("GET", "' . $url_js . '", false);
-//    request.setRequestHeader("Authorization", "Basic " + btoa("' . $token . ':"));
-//    request.send();
-//    var answer = JSON.parse(request.responseText);
-//    var list_js = answer["files"];
-//    var arrayLength = list_js.length;
-//    for (var i = 0; i < arrayLength; i++) {
-//       if (list_js[i] != "/static/js/jquery-1.12.0.min.js") {
-//          var x = document.createElement("script");
-//          x.setAttribute("type", "text/javascript");
-//          x.src = "' . $PM_CONFIG['alignak_webui_url'] . '" + list_js[i];
-//          document.getElementsByTagName("head")[0].appendChild(x);
-//       }
-//    }
-//  </script>';
-//
-//                echo '<script>
-//    var request = new XMLHttpRequest();
-//    request.open("GET", "' . $url_css . '", false);
-//    request.setRequestHeader("Authorization", "Basic " + btoa("' . $token . ':"));
-//    request.send();
-//    var answer = JSON.parse(request.responseText);
-//    var arrayLength = answer["files"].length;
-//    for (var i = 0; i < arrayLength; i++) {
-//       var x = document.createElement("link");
-//       x.setAttribute("rel", "stylesheet");
-//       x.setAttribute("type", "text/css");
-//       x.setAttribute("href", "' . $PM_CONFIG['alignak_webui_url'] . '" + answer["files"][i]);
-//       document.getElementsByTagName("head")[0].appendChild(x);
-//    }
-//    var glpi_css = ["/plugins/monitoring/css/views.css"];
-//    var arrayLength = glpi_css.length;
-//    for (var i = 0; i < arrayLength; i++) {
-//       var x = document.createElement("link");
-//       x.setAttribute("rel", "stylesheet");
-//       x.setAttribute("type", "text/css");
-//       x.setAttribute("href", "' . $CFG_GLPI["root_doc"] . '" + glpi_css[i]);
-//       document.getElementsByTagName("head")[0].appendChild(x);
-//    }
-//
-//    </script>';
-//                $pmWebui = new PluginMonitoringWebui();
-//                $pmWebui->authentication($abc->token);
-//            }
-//        }
     }
     return $PLUGIN_HOOKS;
 }

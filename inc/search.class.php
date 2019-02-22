@@ -417,7 +417,7 @@ class PluginMonitoringSearch extends CommonDBTM
                 echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/componentscatalog_rule.form.php?"
                     . "reset=reset"
                     . "&name=" . $_GET['name']
-                    . "&plugin_monitoring_componentscalalog_id=" . $_GET['plugin_monitoring_componentscalalog_id']
+                    . "&plugin_monitoring_componentscatalogs_id=" . $_GET['plugin_monitoring_componentscatalogs_id']
                     . "&itemtype=" . $_GET['itemtype'] . "' >";
             }
             echo "&nbsp;&nbsp;<img title=\"" . __s('Blank') . "\" alt=\"" . __s('Blank') . "\" src='" .
@@ -436,7 +436,7 @@ class PluginMonitoringSearch extends CommonDBTM
             if (strstr($_SERVER['REQUEST_URI'], 'displayview_rule.form.php')) {
                 echo "<input type='hidden' name='plugin_monitoring_displayviews_id' value='" . $_GET['plugin_monitoring_displayviews_id'] . "' >";
             } else {
-                echo "<input type='hidden' name='plugin_monitoring_componentscalalog_id' value='" . $_GET['plugin_monitoring_componentscalalog_id'] . "' >";
+                echo "<input type='hidden' name='plugin_monitoring_componentscatalogs_id' value='" . $_GET['plugin_monitoring_componentscatalogs_id'] . "' >";
             }
             echo "<input type='hidden' name='id' value='" . $_GET['id'] . "' >";
             echo "<input type='submit' name='updaterule' value=\"" . __('Update this rule', 'monitoring') . "\" class='submit' >";
@@ -446,7 +446,7 @@ class PluginMonitoringSearch extends CommonDBTM
 
         } else {
             echo "<td colspan='4' class='center'>";
-            echo "<input type='hidden' name='plugin_monitoring_componentscalalog_id' value='" . $_GET['plugin_monitoring_componentscalalog_id'] . "' >";
+            echo "<input type='hidden' name='plugin_monitoring_componentscatalogs_id' value='" . $_GET['plugin_monitoring_componentscatalogs_id'] . "' >";
             echo "<input type='submit' name='addrule' value=\"" . __('Add this rule', 'monitoring') . "\" class='submit' >";
         }
         echo "</td>";

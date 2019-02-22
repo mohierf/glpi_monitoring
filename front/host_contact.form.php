@@ -30,35 +30,32 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "host");
+Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
+    "monitoring", "host");
 
 $pmHost_Contact = new PluginMonitoringHost_Contact();
 if (isset($_POST['parent_add'])) {
-   // Add contact to notify for host problem
+    // Add contact to notify for host problem
 
-   $input = array();
-   $input['plugin_monitoring_hosts_id'] = $_POST['id'];
-   $input['plugin_monitoring_contacts_id'] = $_POST['plugin_monitoring_contacts_id'];
-   $pmHost_Contact->add($input);
+    $input = [];
+    $input['plugin_monitoring_hosts_id'] = $_POST['id'];
+    $input['plugin_monitoring_contacts_id'] = $_POST['plugin_monitoring_contacts_id'];
+    $pmHost_Contact->add($input);
 
-   Html::back();
+    Html::back();
 } else if (isset($_POST['parent_delete'])) {
-   // Delete contact to notify for host problem
-
-   foreach ($_POST['parent_to_delete'] as $delete_id) {
-      $query = "DELETE FROM ".$pmHost_Contact->getTable()."
-         WHERE `plugin_monitoring_hosts_id`='".$_POST['id']."'
-            AND `plugin_monitoring_contacts_id`='".$delete_id."'";
-      $DB->query($query);
-   }
-   Html::back();
+    // Delete contact to notify for host problem
+    foreach ($_POST['parent_to_delete'] as $delete_id) {
+        $query = "DELETE FROM " . $pmHost_Contact->getTable() . "
+         WHERE `plugin_monitoring_hosts_id`='" . $_POST['id'] . "'
+            AND `plugin_monitoring_contacts_id`='" . $delete_id . "'";
+        $DB->query($query);
+    }
+    Html::back();
 }
 
 Html::footer();
-
-?>

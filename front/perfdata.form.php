@@ -58,5 +58,3 @@ if (!isset($_GET["id"])) {
 $pmPerfdata->display(array('id' => $_GET["id"]));
 
 Html::footer();
-
-?>

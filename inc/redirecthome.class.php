@@ -88,7 +88,7 @@ class PluginMonitoringRedirecthome extends CommonDBTM {
      * @return void true
      */
    static function displayTabContentForItem(CommonGLPI $item, $tabnum=1, $withtemplate=0) {
-      $rh = new PluginMonitoringRedirecthome();
+      $rh = new self();
       $rh->showForm($item->getID());
    }
 

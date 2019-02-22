@@ -66,7 +66,7 @@ if (isset($_GET['updaterule'])) {
       $pmDisplayview_rule->update($input);
       unset($_SESSION['plugin_monitoring_rules']);
       unset($_SESSION["glpisearch"][$input['itemtype']]);
-      $pmDisplayview_rule->getItemsDynamicly($pmDisplayview_rule);
+      $pmDisplayview_rule->getItemsDynamically($pmDisplayview_rule);
       Html::redirect($CFG_GLPI['root_doc']."/plugins/monitoring/front/displayview.form.php?id=".$input['plugin_monitoring_displayviews_id']);
    }
 } else if (isset($_GET['deleterule'])) {
@@ -80,7 +80,7 @@ if (isset($_GET['updaterule'])) {
    $a_rules = $pmDisplayview_rule->find("`plugin_monitoring_displayviews_id`='".$_POST['displayviews_id']."'");
    foreach ($a_rules as $data) {
       $pmDisplayview_rule->getFromDB($data['id']);
-      $pmDisplayview_rule->getItemsDynamicly($pmDisplayview_rule);
+      $pmDisplayview_rule->getItemsDynamically($pmDisplayview_rule);
    }
    Html::back();
 } else if (isset($_GET['contains'])
@@ -121,5 +121,3 @@ if (isset($_POST['name'])) {
 $pmDisplayview_rule->addRule();
 
 Html::footer();
-
-?>

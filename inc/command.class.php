@@ -53,10 +53,20 @@ class PluginMonitoringCommand extends CommonDBTM
 
     /**
      * Initialization called on plugin installation
+     *
+     * @param Migration $migration
      */
-    function initialize()
+    function initialize($migration)
     {
         global $DB;
+
+        // Shinken 1.4
+        // - restart/reload Shinken
+        $input = [];
+        $input['name'] = "Alignak reload configuration";
+        $input['command_name'] = "alignak_restart";
+        $input['command_line'] = $DB->escape("nohup sh -c 'systemctl stop alignak && sleep 3 && systemctl start alignak'  > /dev/null 2>&1 &");
+        $this->add($input);
 
         // Shinken 1.4
         // - restart/reload Shinken
@@ -83,7 +93,7 @@ class PluginMonitoringCommand extends CommonDBTM
         $input['command_line'] = $DB->escape("nohup sh -c '/etc/init.d/shinken reload'  > /dev/null 2>&1 &");
         $this->add($input);
 
-        // Shinken 2.0
+        // Shinken 2.0 and Alignak
         // - default installed checks
         $input = [];
         $input['name'] = 'Check host alive (ICMP)';
@@ -336,6 +346,8 @@ class PluginMonitoringCommand extends CommonDBTM
         $arg['ARG2'] = 'Set CRITICAL status if more than INTEGER users are logged in';
         $input['arguments'] = exportArrayToDB($arg);
         $this->add($input);
+
+        $migration->displayMessage("  created default check commands");
     }
 
 
@@ -349,6 +361,7 @@ class PluginMonitoringCommand extends CommonDBTM
     {
         return $this->rawSearchOptions();
     }
+
     function rawSearchOptions()
     {
 
@@ -471,6 +484,12 @@ class PluginMonitoringCommand extends CommonDBTM
         echo "</td>";
         echo "</tr>";
 
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Comment', 'monitoring') . "</td>";
+        echo "<td >";
+        echo "<textarea cols='80' rows='4' name='comment' >" . $this->fields['comment'] . "</textarea>";
+        echo "</td>";
+        echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Module type', 'monitoring') . " :</td>";

@@ -32,7 +32,7 @@
 
 include("../../../inc/includes.php");
 
-$title = __('Monitoring - dashboard (components catalogs)', 'monitoring');
+$title = __('Monitoring - dashboard (resources)', 'monitoring');
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Session::checkCentralAccess();
     Html::header($title, $_SERVER["PHP_SELF"], "plugins",
@@ -42,10 +42,11 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Html::helpHeader($title, $_SERVER['PHP_SELF']);
 }
 
-// Display ressources perfdata ?
-if (isset($_SESSION['plugin_monitoring']['ressources_perfdata'])) {
-    unset($_SESSION['plugin_monitoring']['ressources_perfdata']);
+if (!isset($_GET['itemtype'])) {
+    $_GET['itemtype'] = "PluginMonitoringService";
 }
+$params = Search::manageParams("PluginMonitoringService", $_GET);
+
 // Reduced or normal interface ?
 if (!isset($_SESSION['plugin_monitoring_reduced_interface'])) {
     $_SESSION['plugin_monitoring_reduced_interface'] = false;
@@ -59,14 +60,45 @@ $pmMessage = new PluginMonitoringMessage();
 
 $pmMessage->getMessages();
 
-$pmDisplay->dashboard();
+$pmDisplay->dashboard('service');
 
-$pmDisplay->refreshPage(TRUE);
+$pmDisplay->showCounters("Ressources", 1, 0);
+// Manage search
+if (isset($_SESSION['plugin_monitoring']['service'])) {
+    $_GET = $_SESSION['plugin_monitoring']['service'];
+}
+if (isset($_GET['reset'])) {
+    unset($_SESSION['glpisearch']['PluginMonitoringService']);
+}
+if (isset($_GET['glpi_tab'])) {
+    unset($_GET['glpi_tab']);
+}
+if (isset($_GET['hidesearch'])) {
+    echo "<table class='tab_cadre_fixe'>";
+    echo "<tr class='tab_bg_1'>";
+    echo "<th>";
+    echo "<a onClick='$(\"#searchformservices\").toggle();'>
+      <img alt='Down' src='" . $CFG_GLPI["root_doc"] . "/pics/deplier_down.png' />&nbsp;
+         " . __('Display search form', 'monitoring') . "
+      &nbsp;<img alt='Down' src='" . $CFG_GLPI["root_doc"] . "/pics/deplier_down.png' /></a>";
+    echo "</th>";
+    echo "</tr>";
+    echo "</table>";
+    echo "<div style='display: none;' id='searchformservices'>";
+}
+Search::showGenericSearch("PluginMonitoringService", $params);
+if (isset($_GET['hidesearch'])) {
+    echo "</div>";
+}
+$perfdatas = false;
+if (isset($_GET['perfdatas'])) {
+    $perfdatas = true;
+}
 
-$pmDisplay->showCounters("Componentscatalog");
-
-$pmComponentscatalog = new PluginMonitoringComponentscatalog();
-$pmComponentscatalog->showChecks();
+$pmDisplay->showResourcesBoard('', $perfdatas, $params);
+if (isset($_SESSION['glpisearch']['PluginMonitoringService']['reset'])) {
+    unset($_SESSION['glpisearch']['PluginMonitoringService']['reset']);
+}
 
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Html::footer();

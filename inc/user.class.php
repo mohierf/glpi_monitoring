@@ -37,12 +37,13 @@ if (!defined('GLPI_ROOT')) {
 class PluginMonitoringUser extends CommonDBTM
 {
 
-    static $rightname = 'plugin_monitoring_componentscatalog';
+    static $rightname = 'plugin_monitoring_contact';
 
     /**
      * Get name of this type
      *
      * @param int $nb
+     *
      * @return string name of this type by language of the user connected
      *
      */
@@ -54,8 +55,7 @@ class PluginMonitoringUser extends CommonDBTM
 
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-
-        $array_ret = array();
+        $array_ret = [];
         if (($item->getID() > 0) && (PluginMonitoringUser::canView())) {
             $array_ret[0] = self::createTabEntry(
                 __('Alignak backend user', 'monitoring'));
@@ -66,7 +66,6 @@ class PluginMonitoringUser extends CommonDBTM
 
     static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
-
         if ($item->getID() > 0) {
             $pmUser = new PluginMonitoringUser();
             $pmUser->showForm(0);
@@ -79,12 +78,12 @@ class PluginMonitoringUser extends CommonDBTM
      * Display form for Alignak backend user configuration
      *
      * @param $items_id integer ID
-     * @param $options array
+     * @param $options  array
      *
      * @return bool true if form is ok
      *
      **/
-    function showForm($items_id, $options = array())
+    function showForm($items_id, $options = [])
     {
         global $CFG_GLPI;
 
@@ -116,8 +115,8 @@ class PluginMonitoringUser extends CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Alignak backend login', 'monitoring') . " :</td>";
         echo "<td>";
-        Html::autocompletionTextField($this, 'backend_login', array('value' => $this->fields['backend_login']));
-        echo Html::hidden('users_id', array('value' => $_GET['id']));
+        Html::autocompletionTextField($this, 'backend_login', ['value' => $this->fields['backend_login']]);
+        echo Html::hidden('users_id', ['value' => $_GET['id']]);
         echo "</td>";
         echo "<td>" . __('Alignak backend password', 'monitoring') . " :</td>";
         echo "<td>";
@@ -132,7 +131,7 @@ class PluginMonitoringUser extends CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Alignak backend token', 'monitoring') . " :</td>";
         echo "<td>";
-        Html::autocompletionTextField($this, 'backend_token', array('value' => $this->fields['backend_token']));
+        Html::autocompletionTextField($this, 'backend_token', ['value' => $this->fields['backend_token']]);
         echo "</td>";
         echo "<td colspan='2'>";
         echo "</td>";
@@ -165,13 +164,15 @@ class PluginMonitoringUser extends CommonDBTM
     /**
      * Get an authentication token for Alignak backend or WebUI
      *
-     * If Alignak token is in the PHP session, return this token and do not try to log in the backend.
+     * If Alignak token is in the PHP session, return this token and do not try to log in the
+     * backend.
      *
      * If Alignak token is not in the session:
      * 1/ If $backend parameter is provided, log in to the Alignak backend (with current user
      * configured username/password or token) and set the backend token in the PHP session.
      *
-     * 2/ If $backend parameter is null, returns the current user token if it exists else returns an
+     * 2/ If $backend parameter is null, returns the current user token if it exists else returns
+     * an
      * empty token.
      *
      * Return the token to the function caller. Alignak backend or WebUI are not accessible.
@@ -186,7 +187,7 @@ class PluginMonitoringUser extends CommonDBTM
     static function myToken(&$backend = null)
     {
         if (isset($_SESSION['alignak_backend_token'])) {
-            PluginMonitoringToolbox::logIfExtradebug("Use session stored token: " . $_SESSION['alignak_backend_token'] . "\n");
+            PluginMonitoringToolbox::logIfDebug("Use session stored token: " . $_SESSION['alignak_backend_token'] . "\n");
             if ($backend) {
                 $backend->token = $_SESSION['alignak_backend_token'];
             }
@@ -206,7 +207,7 @@ class PluginMonitoringUser extends CommonDBTM
                         $backend->login($user['backend_login'], $user['backend_password']);
                         $token = $backend->token;
                     } catch (Exception $exp) {
-                        Toolbox::logInFile("pm", "PluginMonitoringUser, myToken, exception:". $exp->getMessage() ."\n");
+                        PluginMonitoringToolbox::log("PluginMonitoringUser, myToken, exception:" . $exp->getMessage() . "\n");
                         if (isset($_SESSION['alignak_backend_token'])) {
                             unset($_SESSION['alignak_backend_token']);
                         }
@@ -220,7 +221,7 @@ class PluginMonitoringUser extends CommonDBTM
             }
             if (!isset($_SESSION['alignak_backend_token'])) {
                 $_SESSION['alignak_backend_token'] = $token;
-                PluginMonitoringToolbox::logIfExtradebug("Store Alignak backend token in the current session: " . $_SESSION['alignak_backend_token'] . "\n");
+                PluginMonitoringToolbox::logIfDebug("Store Alignak backend token in the current session: " . $_SESSION['alignak_backend_token'] . "\n");
             }
         }
         return ($token);
@@ -231,7 +232,9 @@ class PluginMonitoringUser extends CommonDBTM
      * Create an account of GLPI account in alignak backend
      *
      * @param integer $users_id
+     *
      * @return bool
+     * @throws Exception
      */
     function createInBackend($users_id)
     {
@@ -240,7 +243,7 @@ class PluginMonitoringUser extends CommonDBTM
         $user = new User();
         $user->getFromDB($users_id);
 
-        $pm_user_data = array();
+        $pm_user_data = [];
         $a_list = $this->find("`users_id`='" . $users_id . "'", '', 1);
         if (count($a_list)) {
             $pm_user_data = current($a_list);
@@ -254,16 +257,16 @@ class PluginMonitoringUser extends CommonDBTM
         $abc = new Alignak_Backend_Client($PM_CONFIG['alignak_backend_url']);
         PluginMonitoringUser::myToken($abc);
 
-        $data = array(
+        $data = [
             'name' => $user->fields['name'],
             'email' => '',
             '_realm' => 'xxx',
             'password' => $this->randomPassword()
-        );
+        ];
 
         try {
             // Get default timeperiod
-            $timeperiods = $abc->get('timeperiod', array('name' => '24x7'));
+            $timeperiods = $abc->get('timeperiod', ['name' => '24x7']);
             $timeperiod = $timeperiods['_items'][0];
             $data['_realm'] = $timeperiod['_realm'];
             $data['service_notification_period'] = $timeperiod['_id'];
@@ -275,10 +278,10 @@ class PluginMonitoringUser extends CommonDBTM
             echo 'Caught exception: ', $e->getMessage(), "\n";
             return FALSE;
         }
-        $input = array(
+        $input = [
             'backend_login' => $user->fields['name'],
             'backend_password' => $data['password']
-        );
+        ];
         if (count($pm_user_data)) {
             $input['id'] = $pm_user_data['id'];
             $this->update($input);
@@ -298,7 +301,7 @@ class PluginMonitoringUser extends CommonDBTM
     function randomPassword()
     {
         $alphabet = "abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ0123456789";
-        $pass = array(); //remember to declare $pass as an array
+        $pass = []; //remember to declare $pass as an array
         $alphaLength = strlen($alphabet) - 1; //put the length -1 in cache
         for ($i = 0; $i < 8; $i++) {
             $n = rand(0, $alphaLength);
@@ -312,13 +315,14 @@ class PluginMonitoringUser extends CommonDBTM
      * Display form related to the massive action selected
      *
      * @param MassiveAction $ma MassiveAction instance
+     *
      * @return boolean
      */
     static function showMassiveActionsSubForm(MassiveAction $ma)
     {
         if ($ma->getAction() == 'createalignakuser') {
             echo Html::submit(__('Create accounts', 'monitoring'),
-                array('name' => 'massiveaction'));
+                ['name' => 'massiveaction']);
             return TRUE;
         }
         return parent::showMassiveActionsSubForm($ma);
@@ -329,11 +333,10 @@ class PluginMonitoringUser extends CommonDBTM
      * Execution code for massive action
      *
      * @param MassiveAction $ma MassiveAction instance
-     * @param CommonDBTM $item item on which execute the code
-     * @param array $ids list of ID on which execute the code
+     * @param CommonDBTM $item  item on which execute the code
+     * @param array $ids        list of ID on which execute the code
      */
-    static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item,
-                                                        array $ids)
+    static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids)
     {
 
         $pfAgent = new self();

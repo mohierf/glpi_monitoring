@@ -47,20 +47,35 @@ class PluginMonitoringRealm extends CommonDropdown
 
     /**
      * Initialization called on plugin installation
+     * @param Migration $migration
      */
-    function initialize()
+    function initialize($migration)
     {
         // Default realm All
         $input = [];
         $input['name'] = "All";
         $input['comment'] = __("Default realm", 'monitoring');
+        $input['is_default'] = "1";
         $this->add($input);
+        $migration->displayMessage("  created realm All");
     }
 
 
     static function getTypeName($nb = 0)
     {
         return _n('Realm', 'Realms', $nb, 'monitoring');
+    }
+
+
+    function getAdditionalFields()
+    {
+        return [
+            [
+                'name' => 'is_default',
+                'label' => __('Default realm', 'monitoring'),
+                'type' => 'bool'
+            ]
+        ];
     }
 
 
@@ -76,6 +91,4 @@ class PluginMonitoringRealm extends CommonDropdown
         $input['name'] = preg_replace("/[^A-Za-z0-9]/", "", $input['name']);
         return $input;
     }
-
 }
-

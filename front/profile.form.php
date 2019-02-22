@@ -48,5 +48,3 @@ if ($pmProfile->getFromDB($_POST['profiles_id'])) {
    $pmProfile->changeprofile();
    Html::back();
 }
-
-?>

@@ -48,8 +48,12 @@ class PluginMonitoringUnavailability extends CommonDBTM
 
     static function getTypeName($nb = 0)
     {
-        return __CLASS__;
+        return __('Monitoring availability', 'monitoring');
     }
+//    static function getTypeName($nb = 0)
+//    {
+//        return __CLASS__;
+//    }
 
 
     /**
@@ -267,11 +271,11 @@ class PluginMonitoringUnavailability extends CommonDBTM
         while ($data = $DB->fetch_array($result)) {
             $pmUnavailability->getCurrentState($data['id']);
 
-//         Toolbox::logInFile('UNAV', "======= ".$data['id']." =======\n");
+//         PluginMonitoringToolbox::log('UNAV', "======= ".$data['id']." =======\n");
             $serviceevents_id = $pmUnavailabilityState->getLastID($data['id']);
 //         $loop = 0;
             while (true) {
-//            Toolbox::logInFile('UNAV', "start (loop ".$loop.")\n");
+//            PluginMonitoringToolbox::log('UNAV', "start (loop ".$loop.")\n");
 //   $time = microtime();
 //   $time = explode(' ', $time);
 //   $time = $time[1] + $time[0];
@@ -285,7 +289,7 @@ class PluginMonitoringUnavailability extends CommonDBTM
                         ORDER BY `id`
                         LIMIT $serviceevents_id, $limit";
                 $result2 = $DB->query($query2);
-//Toolbox::logInFile('UNAV', "LIMIT $serviceevents_id, $limit (".$DB->numrows($result2).")\n");
+//PluginMonitoringToolbox::log('UNAV', "LIMIT $serviceevents_id, $limit (".$DB->numrows($result2).")\n");
 
                 $stop = False;
                 if ($DB->numrows($result2) < $limit) {
@@ -312,7 +316,7 @@ class PluginMonitoringUnavailability extends CommonDBTM
 //   $finish = $time;
 //   $total_time = round(($finish - $start), 4);
 //   $tttime += $total_time;
-//            Toolbox::logInFile('UNAV', "end (".$total_time." seconds - ".$nb." / ".$tttime.")\n");
+//            PluginMonitoringToolbox::log('UNAV', "end (".$total_time." seconds - ".$nb." / ".$tttime.")\n");
 //            $loop++;
                 if ($stop) {
                     break;
@@ -425,7 +429,7 @@ class PluginMonitoringUnavailability extends CommonDBTM
          LEFT JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
             ON `plugin_monitoring_componentscatalogs_hosts_id`=
                `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'";
+         WHERE `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'";
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
             $itemtype = $data['itemtype'];

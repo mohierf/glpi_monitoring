@@ -317,7 +317,7 @@ class PluginMonitoringServiceevent extends CommonDBTM {
 */
       if (is_array($ret) && is_array($ret[0]) && is_array($ret[4])) {
          foreach ($ret[4] as $name=>$data) {
-            // Toolbox::logInFile("pm", "$name -> $data = ".$ret[0][$data][0]."\n");
+            // PluginMonitoringToolbox::log("$name -> $data = ".$ret[0][$data][0]."\n");
             $counter = array();
             $counter['id'] = preg_replace("/[^A-Za-z0-9\-_]/","",$name);
             $counter['name'] = $data;
@@ -334,7 +334,7 @@ class PluginMonitoringServiceevent extends CommonDBTM {
    function getData($result, $perfdatas_id, $start_date, $end_date, $ret=array(), $timecomplete=0, $todisplay=array()) {
       global $DB;
 
-      // Toolbox::logInFile("pm", "serviceevent, getData : $perfdatas_id, from $start_date to $end_date\n");
+      // PluginMonitoringToolbox::log("serviceevent, getData : $perfdatas_id, from $start_date to $end_date\n");
       if (empty($ret)) {
          $ret = $this->getRef($perfdatas_id);
       }
@@ -371,7 +371,7 @@ class PluginMonitoringServiceevent extends CommonDBTM {
          }
       } else {
          foreach ($result as $edata) {
-            // Toolbox::logInFile("pm", "serviceevent, getData : ".$edata['id']."\n");
+            // PluginMonitoringToolbox::log("serviceevent, getData : ".$edata['id']."\n");
 
             $current_timestamp = strtotime($edata['date']);
             $cnt++;
@@ -600,8 +600,8 @@ class PluginMonitoringServiceevent extends CommonDBTM {
       }
 
       $a_perfdata_name = array_unique($a_perfdata_name);
-      // Toolbox::logInFile("pm", "a_perfdata_name : ".serialize($a_perfdata_name)."\n");
-      // Toolbox::logInFile("pm", "mydatat : ".serialize($mydatat)."\n");
+      // PluginMonitoringToolbox::log("a_perfdata_name : ".serialize($a_perfdata_name)."\n");
+      // PluginMonitoringToolbox::log("mydatat : ".serialize($mydatat)."\n");
       return array($mydatat, $a_labels, $a_ref, $a_convert, $a_perfdata_name);
    }
 

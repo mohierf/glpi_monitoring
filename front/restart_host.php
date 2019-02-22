@@ -31,49 +31,53 @@
  */
 
 // Direct access to file
-if (strpos($_SERVER['PHP_SELF'],"restart_host.php")) {
-   include ("../../../inc/includes.php");
-   header("Content-Type: text/html; charset=UTF-8");
-   Html::header_nocache();
+if (strpos($_SERVER['PHP_SELF'], "restart_host.php")) {
+    include("../../../inc/includes.php");
+    header("Content-Type: text/html; charset=UTF-8");
+    Html::header_nocache();
 }
 
 if (!defined('GLPI_ROOT')) {
-   die("Can not acces directly to this file");
+    die("Can not acces directly to this file");
 }
 
 Session::checkLoginUser();
 
 if (empty($_POST)) {
-   Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
 }
 
 // Get FusionInventory agent associated with host ...
-if (! isset($_POST['host_id'])) {
-   $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing computer id in parameters !', 'monitoring');
-   Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+if (!isset($_POST['host_id'])) {
+    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing computer id in parameters !', 'monitoring');
+    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
 }
 $computerId = $_POST['host_id'];
-if (! isset($_POST['host_name'])) {
-   $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing computer name in parameters !', 'monitoring');
-   Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+if (!isset($_POST['host_name'])) {
+    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing computer name in parameters !', 'monitoring');
+    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
 }
 $computerName = $_POST['host_name'];
 
+if (!class_exists("PluginFusioninventoryAgent")) {
+    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Plugin FusionInventory is not installed!', 'monitoring');
+    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+}
 $agent = new PluginFusioninventoryAgent();
 $fusionAgentId = $agent->getAgentWithComputerid($computerId);
 
 // Get FusionInventory task associated with host command ...
-if (! isset($_POST['host_command'])) {
-   $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing host command in parameters !', 'monitoring');
-   Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+if (!isset($_POST['host_command'])) {
+    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing host command in parameters !', 'monitoring');
+    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
 }
 $host_command = $_POST['host_command'];
 $pfTaskjob = new PluginFusioninventoryTaskjob();
 $a_lists = $pfTaskjob->find("name LIKE '$host_command'", '', 1);
 
 if (count($a_lists) == 0) {
-   $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Host command task not found : ', 'monitoring').$host_command;
-   Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Host command task not found : ', 'monitoring') . $host_command;
+    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
 }
 $a_list = current($a_lists);
 
@@ -96,12 +100,11 @@ $query = "INSERT INTO `glpi_plugin_fusioninventory_taskjobstates`
    (`plugin_fusioninventory_taskjobs_id`, `items_id`, `itemtype`, `state`,
     `plugin_fusioninventory_agents_id`, `uniqid`)
    VALUES
-   ('".$taskjob_id."', '".$definition[0]['PluginFusioninventoryDeployPackage']."',
+   ('" . $taskjob_id . "', '" . $definition[0]['PluginFusioninventoryDeployPackage'] . "',
     'PluginFusioninventoryDeployPackage', '0',
-    '".$fusionAgentId."', '".uniqid()."')";
+    '" . $fusionAgentId . "', '" . uniqid() . "')";
 
 $result = $DB->query($query);
 
-$_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Host command \'', 'monitoring').$host_command.__('\' requested for the host \'', 'monitoring').$computerName.'\'';
+$_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Host command \'', 'monitoring') . $host_command . __('\' requested for the host \'', 'monitoring') . $computerName . '\'';
 Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
-?>

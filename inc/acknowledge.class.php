@@ -57,7 +57,7 @@ class PluginMonitoringAcknowledge extends CommonDBTM
     {
         global $CFG_GLPI;
 
-        // Toolbox::logInFile("pm-ack", "getComments ".$this->getID()." \n");
+        // PluginMonitoringToolbox::log("getComments ".$this->getID()." \n");
         $this->isExpired();
 
         // echo $this->fields["start_time"];
@@ -270,15 +270,6 @@ class PluginMonitoringAcknowledge extends CommonDBTM
 
 
     /**
-     * Get host identifier for an acknowledge
-     */
-    function getHostID()
-    {
-        return $this->fields["items_id"];
-    }
-
-
-    /**
      * Get current acknowledge for an host/service
      * @param integer $items_id
      * @param string $itemtype
@@ -287,9 +278,9 @@ class PluginMonitoringAcknowledge extends CommonDBTM
     function getFromHost($items_id, $itemtype = 'Host')
     {
         // $pmAcknowledge = new PluginMonitoringAcknowledge();
-        // Toolbox::logInFile("pm-ack", "getFromHost ? $itemtype / $items_id \n");
+        // PluginMonitoringToolbox::log("getFromHost ? $itemtype / $items_id \n");
         $this->getFromDBByQuery("WHERE `" . $this->getTable() . "`.`itemtype` = 'PluginMonitoring$itemtype' AND `" . $this->getTable() . "`.`items_id` = '$items_id' AND `expired` = '0' LIMIT 1");
-        // Toolbox::logInFile("pm-ack", "getFromHost ? ".$pmAcknowledge->getID()." \n");
+        // PluginMonitoringToolbox::log("getFromHost ? ".$pmAcknowledge->getID()." \n");
         return $this->getID();
     }
 
@@ -321,9 +312,9 @@ class PluginMonitoringAcknowledge extends CommonDBTM
         // End time ...
         $end_time = strtotime($this->fields["end_time"]);
 
-        // Toolbox::logInFile("pm-ack", "isInacknowledge, now : $now, start : $start_time, end : $end_time\n");
+        // PluginMonitoringToolbox::log("isInacknowledge, now : $now, start : $start_time, end : $end_time\n");
         if (($start_time <= $now) && ($now <= $end_time)) {
-            // Toolbox::logInFile("pm-ack", "isInacknowledge, yes, id : ".$this->getID()."\n");
+            // PluginMonitoringToolbox::log("isInacknowledge, yes, id : ".$this->getID()."\n");
             return true;
         }
 
@@ -344,7 +335,7 @@ class PluginMonitoringAcknowledge extends CommonDBTM
 
     function prepareInputForAdd($input)
     {
-        // Toolbox::logInFile("pm-ack", "acknowledge, prepareInputForAdd, item type : ".$input['itemtype']." / ".$input['items_id']."\n");
+        // PluginMonitoringToolbox::log("acknowledge, prepareInputForAdd, item type : ".$input['itemtype']." / ".$input['items_id']."\n");
 
         if ($this->isExpired()) {
             Session::addMessageAfterRedirect(__('Acknowledge period has already expired!', 'monitoring'), false, ERROR);
@@ -454,7 +445,7 @@ class PluginMonitoringAcknowledge extends CommonDBTM
      **/
     function post_addItem()
     {
-        // Toolbox::logInFile("pm-ack", "acknowledge, post_add\n");
+        // PluginMonitoringToolbox::log("acknowledge, post_add\n");
 
     }
 
@@ -467,7 +458,7 @@ class PluginMonitoringAcknowledge extends CommonDBTM
      **/
     function pre_deleteItem()
     {
-        PluginMonitoringToolbox::logIfExtradebug(
+        PluginMonitoringToolbox::logIfDebug(
             'pm-ack',
             "acknowledge, pre_deleteItem : " . $this->fields['id'] . "\n"
         );
@@ -559,7 +550,7 @@ class PluginMonitoringAcknowledge extends CommonDBTM
      */
     function showForm($id = -1, $itemtype = 'Host', $items_id = -1, $options = array())
     {
-        // Toolbox::logInFile("pm-ack", "acknowledge, showForm, id : $id, item type : $itemtype / $items_id\n");
+        // PluginMonitoringToolbox::log("acknowledge, showForm, id : $id, item type : $itemtype / $items_id\n");
 
         $createAcknowledge = false;
 

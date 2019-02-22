@@ -29,7 +29,7 @@
  *    ------------------------------------------------------------------------
  *
  */
-
+/*
 function plugin_monitoring_giveItem($type, $id, $data, $num)
 {
 
@@ -43,53 +43,74 @@ function plugin_monitoring_giveItem($type, $id, $data, $num)
 
     return "";
 }
+*/
 
 
 function plugin_monitoring_getAddSearchOptions($itemtype)
 {
 
-    $sopt = array();
-
-    if ($itemtype == 'Computer') {
-        $sopt[9100]['table'] = 'glpi_plugin_monitoring_computers_deviceprocessors';
-        $sopt[9100]['field'] = 'count';
-        $sopt[9100]['forcegroupby'] = true;
-        $sopt[9100]['usehaving'] = true;
-        $sopt[9100]['datatype'] = 'number';
-        $sopt[9100]['width'] = 64;
-        $sopt[9100]['name'] = __('Processor number', 'monitoring');
-        $sopt[9100]['massiveaction'] = false;
-        $sopt[9100]['joinparams'] = array('jointype' => 'child');
-    }
+    $sopt = [];
+    $index = 19000;
 
     if ($itemtype == 'Entity') {
-        // Shinken tag for the entity
-        $sopt[9101]['table'] = 'glpi_plugin_monitoring_entities';
-        $sopt[9101]['field'] = 'tag';
-        $sopt[9100]['datatype'] = 'number';
-        $sopt[9101]['name'] = __('Entity tag', 'monitoring');
-        $sopt[9101]['joinparams'] = array('jointype' => 'child');
-        $sopt[9101]['massiveaction'] = false;
+        // Monitoring framework tag for the entity
+        $index++;
+        $sopt[$index]['table'] = 'glpi_plugin_monitoring_entities';
+        $sopt[$index]['field'] = 'tag';
+        $sopt[$index]['datatype'] = 'string';
+        $sopt[$index]['name'] = __('Entity tag', 'monitoring');
+        $sopt[$index]['joinparams'] = ['jointype' => 'child'];
+        $sopt[$index]['massiveaction'] = false;
+
+        // Monitoring objects definition order for the entity
+        $index++;
+        $sopt[$index]['table'] = 'glpi_plugin_monitoring_entities';
+        $sopt[$index]['field'] = 'definition_order';
+        $sopt[$index]['datatype'] = 'number';
+        $sopt[$index]['name'] = __('Definition order', 'monitoring');
+        $sopt[$index]['joinparams'] = ['jointype' => 'child'];
+        $sopt[$index]['massiveaction'] = false;
+
+        // Graphite prefix for the entity
+        $index++;
+        $sopt[$index]['table'] = 'glpi_plugin_monitoring_entities';
+        $sopt[$index]['field'] = 'graphite_prefix';
+        $sopt[$index]['datatype'] = 'string';
+        $sopt[$index]['name'] = __('Graphite prefix', 'monitoring');
+        $sopt[$index]['joinparams'] = ['jointype' => 'child'];
+        $sopt[$index]['massiveaction'] = false;
+
+        // Calendar jet lag for the entity
+        $index++;
+        $sopt[$index]['table'] = 'glpi_plugin_monitoring_entities';
+        $sopt[$index]['field'] = 'jet_lag';
+        $sopt[$index]['datatype'] = 'number';
+        $sopt[$index]['name'] = __('Jet lag', 'monitoring');
+        $sopt[$index]['joinparams'] = ['jointype' => 'child'];
+        $sopt[$index]['massiveaction'] = false;
     }
 
     if ($itemtype == 'User') {
         // Contact template for user
-        $sopt[9102]['table'] = 'glpi_plugin_monitoring_contacttemplates';
-        $sopt[9102]['field'] = 'name';
-        $sopt[9102]['datatype'] = 'itemtype';
-        $sopt[9102]['name'] = __('User template', 'monitoring');
-        $sopt[9102]['joinparams'] = array('beforejoin'
-        => array('table' => 'glpi_plugin_monitoring_contacts',
-                'joinparams' => array('jointype' => 'child')));
-        $sopt[9102]['massiveaction'] = false;
+        $index++;
+        $sopt[$index]['table'] = 'glpi_plugin_monitoring_contacttemplates';
+        $sopt[$index]['field'] = 'name';
+        $sopt[$index]['datatype'] = 'itemtype';
+        $sopt[$index]['name'] = __('User template', 'monitoring');
+        $sopt[$index]['joinparams'] = [
+            'beforejoin' => [
+                'table' => 'glpi_plugin_monitoring_contacts',
+                'joinparams' => ['jointype' => 'child']]];
+        $sopt[$index]['massiveaction'] = false;
 
         // user in alignak backend
-        $sopt[9103]['table'] = 'glpi_plugin_monitoring_users';
-        $sopt[9103]['field'] = 'backend_login';
-        $sopt[9103]['datatype'] = 'string';
-        $sopt[9103]['name'] = __('alignak account name', 'monitoring');
-        $sopt[9103]['joinparams'] = array('jointype' => 'child');
-        $sopt[9103]['massiveaction'] = false;
+        $index++;
+        $sopt[$index]['table'] = 'glpi_plugin_monitoring_users';
+        $sopt[$index]['field'] = 'backend_login';
+        $sopt[$index]['datatype'] = 'string';
+        $sopt[$index]['name'] = __('alignak account name', 'monitoring');
+        $sopt[$index]['joinparams'] = ['jointype' => 'child'];
+        $sopt[$index]['massiveaction'] = false;
 
     }
 
@@ -167,7 +188,7 @@ function plugin_monitoring_uninstall()
 //}
 
 
-function plugin_monitoring_MassiveActionsFieldsDisplay($options = array())
+function plugin_monitoring_MassiveActionsFieldsDisplay($options = [])
 {
 
     return false;
@@ -179,57 +200,32 @@ function plugin_monitoring_MassiveActions($type)
 
     switch ($type) {
 
-        case "Computer":
-            return array(
-                "plugin_monitoring_activatehosts" => __('Add these hosts to monitoring', 'monitoring')
-            );
-            break;
-
         case "PluginMonitoringComponentscatalog":
-            return array(
+            return [
                 "plugin_monitoring_playrule_componentscatalog" => __('Force play rules', 'monitoring')
-            );
+            ];
             break;
 
         case "PluginMonitoringDisplayview":
-            return array(
+            return [
                 "plugin_monitoring_playrule_displayview" => __('Force play rules', 'monitoring')
-            );
+            ];
             break;
 
         case "User":
-            return array(
+            return [
                 'PluginMonitoringUser' . MassiveAction::CLASS_ACTION_SEPARATOR . 'createalignakuser' => __('Create alignak backend account', 'monitoring')
-            );
+            ];
     }
 
-    return array();
+    return [];
 }
 
 
-function plugin_monitoring_MassiveActionsDisplay($options = array())
+function plugin_monitoring_MassiveActionsDisplay($options = [])
 {
-    global $CFG_GLPI;
-
+    PluginMonitoringToolbox::logIfDebug("MassiveActionsDisplay: " . $options['itemtype']);
     switch ($options['itemtype']) {
-
-        case "Computer":
-            if ($options['action'] == 'plugin_monitoring_activatehosts') {
-                $pmHost = new PluginMonitoringHost();
-                $a_list = $pmHost->find("`is_template`='1'");
-                $a_elements = array();
-                foreach ($a_list as $data) {
-                    $a_elements[$data['id']] = $data['template_name'];
-                }
-                $rand = Dropdown::showFromArray("template_id", $a_elements);
-                echo "<img alt='' title=\"" . __('add') . "\" src='" . $CFG_GLPI["root_doc"] .
-                    "/pics/add_dropdown.png' style='cursor:pointer; margin-left:2px;'
-            onClick=\"var w = window.open('" . $pmHost->getFormURL() . "?withtemplate=1&popup=1&amp;rand=" .
-                    $rand . "' ,'glpipopup', 'height=400, " .
-                    "width=1000, top=100, left=100, scrollbars=yes' );w.focus();\">";
-                echo "<input name='add' value='Post' class='submit' type='submit'>";
-            }
-            break;
 
         case "PluginMonitoringComponentscatalog":
             if ($options['action'] == 'plugin_monitoring_playrule_componentscatalog') {
@@ -250,27 +246,16 @@ function plugin_monitoring_MassiveActionsDisplay($options = array())
 
 function plugin_monitoring_MassiveActionsProcess($data)
 {
-
+    PluginMonitoringToolbox::logIfDebug("MassiveActionsProcess: " . $data['action']);
     switch ($data['action']) {
-
-        case "plugin_monitoring_activatehosts" :
-            if ($data['itemtype'] == "Computer") {
-                $pmHost = new PluginMonitoringHost();
-                foreach ($data['item'] as $key => $val) {
-                    if ($val == '1') {
-                        $pmHost->massiveactionAddHost($data['itemtype'], $key, $data['template_id']);
-                    }
-                }
-            }
-            break;
 
         case 'plugin_monitoring_playrule_componentscatalog':
             $pmComponentscatalog_rule = new PluginMonitoringComponentscatalog_rule();
             foreach ($data['item'] as $key => $val) {
-                $a_rules = $pmComponentscatalog_rule->find("`plugin_monitoring_componentscalalog_id`='" . $key . "'");
+                $a_rules = $pmComponentscatalog_rule->find("`plugin_monitoring_componentscatalogs_id`='" . $key . "'");
                 foreach ($a_rules as $data) {
                     $pmComponentscatalog_rule->getFromDB($data['id']);
-                    PluginMonitoringComponentscatalog_rule::getItemsDynamicly($pmComponentscatalog_rule);
+                    PluginMonitoringComponentscatalog_rule::getItemsDynamically($pmComponentscatalog_rule);
                 }
             }
             break;
@@ -281,7 +266,7 @@ function plugin_monitoring_MassiveActionsProcess($data)
                 $a_rules = $pmDisplayview_rule->find("`plugin_monitoring_displayviews_id`='" . $key . "'");
                 foreach ($a_rules as $data) {
                     $pmDisplayview_rule->getFromDB($data['id']);
-                    PluginMonitoringDisplayview_rule::getItemsDynamicly($pmDisplayview_rule);
+                    PluginMonitoringDisplayview_rule::getItemsDynamically($pmDisplayview_rule);
                 }
             }
             break;
@@ -298,13 +283,7 @@ function plugin_monitoring_addSelect($type, $id, $num)
     $table = $searchopt[$id]["table"];
     $field = $searchopt[$id]["field"];
 
-//   echo $table.".".$field."<br>";
-    if ($type == 'Computer') {
-
-        if ($table . "." . $field == "glpi_plugin_monitoring_computers_deviceprocessors.count") {
-            return " COUNT(DISTINCT `processormonit`.`id`) AS ITEM_$num,";
-        }
-    } else if ($type == 'PluginMonitoringService') {
+    if ($type == 'PluginMonitoringService') {
         if ($table . "." . $field == 'glpi_computers.name') {
             return " CONCAT_WS('', `glpi_computers`.`name`, `glpi_printers`.`name`, `glpi_networkequipments`.`name`) AS ITEM_$num,";
         }
@@ -327,7 +306,8 @@ function plugin_monitoring_forceGroupBy($type)
 function plugin_monitoring_addLeftJoin($itemtype, $ref_table, $new_table, $linkfield, &$already_link_tables)
 {
 
-    // Toolbox::logInFile("pm", "join $itemtype $ref_table $new_table $linkfield\n");
+    PluginMonitoringToolbox::log("addLeftJoin: $itemtype, ref: $ref_table, new:$new_table, field: $linkfield");
+//    PluginMonitoringToolbox::log("addLeftJoin: $itemtype, relations with:" . print_r($already_link_tables, true));
     switch ($itemtype) {
 
         case 'PluginMonitoringNetworkport':
@@ -495,30 +475,51 @@ function plugin_monitoring_addLeftJoin($itemtype, $ref_table, $new_table, $linkf
             break;
 
         case 'PluginMonitoringService':
-            if ($new_table . "." . $linkfield == "glpi_computers.computers_id") {
+            // glpi_plugin_monitoring_services, new:glpi_plugin_monitoring_hosts, field: plugin_monitoring_componentscatalogs_hosts_id
+
+            if ($new_table . "/" . $linkfield == "glpi_computers/plugin_monitoring_componentscatalogs_hosts_id") {
                 return "
-               LEFT JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
-                  ON `plugin_monitoring_componentscatalogs_hosts_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
-               LEFT JOIN `glpi_computers`
-                  ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_computers`.`id`
-                        AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Computer'
-               LEFT JOIN `glpi_printers`
-                  ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_printers`.`id`
-                     AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Printer'
-               LEFT JOIN `glpi_networkequipments`
-                  ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_networkequipments`.`id`
-                     AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='NetworkEquipment' ";
-            } else if ($new_table . "." . $linkfield == 'glpi_plugin_monitoring_hosts.plugin_monitoring_hosts_id') {
+                LEFT JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
+                    ON `plugin_monitoring_componentscatalogs_hosts_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
+                LEFT JOIN `glpi_computers`
+                    ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_computers`.`id` 
+                    AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Computer'
+                ";
+
+
+
+
+//            } else if ($new_table . "." . $linkfield == "glpi_computers.computers_id") {
+//                return "
+//               LEFT JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
+//                  ON `plugin_monitoring_componentscatalogs_hosts_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
+//               LEFT JOIN `glpi_computers`
+//                  ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_computers`.`id`
+//                        AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Computer'
+//               LEFT JOIN `glpi_printers`
+//                  ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_printers`.`id`
+//                     AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Printer'
+//               LEFT JOIN `glpi_networkequipments`
+//                  ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_networkequipments`.`id`
+//                     AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='NetworkEquipment' ";
+
+
+
+
+            } else if ($new_table . "/" . $linkfield == 'glpi_plugin_monitoring_hosts/plugin_monitoring_componentscatalogs_hosts_id') {
                 return "
-               LEFT JOIN `glpi_plugin_monitoring_hosts`
-                  ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_plugin_monitoring_hosts`.`items_id`
-                        AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`=`glpi_plugin_monitoring_hosts`.`itemtype` ";
-            } else if ($new_table . "." . $linkfield == 'glpi_plugin_monitoring_componentscatalogs.plugin_monitoring_componentscatalogs_id') {
-                return "
-               LEFT JOIN `glpi_plugin_monitoring_componentscatalogs`
-                  ON (`glpi_plugin_monitoring_componentscatalogs_hosts`.`plugin_monitoring_componentscalalog_id` = `glpi_plugin_monitoring_componentscatalogs`.`id`)";
-            } else if ($new_table . "." . $linkfield == 'glpi_plugin_monitoring_componentscatalogs_hosts.plugin_monitoring_componentscatalogs_hosts_id') {
-                return " ";
+                LEFT JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
+                    ON `plugin_monitoring_componentscatalogs_hosts_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`
+                LEFT JOIN `glpi_plugin_monitoring_hosts` AS `glpi_plugin_monitoring_hosts_plugin_monitoring_componentscatalogs_hosts_id`
+                    ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`plugin_monitoring_hosts_id` = 
+                    `glpi_plugin_monitoring_hosts_plugin_monitoring_componentscatalogs_hosts_id`.`id`";
+
+//            } else if ($new_table . "." . $linkfield == 'glpi_plugin_monitoring_componentscatalogs.plugin_monitoring_componentscatalogs_id') {
+//                return "
+//               LEFT JOIN `glpi_plugin_monitoring_componentscatalogs`
+//                  ON (`glpi_plugin_monitoring_componentscatalogs_hosts`.`plugin_monitoring_componentscatalogs_id` = `glpi_plugin_monitoring_componentscatalogs`.`id`)";
+//            } else if ($new_table . "." . $linkfield == 'glpi_plugin_monitoring_componentscatalogs_hosts.plugin_monitoring_componentscatalogs_hosts_id') {
+//                return " ";
             }
             break;
 
@@ -594,46 +595,64 @@ function plugin_monitoring_addWhere($link, $nott, $type, $id, $val)
     return "";
 }
 
-
 /*
- * Webservices
+ * Web services registering
  */
 function plugin_monitoring_registerMethods()
 {
     global $WEBSERVICES_METHOD;
 
-    $WEBSERVICES_METHOD['monitoring.shinkenGetConffiles'] = array('PluginMonitoringWebservice',
-        'methodShinkenGetConffiles');
-    # Web services for Shinken arbiter
-    $WEBSERVICES_METHOD['monitoring.shinkenTags'] = array('PluginMonitoringWebservice',
-        'methodShinkenTags');
-    $WEBSERVICES_METHOD['monitoring.shinkenCommands'] = array('PluginMonitoringWebservice',
-        'methodShinkenCommands');
-    $WEBSERVICES_METHOD['monitoring.shinkenHosts'] = array('PluginMonitoringWebservice',
-        'methodShinkenHosts');
-    $WEBSERVICES_METHOD['monitoring.shinkenHostgroups'] = array('PluginMonitoringWebservice',
-        'methodShinkenHostgroups');
-    $WEBSERVICES_METHOD['monitoring.shinkenContacts'] = array('PluginMonitoringWebservice',
-        'methodShinkenContacts');
-    $WEBSERVICES_METHOD['monitoring.shinkenTimeperiods'] = array('PluginMonitoringWebservice',
-        'methodShinkenTimeperiods');
+    # Web services for the monitoring framework configuration
+    $WEBSERVICES_METHOD['monitoring.getConfigAll'] = [
+        'PluginMonitoringWebservice', 'methodgetConfig'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getConfigCommands'] = [
+        'PluginMonitoringWebservice', 'methodgetConfigCommands'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getConfigHosts'] = [
+        'PluginMonitoringWebservice', 'methodgetConfigHosts'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getConfigRealms'] = [
+        'PluginMonitoringWebservice', 'methodgetConfigRealms'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getConfigHostgroups'] = [
+        'PluginMonitoringWebservice', 'methodgetConfigHostgroups'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getConfigContacts'] = [
+        'PluginMonitoringWebservice', 'methodgetConfigContacts'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getConfigTimeperiods'] = [
+        'PluginMonitoringWebservice', 'methodgetConfigTimeperiods'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getConfigServicesTemplates'] = [
+        'PluginMonitoringWebservice', 'methodgetConfigServicesTemplates'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getConfigServices'] = [
+        'PluginMonitoringWebservice', 'methodgetConfigServices'
+    ];
 
-    $WEBSERVICES_METHOD['monitoring.shinkenServices'] = array('PluginMonitoringWebservice',
-        'methodShinkenServices');
-    $WEBSERVICES_METHOD['monitoring.shinkenTemplates'] = array('PluginMonitoringWebservice',
-        'methodShinkenTemplates');
-    $WEBSERVICES_METHOD['monitoring.dashboard'] = array('PluginMonitoringWebservice',
-        'methodDashboard');
-    $WEBSERVICES_METHOD['monitoring.getServicesList'] = array('PluginMonitoringWebservice',
-        'methodGetServicesList');
-    $WEBSERVICES_METHOD['monitoring.getHostsStates'] = array('PluginMonitoringWebservice',
-        'methodGetHostsStates');
-    $WEBSERVICES_METHOD['monitoring.getServicesStates'] = array('PluginMonitoringWebservice',
-        'methodGetServicesStates');
-    $WEBSERVICES_METHOD['monitoring.getHostsLocations'] = array('PluginMonitoringWebservice',
-        'methodGetHostsLocations');
-    $WEBSERVICES_METHOD['monitoring.getUnavailabilities'] = array('PluginMonitoringWebservice',
-        'methodGetUnavailabilities');
+    # Other web services
+    $WEBSERVICES_METHOD['monitoring.getMonitoredEntities'] = [
+        'PluginMonitoringWebservice', 'methodgetMonitoredEntities'
+    ];
+    $WEBSERVICES_METHOD['monitoring.dashboard'] = [
+        'PluginMonitoringWebservice', 'methodDashboard'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getServicesList'] = [
+        'PluginMonitoringWebservice', 'methodGetServicesList'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getHostsStates'] = [
+        'PluginMonitoringWebservice', 'methodGetHostsStates'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getServicesStates'] = [
+        'PluginMonitoringWebservice', 'methodGetServicesStates'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getHostsLocations'] = [
+        'PluginMonitoringWebservice', 'methodGetHostsLocations'
+    ];
+    $WEBSERVICES_METHOD['monitoring.getUnavailabilities'] = [
+        'PluginMonitoringWebservice', 'methodGetUnavailabilities'
+    ];
 }
 
 
@@ -662,13 +681,11 @@ function plugin_monitoring_searchOptionsValues($item)
     global $CFG_GLPI;
 
     // Fred : Add a log to check whether this function is still called ...
-    PluginMonitoringToolbox::logIfExtradebug(
-        "********** plugin_monitoring_searchOptionsValues is called ... still used?\n"
-    );
+    PluginMonitoringToolbox::log("********** plugin_monitoring_searchOptionsValues is called ... still used?");
     // Search options for services
     if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_services'
         AND $item['searchoption']['field'] == 'state') {
-        $input = array();
+        $input = [];
         $input['CRITICAL'] = 'CRITICAL';
         $input['DOWNTIME'] = 'DOWNTIME';
         $input['FLAPPING'] = 'FLAPPING';
@@ -677,15 +694,15 @@ function plugin_monitoring_searchOptionsValues($item)
         $input['UNKNOWN'] = 'UNKNOWN';
         $input['WARNING'] = 'WARNING';
 
-        Dropdown::showFromArray($item['name'], $input, array('value' => $item['value']));
+        Dropdown::showFromArray($item['name'], $input, ['value' => $item['value']]);
         return true;
     } else if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_services'
         AND $item['searchoption']['field'] == 'state_type') {
-        $input = array();
+        $input = [];
         $input['HARD'] = 'HARD';
         $input['SOFT'] = 'SOFT';
 
-        Dropdown::showFromArray($item['name'], $input, array('value' => $item['value']));
+        Dropdown::showFromArray($item['name'], $input, ['value' => $item['value']]);
         return true;
     } else if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_services'
         AND ($item['searchoption']['field'] == 'Computer'
@@ -703,7 +720,7 @@ function plugin_monitoring_searchOptionsValues($item)
             }
         }
 
-        $params = array();
+        $params = [];
         $params['itemtype'] = $itemtype;
         $params['searchText'] = '';
         $params['myname'] = $item['name'];
@@ -727,7 +744,7 @@ function plugin_monitoring_searchOptionsValues($item)
     // Search options for hosts
     if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_hosts'
         AND $item['searchoption']['field'] == 'state') {
-        $input = array();
+        $input = [];
         $input['DOWN'] = 'DOWN';
         $input['DOWNTIME'] = 'DOWNTIME';
         $input['FLAPPING'] = 'FLAPPING';
@@ -736,15 +753,15 @@ function plugin_monitoring_searchOptionsValues($item)
         $input['UNREACHABLE'] = 'UNREACHABLE';
         $input['UP'] = 'UP';
 
-        Dropdown::showFromArray($item['name'], $input, array('value' => $item['value']));
+        Dropdown::showFromArray($item['name'], $input, ['value' => $item['value']]);
         return true;
     } else if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_hosts'
         AND $item['searchoption']['field'] == 'state_type') {
-        $input = array();
+        $input = [];
         $input['HARD'] = 'HARD';
         $input['SOFT'] = 'SOFT';
 
-        Dropdown::showFromArray($item['name'], $input, array('value' => $item['value']));
+        Dropdown::showFromArray($item['name'], $input, ['value' => $item['value']]);
         return true;
     }
 }
@@ -752,12 +769,12 @@ function plugin_monitoring_searchOptionsValues($item)
 
 function plugin_monitoring_ReplayRulesForItem($args)
 {
-
+    /* @var CommonDBTM $item */
     $itemtype = $args[0];
     $items_id = $args[1];
     $item = new $itemtype();
     $item->getFromDB($items_id);
-    PluginMonitoringComponentscatalog_rule::isThisItemCheckRule($item);
+    PluginMonitoringComponentscatalog_rule::doesThisItemVerifyRule($item);
 }
 
 
@@ -769,7 +786,7 @@ function plugin_monitoring_postinit()
         && $_SESSION['glpiactiveprofile']['interface'] == 'helpdesk') {
         if (strstr($_SERVER['PHP_SELF'], "/helpdesk.public.php")) {
             if (count($_GET) == 0
-                && count($_POST) == 0) {
+                and count($_POST) == 0) {
                 $pmredirecthome = new PluginMonitoringRedirecthome();
                 if ($pmredirecthome->is_redirect($_SESSION['glpiID'])) {
                     Html::redirect($CFG_GLPI["root_doc"] . "/plugins/monitoring/front/dashboard.php");

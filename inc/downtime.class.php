@@ -91,7 +91,7 @@ class PluginMonitoringDowntime extends CommonDBTM
     static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
 
-        // Toolbox::logInFile("pm-downtime", "Downtime, displayTabContentForItem ($withtemplate), item concerned : ".$item->getTypeName()."/".$item->getID()."\n");
+        // PluginMonitoringToolbox::log("Downtime, displayTabContentForItem ($withtemplate), item concerned : ".$item->getTypeName()."/".$item->getID()."\n");
         if ($item->getType() == 'Ticket') {
             /* @var Ticket $item */
             if (self::canView()) {
@@ -286,15 +286,6 @@ class PluginMonitoringDowntime extends CommonDBTM
 
 
     /**
-     * Get host identifier for a downtime
-     */
-    function getHostID()
-    {
-        return $this->fields["plugin_monitoring_hosts_id"];
-    }
-
-
-    /**
      * Get current downtime for an host
      */
     function getFromHost($host_id)
@@ -331,9 +322,9 @@ class PluginMonitoringDowntime extends CommonDBTM
         // End time ...
         $end_time = strtotime($this->fields["end_time"]);
 
-        // Toolbox::logInFile("pm-downtime", "isInDowntime, now : $now, start : $start_time, end : $end_time\n");
+        // PluginMonitoringToolbox::log("isInDowntime, now : $now, start : $start_time, end : $end_time\n");
         if (($start_time <= $now) && ($now <= $end_time)) {
-            // Toolbox::logInFile("pm-downtime", "isInDowntime, yes, id : ".$this->getID()."\n");
+            // PluginMonitoringToolbox::log("isInDowntime, yes, id : ".$this->getID()."\n");
             return true;
         }
 
@@ -374,7 +365,7 @@ class PluginMonitoringDowntime extends CommonDBTM
 
     function prepareInputForAdd($input)
     {
-        // Toolbox::logInFile("pm-downtime", "Downtime, prepareInputForAdd\n");
+        // PluginMonitoringToolbox::log("Downtime, prepareInputForAdd\n");
 
         if ($this->isExpired()) {
             Session::addMessageAfterRedirect(__('Downtime period has already expired!', 'monitoring'), false, ERROR);
@@ -481,7 +472,7 @@ class PluginMonitoringDowntime extends CommonDBTM
      **/
     function post_addItem()
     {
-        // Toolbox::logInFile("pm-downtime", "Downtime, post_add\n");
+        // PluginMonitoringToolbox::log("Downtime, post_add\n");
 
     }
 
@@ -494,7 +485,7 @@ class PluginMonitoringDowntime extends CommonDBTM
      **/
     function pre_deleteItem()
     {
-        // Toolbox::logInFile("pm-downtime", "Downtime, pre_deleteItem\n");
+        // PluginMonitoringToolbox::log("Downtime, pre_deleteItem\n");
 
         $user = new User();
         $user->getFromDB($this->fields['users_id']);

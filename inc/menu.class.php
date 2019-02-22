@@ -77,6 +77,7 @@ class PluginMonitoringMenu extends CommonGLPI
             'eventhandler' => 'PluginMonitoringEventhandler',
             'notificationcommand' => 'PluginMonitoringNotificationcommand',
 
+            'host_template' => 'PluginMonitoringHosttemplate',
             'contact_template' => 'PluginMonitoringContacttemplate',
             'hn_template' => 'PluginMonitoringHostnotificationtemplate',
             'sn_template' => 'PluginMonitoringServicenotificationtemplate',
@@ -85,6 +86,8 @@ class PluginMonitoringMenu extends CommonGLPI
             'host' => 'PluginMonitoringHost',
             'service' => 'PluginMonitoringService',
             'component' => 'PluginMonitoringComponent',
+
+            'componentscatalog' => 'PluginMonitoringComponentscatalog'
 //            'mail_notification' => 'PluginMonitoringMailNotification',
 //            'monitoring_template' => 'PluginMonitoringMonitoringTemplate',
 //            'computer_counters_template' => 'PluginMonitoringCountersTemplate',

@@ -38,15 +38,19 @@ class PluginMonitoringContacttemplate extends CommonDBTM
 {
     static $rightname = 'plugin_monitoring_notification';
 
+    // Prefix to use when commands are built for Shinken configuration
+    public static $default_template = 'Default notifications';
+
     /**
      * Initialization called on plugin installation
+     * @param Migration $migration
      */
-    function initialize()
+    function initialize($migration)
     {
-        $check_period = -1;
+        $notification_period = -1;
         $calendar = new Calendar();
         if ($calendar->getFromDBByCrit(['name' => "24x7"])) {
-            $check_period = $calendar->getID();
+            $notification_period = $calendar->getID();
         }
 
         $cmd_host_notification = -1;
@@ -62,23 +66,24 @@ class PluginMonitoringContacttemplate extends CommonDBTM
         }
 
         $input = [];
-        $input['name'] = 'Default notifications';
+        $input['name'] = self::$default_template;
         $input['is_default'] = '1';
 
         // Default is not administrator but allowed to raise commands
-        $input['shinken_administrator'] = '0';
-        $input['shinken_can_submit_commands'] = '1';
+        $input['ui_administrator'] = '0';
+        $input['ui_can_submit_commands'] = '1';
 
         // Default are disabled
         $input['hn_enabled'] = '0';
-        $input['hn_period'] = $check_period;
+        $input['hn_period'] = $notification_period;
         $input['hn_commands'] = $cmd_host_notification;
 
         $input['sn_enabled'] = '0';
-        $input['sn_period'] = $check_period;
+        $input['sn_period'] = $notification_period;
         $input['sn_commands'] = $cmd_service_notification;
-        PluginMonitoringToolbox::log("Contact template: " . print_r($input, true));
         $this->add($input);
+
+        $migration->displayMessage("  created default contact template");
     }
 
     static function getTypeName($nb = 0)
@@ -175,11 +180,11 @@ class PluginMonitoringContacttemplate extends CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Contact has Shinken administrator rights', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('shinken_administrator', $this->fields['shinken_administrator']);
+        Dropdown::showYesNo('ui_administrator', $this->fields['ui_administrator']);
         echo "</td>";
         echo "<td>" . __('Contact can submit Shinken commands', 'monitoring') . "&nbsp;:</td>";
         echo "<td align='center'>";
-        Dropdown::showYesNo('shinken_can_submit_commands', $this->fields['shinken_can_submit_commands']);
+        Dropdown::showYesNo('ui_can_submit_commands', $this->fields['ui_can_submit_commands']);
         echo "</td>";
         echo "</tr>";
 

@@ -42,22 +42,68 @@ class PluginMonitoringComponent extends CommonDBTM
 
     /**
      * Initialization called on plugin installation
+     *
+     * @param Migration $migration
      */
-    function initialize()
+    function initialize($migration)
     {
+        $check_period = -1;
+        $calendar = new Calendar();
+        if ($calendar->getFromDBByCrit(['name' => "monitoring-default"])) {
+            $check_period = $calendar->getID();
+        }
 
+        $check_strategy = -1;
+        $strategy = new PluginMonitoringCheck();
+        if ($strategy->getFromDBByCrit(['name' => "15 minutes / 3 retries"])) {
+            $check_strategy = $strategy->getID();
+        }
+
+        $check_command = -1;
+        $command = new PluginMonitoringCommand();
+        if ($command->getFromDBByCrit(['command_name' => "check_host_alive"])) {
+            $check_command = $command->getID();
+        }
+
+        $input = [];
+        $input['name'] = 'Host check (ICMP)';
+        $input['description'] = 'host_check';
+        $input['active_checks_enabled'] = '1';
+        $input['passive_checks_enabled'] = '0';
+        $input['plugin_monitoring_commands_id'] = $check_command;
+        $input['plugin_monitoring_checks_id'] = $check_strategy;
+        $input['calendars_id'] = $check_period;
+        $this->add($input);
+
+        $check_command = -1;
+        $command = new PluginMonitoringCommand();
+        if ($command->getFromDBByCrit(['command_name' => "check_ping"])) {
+            $check_command = $command->getID();
+        }
+
+        $input = [];
+        $input['name'] = 'Host check (ping)';
+        $input['description'] = 'host_check';
+        $input['active_checks_enabled'] = '1';
+        $input['passive_checks_enabled'] = '0';
+        $input['plugin_monitoring_commands_id'] = $check_command;
+        $input['plugin_monitoring_checks_id'] = $check_strategy;
+        $input['calendars_id'] = $check_period;
+        $this->add($input);
+
+        $migration->displayMessage("  created default components");
     }
 
 
     static function getTypeName($nb = 1)
     {
-        return __('Component', 'monitoring');
+        return __('Components', 'monitoring');
     }
 
 
-    function defineTabs($options = array())
+    function defineTabs($options = [])
     {
-        $ong = array();
+        $ong = [];
         $this->addDefaultFormTab($ong);
         $this->addStandardTab("PluginMonitoringComponent", $ong, $options);
         return $ong;
@@ -76,18 +122,18 @@ class PluginMonitoringComponent extends CommonDBTM
     {
         /* @var CommonDBTM $item */
         if ($item->getID() > 0
-            AND $item->getField('graph_template') != 0) {
+            and $item->getField('graph_template') != 0) {
 
-            return array(
+            return [
                 __('Copy'),
                 __('Components catalog', 'monitoring'),
                 __('Graph configuration', 'monitoring')
-            );
+            ];
         } else if ($item->getID() > 0) {
-            return array(
+            return [
                 __('Copy'),
                 __('Components catalog', 'monitoring')
-            );
+            ];
         }
         return [];
     }
@@ -110,8 +156,6 @@ class PluginMonitoringComponent extends CommonDBTM
                 $item->copyItem($item->getID());
             } else if ($tabnum == '1') {
                 PluginMonitoringComponentscatalog_Component::listForComponents($item->getID());
-            } else if ($tabnum == '2') {
-                $item->preferences($item->getID());
             }
         }
         return true;
@@ -136,22 +180,24 @@ class PluginMonitoringComponent extends CommonDBTM
             'name' => __('Components', 'monitoring')
         ];
 
+        $index = 1;
         $tab[] = [
-            'id' => '1',
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'name',
             'name' => __('Name'),
+            'datatype' => 'itemlink'
         ];
 
         $tab[] = [
-            'id' => '2',
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'description',
-            'name' => __('Comment'),
+            'name' => __('Description'),
         ];
 
         $tab[] = [
-            'id' => '3',
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'active_checks_enabled',
             'datatype' => 'bool',
@@ -159,7 +205,7 @@ class PluginMonitoringComponent extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '4',
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'passive_checks_enabled',
             'datatype' => 'bool',
@@ -167,7 +213,7 @@ class PluginMonitoringComponent extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '5',
+            'id' => $index++,
             'table' => 'glpi_plugin_monitoring_commands',
             'field' => 'name',
             'datatype' => 'itemlink',
@@ -176,7 +222,7 @@ class PluginMonitoringComponent extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '6',
+            'id' => $index++,
             'table' => 'glpi_plugin_monitoring_eventhandlers',
             'field' => 'name',
             'datatype' => 'itemlink',
@@ -185,7 +231,7 @@ class PluginMonitoringComponent extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '7',
+            'id' => $index++,
             'table' => 'glpi_plugin_monitoring_checks',
             'field' => 'name',
             'datatype' => 'itemlink',
@@ -194,24 +240,23 @@ class PluginMonitoringComponent extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '8',
+            'id' => $index++,
             'table' => 'glpi_calendars',
             'field' => 'name',
             'datatype' => 'specific',
-//            'linkfield'          => 'calendars_id',
             'name' => __('Related check period', 'monitoring'),
         ];
 
         $tab[] = [
-            'id' => '9',
+            'id' => $index++,
             'table' => $this->getTable(),
-            'field' => 'business_priority',
+            'field' => 'business_impact',
             'datatype' => 'integer',
             'name' => __('Business impact', 'monitoring'),
         ];
 
         $tab[] = [
-            'id' => '11',
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'freshness_type',
             'datatype' => 'specific',
@@ -219,7 +264,7 @@ class PluginMonitoringComponent extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => '10',
+            'id' => $index,
             'table' => $this->getTable(),
             'field' => 'freshness_count',
             'datatype' => 'integer',
@@ -242,65 +287,12 @@ class PluginMonitoringComponent extends CommonDBTM
         return $tab;
     }
 
-    function getSearchOptions_old()
-    {
 
-        $tab = array();
-
-        $tab['common'] = __('Components', 'monitoring');
-
-//        $tab[1]['table'] = $this->getTable();
-//        $tab[1]['field'] = 'name';
-//        $tab[1]['linkfield'] = 'name';
-//        $tab[1]['name'] = __('Name');
-//        $tab[1]['datatype'] = 'itemlink';
-
-//        $tab[2]['table'] = $this->getTable();
-//        $tab[2]['field'] = 'id';
-//        $tab[2]['name'] = __('ID');
-//        $tab[2]['massiveaction'] = false; // implicit field is id
-
-//        $tab[3]['table'] = $this->getTable();
-//        $tab[3]['field'] = 'description';
-//        $tab[3]['name'] = __('Alias (Shinken service_description)', 'monitoring');
-
-//        $tab[4]['table'] = $this->getTable();
-//        $tab[4]['field'] = 'active_checks_enabled';
-//        $tab[4]['name'] = __('Active check', 'monitoring');
-//        $tab[4]['datatype'] = 'bool';
-//
-//        $tab[5]['table'] = $this->getTable();
-//        $tab[5]['field'] = 'passive_checks_enabled';
-//        $tab[5]['name'] = __('Passive check', 'monitoring');
-//        $tab[5]['datatype'] = 'bool';
-
-//        $tab[6]['table'] = $this->getTable();
-//        $tab[6]['field'] = 'calendars_id';
-//        $tab[6]['name'] = __('Check period', 'monitoring');
-//        $tab[6]['datatype'] = 'specific';
-//
-//        $tab[7]['table'] = $this->getTable();
-//        $tab[7]['field'] = 'freshness_count';
-//        $tab[7]['name'] = __('Freshness count', 'monitoring');
-//
-//        $tab[8]['table'] = $this->getTable();
-//        $tab[8]['field'] = 'freshness_type';
-//        $tab[8]['name'] = __('Freshness type', 'monitoring');
-//        $tab[8]['datatype'] = 'specific';
-//
-//        $tab[9]['table'] = $this->getTable();
-//        $tab[9]['field'] = 'business_priority';
-//        $tab[9]['name'] = __('Business priority', 'monitoring');
-
-        return $tab;
-    }
-
-
-    static function getSpecificValueToDisplay($field, $values, array $options = array())
+    static function getSpecificValueToDisplay($field, $values, array $options = [])
     {
 
         if (!is_array($values)) {
-            $values = array($field => $values);
+            $values = [$field => $values];
         }
         switch ($field) {
             case 'calendars_id':
@@ -310,7 +302,7 @@ class PluginMonitoringComponent extends CommonDBTM
                 break;
 
             case 'freshness_type':
-                $a_freshness_type = array();
+                $a_freshness_type = [];
                 $a_freshness_type['seconds'] = __('Second(s)', 'monitoring');
                 $a_freshness_type['minutes'] = __('Minute(s)', 'monitoring');
                 $a_freshness_type['hours'] = __('Hour(s)', 'monitoring');
@@ -322,7 +314,7 @@ class PluginMonitoringComponent extends CommonDBTM
     }
 
 
-    function showForm($items_id, $options = array(), $copy = array())
+    function showForm($items_id, $options = [], $copy = [])
     {
         $pMonitoringCommand = new PluginMonitoringCommand();
 
@@ -330,7 +322,7 @@ class PluginMonitoringComponent extends CommonDBTM
         if ($this->fields['id'] == 0) {
             $this->fields['active_checks_enabled'] = 1;
             $this->fields['passive_checks_enabled'] = 1;
-            $this->fields['business_priority'] = 3;
+            $this->fields['business_impact'] = 3;
         }
 
         if (count($copy) > 0) {
@@ -359,26 +351,26 @@ class PluginMonitoringComponent extends CommonDBTM
         echo "<input type='hidden' name='is_template' value='1' />";
         $objectName = autoName($this->fields["name"], "name", 1,
             $this->getType());
-        Html::autocompletionTextField($this, 'name', array('value' => $objectName));
+        Html::autocompletionTextField($this, 'name', ['value' => $objectName]);
         echo "</td>";
         // * checks
-        echo "<td>" . __('Check definition', 'monitoring') . "<span class='red'>*</span>&nbsp;:</td>";
+        echo "<td>" . __('Check strategy', 'monitoring') . "<span class='red'>*</span>&nbsp;:</td>";
         echo "<td>";
         Dropdown::show("PluginMonitoringCheck",
-            array('name' => 'plugin_monitoring_checks_id',
-                'value' => $this->fields['plugin_monitoring_checks_id']));
+            ['name' => 'plugin_monitoring_checks_id',
+                'value' => $this->fields['plugin_monitoring_checks_id']]);
         echo "</td>";
         echo "</tr>";
 
         // * Link
         echo "<tr>";
         echo "<td>";
-        echo __('Alias (Shinken service_description)', 'monitoring') . "&nbsp;:";
+        echo __('Monitoring service_description', 'monitoring') . "&nbsp;:";
         echo "</td>";
         echo "<td>";
-        $objectDescription = autoName($this->fields["description"], "name", 1,
-            $this->getType());
-        Html::autocompletionTextField($this, 'description', array('value' => $objectDescription));
+        $objectDescription = autoName($this->fields["description"],
+            "name", 1, $this->getType());
+        Html::autocompletionTextField($this, 'description', ['value' => $objectDescription]);
         echo "</td>";
         /*
               echo "<td>";
@@ -408,10 +400,10 @@ class PluginMonitoringComponent extends CommonDBTM
         echo "</td>";
         echo "<td>";
         $pMonitoringCommand->getFromDB($this->fields['plugin_monitoring_commands_id']);
-        Dropdown::show("PluginMonitoringCommand", array(
+        Dropdown::show("PluginMonitoringCommand", [
             'name' => 'plugin_monitoring_commands_id',
             'value' => $this->fields['plugin_monitoring_commands_id']
-        ));
+        ]);
         echo "</td>";
         // * passive check
         echo "<td>";
@@ -423,33 +415,26 @@ class PluginMonitoringComponent extends CommonDBTM
         echo "</tr>";
 
         echo "<tr>";
-        echo "<td>";
-        echo __('Template (for graphs generation)', 'monitoring') . "&nbsp;:";
-        echo "</td>";
-        echo "<td>";
-        Dropdown::show('PluginMonitoringPerfdata',
-            array('name' => 'graph_template',
-                'value' => $this->fields['graph_template']));
-        echo "</td>";
         // * freshness
         echo "<td>" . __('Freshness (for passive mode)', 'monitoring') . "&nbsp;:</td>";
         echo "<td>";
         if ($this->fields['freshness_count'] == '') {
             $this->fields['freshness_count'] = 0;
         }
-        Dropdown::showNumber("freshness_count", array(
+        Dropdown::showNumber("freshness_count", [
                 'value' => $this->fields['freshness_count'],
                 'min' => 0,
-                'max' => 300)
+                'max' => 300]
         );
-        $a_time = array();
+        $a_time = [];
         $a_time['seconds'] = __('Second(s)', 'monitoring');
         $a_time['minutes'] = __('Minute(s)', 'monitoring');
         $a_time['hours'] = __('Hour(s)', 'monitoring');
         $a_time['days'] = __('Day(s)', 'monitoring');
 
-        Dropdown::showFromArray("freshness_type", $a_time, array('value' => $this->fields['freshness_type']));
+        Dropdown::showFromArray("freshness_type", $a_time, ['value' => $this->fields['freshness_type']]);
         echo "</td>";
+        echo "<td colspan='2'></td>";
         echo "</tr>";
 
         echo "<tr>";
@@ -458,24 +443,24 @@ class PluginMonitoringComponent extends CommonDBTM
         echo "</td>";
         echo "<td>";
         dropdown::show("PluginMonitoringEventhandler",
-            array('name' => 'plugin_monitoring_eventhandlers_id',
-                'value' => $this->fields['plugin_monitoring_eventhandlers_id']));
+            ['name' => 'plugin_monitoring_eventhandlers_id',
+                'value' => $this->fields['plugin_monitoring_eventhandlers_id']]);
         echo "</td>";
         // * calendar
         echo "<td>" . __('Check period', 'monitoring') . "<span class='red'>*</span>&nbsp;:</td>";
         echo "<td>";
-        dropdown::show("Calendar", array('name' => 'calendars_id',
-            'value' => $this->fields['calendars_id']));
+        dropdown::show("Calendar", ['name' => 'calendars_id',
+            'value' => $this->fields['calendars_id']]);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Business priority level', 'monitoring') . "&nbsp;:</td>";
         echo "<td>";
-        Dropdown::showNumber('business_priority', array(
-                'value' => $this->fields['business_priority'],
+        Dropdown::showNumber('business_impact', [
+                'value' => $this->fields['business_impact'],
                 'min' => 0,
-                'max' => 5)
+                'max' => 5]
         );
         echo "</td>";
         echo "<td colspan='2'></td>";
@@ -491,14 +476,12 @@ class PluginMonitoringComponent extends CommonDBTM
         echo __('Utility used for remote check', 'monitoring') . "&nbsp;:";
         echo "</td>";
         echo "<td>";
-        $input = array();
+        $input = [];
         $input[''] = '------';
-        $input['byssh'] = 'byssh';
+//        $input['byssh'] = 'byssh';
         $input['nrpe'] = 'nrpe';
         $input['nsca'] = 'nsca';
-        Dropdown::showFromArray("remotesystem",
-            $input,
-            array('value' => $this->fields['remotesystem']));
+        Dropdown::showFromArray("remotesystem", $input, ['value' => $this->fields['remotesystem']]);
         echo "</td>";
         // * is_argument
         echo "<td>";
@@ -520,10 +503,9 @@ class PluginMonitoringComponent extends CommonDBTM
         echo "<td colspan='2'></td>";
         echo "</tr>";
 
-
         // * Manage arguments
-        $array = array();
-        $a_displayarg = array();
+        $array = [];
+        $a_displayarg = [];
         if (isset($pMonitoringCommand->fields['command_line'])) {
             preg_match_all("/\\$(ARG\d+)\\$/", $pMonitoringCommand->fields['command_line'], $array);
             $a_arguments = importArrayFromDB($this->fields['arguments']);
@@ -586,50 +568,6 @@ class PluginMonitoringComponent extends CommonDBTM
             }
         }
 
-        if (Session::haveRight("plugin_monitoring_weathermap", READ)) {
-            echo "<tr>";
-            echo "<th colspan='4'>" . __('Weathermap', 'monitoring') . "&nbsp;</th>";
-            echo "</tr>";
-
-            echo "<tr>";
-            echo "<td>";
-            echo __('Use this component for Weathermap', 'monitoring') . "&nbsp;:";
-            echo "</td>";
-            echo "<td>";
-            Dropdown::showYesNo("is_weathermap", $this->fields['is_weathermap']);
-            echo "</td>";
-            echo "<td>";
-            $tooltip = __('Example', 'monitoring') . " :<br/><br/>";
-            $tooltip .= "perfdata : <i>inUsage=0.00%;85;98 outUsage=0.00%;85;98 inBandwidth=<strong>789944</strong>.00bps outBandwidth=486006.00bps inAbsolut=0 outAbsolut=12665653</i><br/><br/>";
-            $tooltip .= __('Regex bandwidth input', 'monitoring') . " : <i><strong>(?:.*)inBandwidth=(\d+)(?:.*)</strong></i><br/><br/>";
-            $tooltip .= __('Assign the value from regular expression') . " : <strong>789944</strong>";
-            echo __('Regex bandwidth input', 'monitoring') . "&nbsp;";
-            Html::showToolTip($tooltip, array('autoclose' => false));
-            echo "&nbsp;:";
-            echo "</td>";
-            echo "<td>";
-            echo "<input type='text' name='weathermap_regex_in' value='" . $this->fields['weathermap_regex_in'] . "' size='40' />";
-            echo "</td>";
-            echo "</tr>";
-
-            echo "<tr>";
-            echo "<td colspan='2'>";
-            echo "</td>";
-            echo "<td>";
-            $tooltip = __('Example', 'monitoring') . " :<br/><br/>";
-            $tooltip .= "perfdata : <i>inUsage=0.00%;85;98 outUsage=0.00%;85;98 inBandwidth=789944.00bps outBandwidth=<strong>486006</strong>.00bps inAbsolut=0 outAbsolut=12665653</i><br/><br/>";
-            $tooltip .= __('Regex bandwidth output', 'monitoring') . " : <i><strong>(?:.*)outBandwidth=(\d+)(?:.*)</strong></i><br/><br/>";
-            $tooltip .= __('Assign the value from regular expression') . " : <strong>789944</strong>";
-            echo __('Regex bandwidth output', 'monitoring') . "&nbsp;";
-            Html::showToolTip($tooltip, array('autoclose' => false));
-            echo "&nbsp;:";
-            echo "</td>";
-            echo "<td>";
-            echo "<input type='text' name='weathermap_regex_out' value='" . $this->fields['weathermap_regex_out'] . "' size='40' />";
-            echo "</td>";
-            echo "</tr>";
-        }
-
         $this->showFormButtons($options);
 
         return true;
@@ -645,7 +583,7 @@ class PluginMonitoringComponent extends CommonDBTM
 
         $this->getFromDB($items_id);
         $this->fields['id'] = 0;
-        $this->showFormHeader(array());
+        $this->showFormHeader([]);
 
         echo "<tr class='tab_bg_1'>";
         echo "<td colspan='4' class='center'>";
@@ -666,10 +604,11 @@ class PluginMonitoringComponent extends CommonDBTM
     function tagsAvailable()
     {
 
-        $elements = array();
-        $elements[__('List of tags available', 'monitoring')] = '';
+        $elements = [];
+        $elements[__('List of available tags', 'monitoring')] = '';
         $elements["[[HOSTNAME]]"] = __('Hostname of the device', 'monitoring');
         $elements["[[IP]]"] = __('IP of the device', 'monitoring');
+        /* mohierf: disable this feature
         $elements["[[NETWORKPORTNUM]]"] = __('Network port number', 'monitoring');
         $elements["[[NETWORKPORTNAME]]"] = __('Network port name', 'monitoring');
         if (class_exists("PluginFusioninventoryNetworkPort")) {
@@ -677,51 +616,8 @@ class PluginMonitoringComponent extends CommonDBTM
             $elements["[SNMP:version]"] = __('SNMP version of network equipment or printer', 'monitoring');
             $elements["[SNMP:authentication]"] = __('SNMP community of network equipment or printer', 'monitoring');
         }
+        */
         return $elements;
-    }
-
-
-    function preferences($components_id)
-    {
-
-//      echo '<script type="text/javascript">
-//    jQuery(function() {
-//      jQuery("#jquery-tagbox-select").tagBox({
-//        enableDropdown: true,
-//        separator: "####",
-//        tagButtonTitle: "'.__('Add to graph', 'monitoring').'",
-//        dropdownSource: function() {
-//          return jQuery("#jquery-tagbox-select-options");
-//        }
-//      });
-//    });
-//    jQuery(function() {
-//      jQuery("#jquery-tagbox-select2").tagBox({
-//        enableDropdown: true,
-//        separator: "####",
-//        tagButtonTitle: "'.__('Invert', 'monitoring').'",
-//        dropdownSource: function() {
-//          return jQuery("#jquery-tagbox-select2-options");
-//        }
-//      });
-//    });
-//  </script>';
-
-
-        echo "<table class='tab_cadre_fixe'>";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<th>";
-        echo __('Settings');
-        echo "</th>";
-        echo "</tr>";
-
-        echo "<tr class='tab_bg_3'>";
-        echo "<td style='background: #fff'>";
-        PluginMonitoringToolbox::preferences($components_id);
-        echo "</td>";
-        echo "</tr>";
-        echo "</table>";
     }
 
 
@@ -741,62 +637,14 @@ class PluginMonitoringComponent extends CommonDBTM
 
     function hasPerfdata($incremental = false)
     {
-        if ($this->fields['graph_template'] == 0) return false;
-
-        // TODO : improve this function !
-
-        // Get component graph configuration ...
-        if (!isset($_SESSION['glpi_plugin_monitoring']['perfname'][$this->fields['id']])) {
-            PluginMonitoringToolbox::loadPreferences($this->fields['id']);
-        }
-
-        $a_perf = PluginMonitoringPerfdata::getArrayPerfdata($this->fields['graph_template']);
-
-        $myPerfdata = array();
-        foreach ($a_perf['parseperfdata'] as $data) {
-            // Toolbox::logInFile("pm", "perf : ".serialize($data)."\n");
-            $i = 0;
-            foreach ($data['DS'] as $data2) {
-                // Toolbox::logInFile("pm", "perf : ".serialize($data2)."\n");
-                preg_replace("/[^A-Za-z0-9\-_]/", "", $data['name']);
-                if ($incremental) {
-                    if ($data['incremental'][$i] == '1') {
-                        $myPerfdata[] = $data2['dsname'];
-                    }
-                } else {
-                    $myPerfdata[] = $data2['dsname'];
-                }
-                $i++;
-            }
-        }
-
-        return $myPerfdata;
+        // For former source code compatibility!
+        return false;
     }
 
 
     function hasCounters()
     {
-        if ($this->fields['graph_template'] == 0) return false;
-
-        // Get component graph configuration ...
-        if (!isset($_SESSION['glpi_plugin_monitoring']['perfname'][$this->fields['id']])) {
-            PluginMonitoringToolbox::loadPreferences($this->fields['id']);
-        }
-
-        $a_perf = PluginMonitoringPerfdata::getArrayPerfdata($this->fields['graph_template']);
-
-        $myPerfdata = array();
-        foreach ($a_perf['parseperfdata'] as $data) {
-            $i = 0;
-            foreach ($data['DS'] as $data2) {
-                $counter = preg_replace("/[^A-Za-z0-9\-_]/", "", $data['name']);
-                if ($data['incremental'][$i] == '1') {
-                    $myPerfdata[$counter] = $data2['dsname'];
-                }
-                $i++;
-            }
-        }
-
-        return $myPerfdata;
+        // For former source code compatibility!
+        return false;
     }
 }

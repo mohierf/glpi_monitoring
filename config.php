@@ -139,7 +139,7 @@ try {
 $cronTask = new CronTask();
 $cronTask->getFromDBbyName('PluginAlignakTask', 'taskscheduler');
 if ($cronTask->fields['lastrun'] == ''
-   OR strtotime($cronTask->fields['lastrun']) < strtotime("-3 day")) {
+   or strtotime($cronTask->fields['lastrun']) < strtotime("-3 day")) {
    $message = __('Alignak CRON task is not running, see ', 'alignak');
    $message .= " <a href='http://fusioninventory.org/documentation/fi4g/cron.html'>".__('documentation', 'fusioninventory')."</a>";
    Html::displayTitle($CFG_GLPI['root_doc']."/pics/warning.png", $message, $message);

@@ -38,7 +38,7 @@ $pmComponentscatalog_Component = new PluginMonitoringComponentscatalog_Component
 
 if (isset ($_POST["add"])) {
    $pmComponentscatalog_Component->add($_POST);
-   $pmComponentscatalog_Component->addComponentToItems($_POST['plugin_monitoring_componentscalalog_id'],
+   $pmComponentscatalog_Component->addComponentToItems($_POST['plugin_monitoring_componentscatalogs_id'],
                                                        $_POST['plugin_monitoring_components_id']);
    Html::back();
 } else if (isset($_POST["deleteitem"])) {
@@ -48,7 +48,7 @@ if (isset ($_POST["add"])) {
       $fields = $pmComponentscatalog_Component->fields;
 
       $pmComponentscatalog_Component->delete(array('id'=>$id));
-      $pmComponentscatalog_Component->removeComponentToItems($fields['plugin_monitoring_componentscalalog_id'],
+      $pmComponentscatalog_Component->removeComponentToItems($fields['plugin_monitoring_componentscatalogs_id'],
                                                           $fields['plugin_monitoring_components_id']);
 
    }
@@ -56,5 +56,3 @@ if (isset ($_POST["add"])) {
 }
 
 Html::footer();
-
-?>

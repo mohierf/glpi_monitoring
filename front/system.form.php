@@ -30,21 +30,19 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "system");
+Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
+    "monitoring", "system");
 
 $pmSystem = new PluginMonitoringSystem();
 
 if (isset($_GET["id"])) {
-   $pmSystem->showForm($_GET["id"]);
+    $pmSystem->showForm($_GET["id"]);
 } else {
-   $pmSystem->showForm("");
+    $pmSystem->showForm("");
 }
 
 Html::footer();
-
-?>

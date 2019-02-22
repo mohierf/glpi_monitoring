@@ -31,69 +31,71 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringSystem extends CommonDBTM {
+class PluginMonitoringSystem extends CommonDBTM
+{
+    const HOMEPAGE = 1024;
+    const DASHBOARD = 2048;
+
+    static $rightname = 'plugin_monitoring_systemstatus';
 
 
-   const HOMEPAGE         =  1024;
-   const DASHBOARD        =  2048;
+    function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+    {
 
-   static $rightname = 'plugin_monitoring_systemstatus';
+        if (!$withtemplate) {
+            switch ($item->getType()) {
+                case 'Central' :
+                    if (Session::haveRight("plugin_monitoring_homepage", READ)
+                        && Session::haveRight("plugin_monitoring_systemstatus", PluginMonitoringSystem::HOMEPAGE)) {
+                        return [1 => "[" . __('System status', 'monitoring')];
+                    } else {
+                        return '';
+                    }
+            }
+        }
+        return '';
+    }
 
 
+    static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    {
 
-   function getTabNameForItem(CommonGLPI $item, $withtemplate=0) {
-
-      if (!$withtemplate) {
-         switch ($item->getType()) {
+        switch ($item->getType()) {
             case 'Central' :
-               if (Session::haveRight("plugin_monitoring_homepage", READ)
-                       && Session::haveRight("plugin_monitoring_systemstatus", PluginMonitoringSystem::HOMEPAGE)) {
-                  return array(1 => "[".__('System status', 'monitoring'));
-               } else {
-                  return '';
-               }
-         }
-      }
-      return '';
-   }
+                echo "<table class='tab_cadre' width='950'>";
+                echo "<tr class='tab_bg_1'>";
+                echo "<th height='80'>";
+                echo __('Sorry, this content is not yet available in the Monitoring', 'monitoring');
+                echo "</th>";
+                echo "</tr>";
+                echo "</table>";
 
+                return true;
 
-
-   static function displayTabContentForItem(CommonGLPI $item, $tabnum=1, $withtemplate=0) {
-
-      switch ($item->getType()) {
-         case 'Central' :
-            echo "<table class='tab_cadre' width='950'>";
-            echo "<tr class='tab_bg_1'>";
-            echo "<th height='80'>";
-            echo __('Sorry, this content is not yet available in the Monitoring', 'monitoring');
-            echo "</th>";
-            echo "</tr>";
-            echo "</table>";
-
-            return true;
-
-      }
-      return true;
-   }
+        }
+        return true;
+    }
 
 
     /**
      * @since version 0.85
      *
-     * @see commonDBTM::getRights()
+     * @see   commonDBTM::getRights()
+     *
      * @param string $interface
+     *
      * @return array
      */
-   function getRights($interface='central') {
+    function getRights($interface = 'central')
+    {
 
-      $values = array();
-      $values[self::HOMEPAGE]    = __('See in homepage', 'monitoring');
-      $values[self::DASHBOARD]   = __('See in dashboard', 'monitoring');
+        $values = [];
+        $values[self::HOMEPAGE] = __('See in homepage', 'monitoring');
+        $values[self::DASHBOARD] = __('See in dashboard', 'monitoring');
 
-      return $values;
-   }
+        return $values;
+    }
 }

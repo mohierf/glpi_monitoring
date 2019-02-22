@@ -41,7 +41,7 @@ $pmMessage = new PluginMonitoringMessage();
 $pmMessage->getMessages();
 
 $pmDisplay = new PluginMonitoringDisplay();
-$pmDisplay->menu();
+$pmDisplay->dashboard();
 
 Search::show('PluginMonitoringDowntime');
 

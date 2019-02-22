@@ -41,4 +41,3 @@ Html::header(__('Monitoring - counter', 'monitoring'),$_SERVER["PHP_SELF"], "plu
 Search::show('PluginMonitoringCustomitem_Counter');
 
 Html::footer();
-?>

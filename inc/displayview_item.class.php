@@ -264,14 +264,13 @@ class PluginMonitoringDisplayview_item extends CommonDBTM
     {
         global $CFG_GLPI;
 
-        /* @var CommonDBTM $item */
         $itemtype = $data['itemtype'];
         $itemtype2 = '';
-        if ($itemtype == 'host'
-            || $itemtype == 'service') {
+        if ($itemtype == 'host' || $itemtype == 'service') {
             $itemtype2 = $itemtype;
             $itemtype = 'PluginMonitoringDisplayview';
         }
+        /* @var PluginMonitoringService $item */
         $item = new $itemtype();
 //        $content = '';
         $title = $item->getTypeName();
@@ -298,19 +297,8 @@ class PluginMonitoringDisplayview_item extends CommonDBTM
                 $title .= str_replace("'", "\"", $item2->getLink() . " (" . $item2->getTypeName() . " / " . $data['extra_infos'] . ")");
             }
             $width = "width: 475,";
-        } else if ($itemtype == "PluginMonitoringWeathermap") {
-//         $content = $item->showWidget($data['items_id'], $data['extra_infos']);
-            $content = '<div id="weathermap-' . $data['items_id'] . '"></div>';
-//         $event = ", ".$item->widgetEvent($data['items_id']);
-            if ($data['items_id'] == -1) {
-                $title .= " : " . __('Legend', 'monitoring');
-                $width = "width:400,";
-            } else {
-                $title .= " : " . Dropdown::getDropdownName(getTableForItemType('PluginMonitoringWeathermap'), $data['items_id']);
-                $item->getFromDB($data['items_id']);
-                $width = "width:" . (($item->fields['width'] * $data['extra_infos']) / 100) . ",";
-            }
         } else {
+            /* @var PluginMonitoringDisplayview $item */
             if ($itemtype2 != '') {
                 $content = $item->showWidget2($data['id']);
             } else {
@@ -403,24 +391,21 @@ class PluginMonitoringDisplayview_item extends CommonDBTM
      </script>";//.show()
 
         if ($itemtype == "PluginMonitoringService") {
-            $pmComponent = new PluginMonitoringComponent();
-            $item = new PluginMonitoringService();
-
-            $item->getFromDB($data['items_id']);
-            $pmComponent->getFromDB($item->fields['plugin_monitoring_components_id']);
-            $pmServicegraph = new PluginMonitoringServicegraph();
-            $pmServicegraph->displayGraph($pmComponent->fields['graph_template'],
-                "PluginMonitoringService",
-                $data['items_id'],
-                "0",
-                $data['extra_infos'],
-                "js");
+//            $pmComponent = new PluginMonitoringComponent();
+//            $item = new PluginMonitoringService();
+//
+//            $item->getFromDB($data['items_id']);
+//            $pmComponent->getFromDB($item->fields['plugin_monitoring_components_id']);
+//            $pmServicegraph = new PluginMonitoringServicegraph();
+//            $pmServicegraph->displayGraph($pmComponent->fields['graph_template'],
+//                "PluginMonitoringService",
+//                $data['items_id'],
+//                "0",
+//                $data['extra_infos'],
+//                "js");
         } else if ($itemtype == "PluginMonitoringComponentscatalog") {
             $pmComponentscatalog = new PluginMonitoringComponentscatalog();
             $pmComponentscatalog->ajaxLoad($data['items_id'], $data['is_minemap']);
-        } else if ($itemtype == "PluginMonitoringServicescatalog") {
-            $pmServicescatalog = new PluginMonitoringServicescatalog();
-            $pmServicescatalog->ajaxLoad($data['items_id']);
         } else if ($itemtype2 != '') {
             $pmDisplayview = new PluginMonitoringDisplayview();
             $pmDisplayview->ajaxLoad2($data['id'], $data['is_minemap']);
@@ -435,26 +420,6 @@ class PluginMonitoringDisplayview_item extends CommonDBTM
             $pmCustomitem_Counter->ajaxLoad($data['items_id']);
         }
 
-        if ($itemtype == "PluginMonitoringWeathermap") {
-//         echo "<script type='text/javascript'>
-//            function updateimagew".$data['items_id']."() {
-//               var demain=new Date();
-//               document.getElementById('weathermap-".$data['items_id']."').innerHTML = demain.getTime() + '".$content."';
-//            }
-//            setInterval(updateimagew".$data['items_id'].", 50000);
-//         </script>";
-//      }
-
-            echo "<script type='text/javascript'>
-         var mgr = new Ext.UpdateManager('weathermap-" . $data['items_id'] . "');
-         mgr.startAutoRefresh(50, \"" . $CFG_GLPI["root_doc"] .
-                "/plugins/monitoring/ajax/widgetWeathermap.php\","
-                . " \"id=" . $data['items_id'] . "&extra_infos=" .
-                $data['extra_infos'] .
-                "&glpiID=" . $_SESSION['glpiID'] .
-                "\", \"\", true);
-         </script>";
-        }
         return true;
     }
 
@@ -494,7 +459,6 @@ class PluginMonitoringDisplayview_item extends CommonDBTM
         $elements['host'] = __('Host (info)', 'monitoring');
         $elements['PluginMonitoringService'] = __('Resources (graph)', 'monitoring');
         $elements['PluginMonitoringComponentscatalog'] = __('Components catalog', 'monitoring');
-        $elements['PluginMonitoringWeathermap'] = __('Weathermap', 'monitoring');
         $elements['PluginMonitoringCustomitem_Gauge'] = PluginMonitoringCustomitem_Gauge::getTypeName();
         $elements['PluginMonitoringCustomitem_Counter'] = PluginMonitoringCustomitem_Counter::getTypeName();
 
@@ -593,10 +557,6 @@ class PluginMonitoringDisplayview_item extends CommonDBTM
                 $size['height'] = 340;
                 break;
 
-            case 'PluginMonitoringWeathermap':
-
-                break;
-
             case 'PluginMonitoringServicescatalog':
             case 'PluginMonitoringComponentscatalog':
                 $size['width'] = 180;
@@ -664,9 +624,7 @@ class PluginMonitoringDisplayview_item extends CommonDBTM
             if ($item['itemtype'] != 'PluginMonitoringServicescatalog'
                 && $item['itemtype'] != 'PluginMonitoringComponentscatalog'
                 && $item['itemtype'] != 'PluginMonitoringDisplayview'
-                && $item['itemtype'] != 'host'
-                && !($item['itemtype'] == 'PluginMonitoringWeathermap'
-                    && $item['items_id'] == -1)) {
+                && $item['itemtype'] != 'host') {
                 echo 'class="ui-widget-content" ';
             }
             if ($item['itemtype'] == 'host'
@@ -676,53 +634,24 @@ class PluginMonitoringDisplayview_item extends CommonDBTM
             }
 
             if ($item['itemtype'] == 'PluginMonitoringService') {
-                echo 'style="width: ' . $size['width'] . 'px; height: ' . $size['height'] . 'px; '
-                    . 'position: absolute; left: ' . $item['x'] . 'px; top: ' . $item['y'] . 'px;">';
-                $pmComponent = new PluginMonitoringComponent();
-                $pmService = new PluginMonitoringService();
-
-                if ($pmService->getFromDB($item['items_id'])) {
-                    $pmComponent->getFromDB($pmService->fields['plugin_monitoring_components_id']);
-                    $pmServicegraph = new PluginMonitoringServicegraph();
-                    $pmServicegraph->displayGraph($pmComponent->fields['graph_template'],
-                        "PluginMonitoringService",
-                        $item['items_id'],
-                        "0",
-                        $item['extra_infos'],
-                        "",
-                        ($size['width'] - 15));
-                } else {
-                    $this->delete($item);
-                }
-            } else if ($item['itemtype'] == 'PluginMonitoringWeathermap') {
-                if ($item['items_id'] == -1) {
-                    $title = " : " . __('Legend', 'monitoring');
-                    echo 'style="width: 400px; height: 51px; '
-                        . 'position: absolute; left: ' . $item['x'] . 'px; top: ' . $item['y'] . 'px;">';
-                } else {
-                    $weathermap = new PluginMonitoringWeathermap();
-                    $weathermap->getFromDB($item['items_id']);
-                    //            $title .= " : ".Dropdown::getDropdownName(
-                    //                     getTableForItemType('PluginMonitoringWeathermap'), $item['items_id']);
-                    $width = (($weathermap->fields['width'] * $item['extra_infos']) / 100);
-                    $height = (($weathermap->fields['height'] * $item['extra_infos']) / 100);
-                    echo 'style="width: ' . $width . 'px; height: ' . $height . 'px; '
-                        . 'position: absolute; left: ' . $item['x'] . 'px; top: ' . $item['y'] . 'px;">';
-                }
-                echo '<div id="weathermap-' . $item['items_id'] . '"></div>';
-                echo "<script type=\"text/javascript\">
-                  (function worker() {
-                    $.get('" . $CFG_GLPI["root_doc"] .
-                    "/plugins/monitoring/ajax/widgetWeathermap.php?"
-                    . "id=" . $item['items_id'] . "&extra_infos=" .
-                    $item['extra_infos'] .
-                    "&glpiID=" . $_SESSION['glpiID'] .
-                    "', function(data) {
-                      $('#weathermap-" . $item['items_id'] . "').html(data);
-                      setTimeout(worker, 50000);
-                    });
-                  })();
-               </script>";
+//                echo 'style="width: ' . $size['width'] . 'px; height: ' . $size['height'] . 'px; '
+//                    . 'position: absolute; left: ' . $item['x'] . 'px; top: ' . $item['y'] . 'px;">';
+//                $pmComponent = new PluginMonitoringComponent();
+//                $pmService = new PluginMonitoringService();
+//
+//                if ($pmService->getFromDB($item['items_id'])) {
+//                    $pmComponent->getFromDB($pmService->fields['plugin_monitoring_components_id']);
+//                    $pmServicegraph = new PluginMonitoringServicegraph();
+//                    $pmServicegraph->displayGraph($pmComponent->fields['graph_template'],
+//                        "PluginMonitoringService",
+//                        $item['items_id'],
+//                        "0",
+//                        $item['extra_infos'],
+//                        "",
+//                        ($size['width'] - 15));
+//                } else {
+//                    $this->delete($item);
+//                }
             } else if ($item['itemtype'] == "PluginMonitoringDisplayview") {
                 echo 'style="width: ' . $size['width'] . 'px; height: ' . $size['height'] . 'px; '
                     . 'position: absolute; left: ' . $item['x'] . 'px; top: ' . $item['y'] . 'px;">';

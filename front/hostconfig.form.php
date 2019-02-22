@@ -31,32 +31,29 @@
  */
 
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "hostconfig");
+Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
+    "monitoring", "hostconfig");
 
 
 $pmHostconfig = new PluginMonitoringHostconfig();
 
 if (isset($_POST["update"])) {
-   if ($_POST['plugin_monitoring_components_id'] != '-1'
-           OR $_POST['plugin_monitoring_realms_id'] != '-1'
-           OR $_POST['jetlag'] != '100') {
+    if ($_POST['plugin_monitoring_components_id'] != '-1'
+        or $_POST['plugin_monitoring_realms_id'] != '-1') {
 
-      if (isset($_POST['id'])) {
-         $pmHostconfig->update($_POST);
-      } else {
-         $pmHostconfig->add($_POST);
-      }
-   } else if (isset($_POST['id'])) {
-      $pmHostconfig->delete($_POST);
-   }
-   Html::back();
+        if (isset($_POST['id'])) {
+            $pmHostconfig->update($_POST);
+        } else {
+            $pmHostconfig->add($_POST);
+        }
+    } else if (isset($_POST['id'])) {
+        $pmHostconfig->delete($_POST);
+    }
+    Html::back();
 }
 
 Html::footer();
-
-?>

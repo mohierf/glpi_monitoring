@@ -36,38 +36,18 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringComponentscatalog extends CommonDropdown
 {
-    /*
-     * TODO for alignak!!!
-     *
-     * Associate a catalog with host/service templates of the backend
-     * We can only associate a host template who have services templates.
-     * Like this it's more simple.
-     *
-     * for test use templates :
-     * host_http_template      => http
-     *                            https
-     * host_disk_root_template => check /
-     * host_standard           => cpu
-     *                         => memory
-     *                         => load
-     *                         => ssh
-     *                         => user
-     *                         => process
-     *                         => disk io
-     */
-
     const HOMEPAGE = 1024;
     const DASHBOARD = 2048;
 
+    public $display_dropdowntitle = false;
+
+    public $first_level_menu = "plugins";
+    public $second_level_menu = "pluginmonitoringmenu";
+    public $third_level_menu = "componentscatalog";
+
     static $rightname = 'plugin_monitoring_componentscatalog';
 
-    /**
-     * Get name of this type
-     *
-     * @param int $nb
-     * @return string name of this type by language of the user connected
-     *
-     */
+
     static function getTypeName($nb = 0)
     {
         return __('Components catalog', 'monitoring');
@@ -77,13 +57,14 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
     /**
      * @since version 0.85
      *
-     * @see commonDBTM::getRights()
+     * @see   commonDBTM::getRights()
+     *
      * @param string $interface
+     *
      * @return array
      */
     function getRights($interface = 'central')
     {
-
         $values = parent::getRights();
         $values[self::HOMEPAGE] = __('See in homepage', 'monitoring');
         $values[self::DASHBOARD] = __('See in dashboard', 'monitoring');
@@ -92,12 +73,15 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
     }
 
 
-    function defineTabs($options = array())
+    function defineTabs($options = [])
     {
 
-        $ong = array();
-        $this->addDefaultFormTab($ong);
-        $this->addStandardTab("PluginMonitoringComponentscatalog", $ong, $options);
+        $ong = [];
+        $this->addDefaultFormTab($ong)
+            ->addStandardTab('Document_Item', $ong, $options)
+            ->addStandardTab("PluginMonitoringComponentscatalog", $ong, $options)
+            ->addStandardTab('Log', $ong, $options);
+
         return $ong;
     }
 
@@ -105,30 +89,30 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
     /**
      * Display tab
      *
-     * @param $item CommonGLPI
+     * @param $item         CommonGLPI
      * @param $withtemplate integer
      *
      * @return array|string name of the tab(s) to display
      */
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-
         if (!$withtemplate) {
             switch ($item->getType()) {
                 case 'Central' :
                     if (Session::haveRight("plugin_monitoring_homepage", READ)
                         && Session::haveRight("plugin_monitoring_componentscatalog", PluginMonitoringComponentscatalog::HOMEPAGE)) {
-                        return array(1 => __('Components catalogs', 'monitoring'));
-                    } else {
-                        return '';
+                        return [1 => __('Components catalogs', 'monitoring')];
                     }
+                    return '';
             }
+
             if ($item->getID() > 0) {
-                $ong = array();
-                $ong[1] = self::createTabEntry(__('Templates', 'monitoring'), self::countForComponents($item));
+                $ong = [];
+                $ong[1] = self::createTabEntry(__('Components', 'monitoring'), self::countForComponents($item));
                 $ong[2] = self::createTabEntry(__('Static hosts', 'monitoring'), self::countForStaticHosts($item));
                 $ong[3] = self::createTabEntry(_n('Rule', 'Rules', 2), self::countForRules($item));
                 $ong[4] = self::createTabEntry(__('Dynamic hosts', 'monitoring'), self::countForDynamicHosts($item));
+                $ong[5] = self::createTabEntry(__('Contacts', 'monitoring'), self::countForContacts($item));
                 return $ong;
             }
         }
@@ -143,11 +127,9 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
      */
     static function countForStaticHosts(PluginMonitoringComponentscatalog $item)
     {
-
-        $restrict = "`plugin_monitoring_componentscalalog_id` = '" . $item->getField('id') . "'
-         AND `is_static`='1'";
-
-        return countElementsInTable('glpi_plugin_monitoring_componentscatalogs_hosts', $restrict);
+        $dbu = new DbUtils();
+        return $dbu->countElementsInTable('glpi_plugin_monitoring_componentscatalogs_hosts',
+            ['WHERE' => "`plugin_monitoring_componentscatalogs_id` = '" . $item->getID() . "' AND `is_static`='1'"]);
     }
 
 
@@ -158,11 +140,9 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
      */
     static function countForDynamicHosts(PluginMonitoringComponentscatalog $item)
     {
-
-        $restrict = "`plugin_monitoring_componentscalalog_id` = '" . $item->getField('id') . "'
-         AND `is_static`='0'";
-
-        return countElementsInTable('glpi_plugin_monitoring_componentscatalogs_hosts', $restrict);
+        $dbu = new DbUtils();
+        return $dbu->countElementsInTable('glpi_plugin_monitoring_componentscatalogs_hosts',
+            ['WHERE' => "`plugin_monitoring_componentscatalogs_id` = '" . $item->getID() . "' AND `is_static`='0'"]);
     }
 
 
@@ -173,10 +153,9 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
      */
     static function countForRules(PluginMonitoringComponentscatalog $item)
     {
-
-        $restrict = "`plugin_monitoring_componentscalalog_id` = '" . $item->getField('id') . "'";
-
-        return countElementsInTable('glpi_plugin_monitoring_componentscatalogs_rules', $restrict);
+        $dbu = new DbUtils();
+        return $dbu->countElementsInTable('glpi_plugin_monitoring_componentscatalogs_rules',
+            ['WHERE' => "`plugin_monitoring_componentscatalogs_id` = '" . $item->getID() . "'"]);
     }
 
 
@@ -187,10 +166,9 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
      */
     static function countForComponents(PluginMonitoringComponentscatalog $item)
     {
-
-        $restrict = "`plugin_monitoring_componentscalalog_id` = '" . $item->getField('id') . "'";
-
-        return countElementsInTable('glpi_plugin_monitoring_componentscatalogs_components', $restrict);
+        $dbu = new DbUtils();
+        return $dbu->countElementsInTable('glpi_plugin_monitoring_componentscatalogs_components',
+            ['WHERE' => "`plugin_monitoring_componentscatalogs_id` = '" . $item->getID() . "'"]);
     }
 
 
@@ -201,11 +179,9 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
      */
     static function countForContacts(PluginMonitoringComponentscatalog $item)
     {
-
-        $restrict = "`items_id` = '" . $item->getField('id') . "'"
-            . " AND `itemtype`='PluginMonitoringComponentscatalog'";
-
-        return countElementsInTable('glpi_plugin_monitoring_contacts_items', $restrict);
+        $dbu = new DbUtils();
+        return $dbu->countElementsInTable('glpi_plugin_monitoring_contacts_items',
+            ['WHERE' => "`items_id` = '" . $item->getID() . "' AND `itemtype`='PluginMonitoringComponentscatalog'"]);
     }
 
 
@@ -220,19 +196,20 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
      */
     static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
+        /* @var CommonDBTM $item */
 
         switch ($item->getType()) {
             case 'Central' :
                 $pmDisplay = new PluginMonitoringDisplay();
+                $pmDisplay->showCounters("Componentscatalog");
+
                 $pmComponentscatalog = new PluginMonitoringComponentscatalog();
-                // $pmDisplay->showCounters("Componentscatalog");
                 $pmComponentscatalog->showChecks();
                 return true;
 
         }
         if ($item->getID() > 0) {
             switch ($tabnum) {
-
                 case 1:
                     $pmComponentscatalog_Component = new PluginMonitoringComponentscatalog_Component();
                     $pmComponentscatalog_Component->showComponents($item->getID());
@@ -240,7 +217,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
                 case 2 :
                     $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
-                    $pmComponentscatalog_Host->showHosts($item->getID(), 1);
+                    $pmComponentscatalog_Host->showHosts($item->getID(), true);
                     break;
 
                 case 3 :
@@ -250,7 +227,12 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
                 case 4 :
                     $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
-                    $pmComponentscatalog_Host->showHosts($item->getID(), 0);
+                    $pmComponentscatalog_Host->showHosts($item->getID(), false);
+                    break;
+
+                case 5 :
+                    $pmContact_Item = new PluginMonitoringContact_Item();
+                    $pmContact_Item->showContacts("PluginMonitoringComponentscatalog", $item->getID());
                     break;
 
                 default :
@@ -261,22 +243,184 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
     }
 
 
-    /**
-     * Get search function for the class
-     *
-     * @return array of search option
-     **/
-    function getSearchOptions()
+    function getAdditionalFields()
     {
+        return [
+            [
+                'name' => 'notification_interval',
+                'label' => __('Interval between 2 notifications (in minutes)', 'monitoring'),
+                'type' => 'notification_interval'
+            ],
+            [
+                'name' => 'hostsnotification_id',
+                'label' => __('Hosts notification options', 'monitoring'),
+                'type' => 'hosts_notification_id',
+            ],
+            [
+                'name' => 'servicesnotification_id',
+                'label' => __('Services notification options', 'monitoring'),
+                'type' => 'services_notification_id'
+            ],
+            [
+                'name' => 'additional_templates',
+                'label' => __('Additional templates list', 'monitoring'),
+                'type' => 'additional_templates'
+            ]
+        ];
+    }
 
-        $tab = parent::getSearchOptions();
+
+    /*
+     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
+     */
+    public function getSearchOptionsNew()
+    {
+        return $this->rawSearchOptions();
+    }
+
+    function rawSearchOptions()
+    {
+        $tab = [];
+        $tab[] = [
+            'id' => 'common',
+            'name' => __('Components catalogs', 'monitoring')
+        ];
+
+        $index = 1;
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'name',
+            'name' => __('Name'),
+            'datatype' => 'itemlink'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'notification_interval',
+            'datatype' => 'number',
+            'name' => __('Interval between 2 notifications (in minutes)', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => PluginMonitoringHostnotificationtemplate::getTable(),
+            'field' => 'name',
+            'datatype' => 'itemlink',
+            'linkfield' => 'hostnotificationtemplates_id',
+            'name' => __('Hosts notification template', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => $index,
+            'table' => PluginMonitoringServicenotificationtemplate::getTable(),
+            'field' => 'name',
+            'datatype' => 'itemlink',
+            'linkfield' => 'servicenotificationtemplates_id',
+            'name' => __('Services notification template', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'additional_templates',
+            'datatype' => 'string',
+            'name' => __('Additional templates list)', 'monitoring'),
+        ];
+
+        /*
+         * Include other fields here
+         */
+
+        $tab[] = [
+            'id' => '99',
+            'table' => $this->getTable(),
+            'field' => 'id',
+            'name' => __('ID'),
+            'usehaving' => true,
+            'searchtype' => 'equals',
+        ];
+
         return $tab;
+    }
+
+
+    /**
+     * Convert hours/minutes for interval to minutes only
+     *
+     * @param array $input - data from the form
+     *
+     * @return array
+     */
+    function prepareInputForUpdate($input)
+    {
+        if (isset($input["notification_interval_hours"])
+            and isset($input['notification_interval_minutes'])) {
+            $input['notification_interval'] = (int)$input["notification_interval_hours"] * 60
+                + (int)$input['notification_interval_minutes'];
+            unset($input["notification_interval_hours"]);
+            unset($input['notification_interval_minutes']);
+        }
+
+        return $input;
+    }
+
+
+    function displaySpecificTypeField($ID, $field = [])
+    {
+        switch ($field['type']) {
+            case 'notification_interval' :
+                if ($ID > 0) {
+//               $this->fields['notification_interval'];
+                } else {
+                    $this->fields['notification_interval'] = 30;
+                }
+                $hours = (int)($this->fields['notification_interval'] / 60);
+                $minutes = (int)($this->fields['notification_interval'] % 60);
+                Dropdown::showNumber('notification_interval_hours', [
+                        'value' => $hours,
+                        'min' => 0,
+                        'max' => 168,
+                        'step' => 1
+                    ]
+                );
+                echo "&nbsp;" . __('hours', 'monitoring');
+                Dropdown::showNumber('notification_interval_minutes', [
+                        'value' => $minutes,
+                        'min' => 0,
+                        'max' => 59,
+                        'step' => 1
+                    ]
+                );
+                echo "&nbsp;" . __('minutes', 'monitoring');
+                break;
+
+            case 'hosts_notification_id' :
+                Dropdown::show("PluginMonitoringHostnotificationtemplate", [
+                    'name' => 'hostnotificationtemplates_id',
+                    'value' => $this->fields['hostnotificationtemplates_id']
+                ]);
+                break;
+
+            case 'services_notification_id' :
+                Dropdown::show("PluginMonitoringServicenotificationtemplate", [
+                    'name' => 'servicenotificationtemplates_id',
+                    'value' => $this->fields['servicenotificationtemplates_id']
+                ]);
+                break;
+
+            case 'additional_templates' :
+                $objectDescription = autoName($this->fields["additional_templates"],
+                    "name", 1, $this->getType());
+                Html::autocompletionTextField($this, 'additional_templates', ['value' => $objectDescription]);
+                break;
+        }
     }
 
 
     function showChecks()
     {
-
         echo "
       <script>
          function toggleEntity(idEntity) {
@@ -334,11 +478,11 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
     {
 
         $datas = getAllDatasFromTable("glpi_plugin_monitoring_componentscatalogs_rules",
-            "`plugin_monitoring_componentscalalog_id`='" . $item->getID() . "'");
+            "`plugin_monitoring_componentscatalogs_id`='" . $item->getID() . "'");
         $pmComponentscatalog_rule = new PluginMonitoringComponentscatalog_rule();
         foreach ($datas as $data) {
             $pmComponentscatalog_rule->getFromDB($data['id']);
-            PluginMonitoringComponentscatalog_rule::getItemsDynamicly($pmComponentscatalog_rule);
+            PluginMonitoringComponentscatalog_rule::getItemsDynamically($pmComponentscatalog_rule);
         }
     }
 
@@ -351,7 +495,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         $pmComponentscatalog_rule = new PluginMonitoringComponentscatalog_rule();
 
         $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $item->fields["id"] . "'
+         WHERE `plugin_monitoring_componentscatalogs_id`='" . $item->fields["id"] . "'
             AND `is_static`='1'";
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
@@ -359,7 +503,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         }
 
         $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_rules`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $item->fields["id"] . "'";
+         WHERE `plugin_monitoring_componentscatalogs_id`='" . $item->fields["id"] . "'";
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
             $pmComponentscatalog_rule->delete($data);
@@ -402,12 +546,12 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         $count = 0;
 
         $link = '';
-        // Toolbox::logInFile("pm", "stateg $id - ".serialize($stateg)."\n");
+        // PluginMonitoringToolbox::log("stateg $id - ".serialize($stateg)."\n");
         if ($stateg['CRITICAL'] > 0) {
             $count = $stateg['CRITICAL'];
             $colorclass = 'crit';
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/service.php?hidesearch=1"
+                "/plugins/monitoring/front/status_services.php?hidesearch=1"
 //                 . "&reset=reset&"
                 . "&criteria[0][field]=3"
                 . "&criteria[0][searchtype]=equals"
@@ -424,7 +568,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             $count = $stateg['WARNING'];
             $colorclass = 'warn';
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/service.php?hidesearch=1"
+                "/plugins/monitoring/front/status_services.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=3"
                 . "&criteria[0][searchtype]=equals"
@@ -472,7 +616,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             $count += $stateg['ACKNOWLEDGE'];
             $count += $stateg['UNKNOWN'];
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/service.php?hidesearch=1"
+                "/plugins/monitoring/front/status_services.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=3"
                 . "&criteria[0][searchtype]=equals"
@@ -494,7 +638,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
         if (Session::haveRight("plugin_monitoring_servicescatalog", PluginMonitoringService::DASHBOARD)) {
             $link_catalog = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/service.php?hidesearch=1"
+                "/plugins/monitoring/front/status_services.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=9"
                 . "&criteria[0][searchtype]=equals"
@@ -529,7 +673,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         }
 
         // Get services list ...
-        $services = array();
+        $services = [];
         $i = 0;
         foreach ($hosts_ressources as $resources) {
             foreach ($resources as $resource => $status) {
@@ -561,7 +705,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
             if (Session::haveRight("plugin_monitoring_service", READ)) {
                 $link = $CFG_GLPI['root_doc'] .
-                    "/plugins/monitoring/front/service.php?hidesearch=1"
+                    "/plugins/monitoring/front/status_services.php?hidesearch=1"
 //                    . "&reset=reset"
                     . "&criteria[0][field]=2"
                     . "&criteria[0][searchtype]=equals"
@@ -613,7 +757,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             }
 
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/service.php?hidesearch=1"
+                "/plugins/monitoring/front/status_services.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=" . $field_id . ""
                 . "&criteria[0][searchtype]=equals"
@@ -698,19 +842,19 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
         $pmService = new PluginMonitoringService();
 
-        $stateg = array();
+        $stateg = [];
         $stateg['OK'] = 0;
         $stateg['WARNING'] = 0;
         $stateg['CRITICAL'] = 0;
         $stateg['UNKNOWN'] = 0;
         $stateg['ACKNOWLEDGE'] = 0;
-        $a_gstate = array();
+        $a_gstate = [];
         $nb_ressources = 0;
-        $hosts_ids = array();
-        $hosts_states = array();
-        $services_ids = array();
-        $hosts_ressources = array();
-        $a_componentscatalogs_hosts = array();
+        $hosts_ids = [];
+        $hosts_states = [];
+        $services_ids = [];
+        $hosts_ressources = [];
+        $a_componentscatalogs_hosts = [];
 
         $query = "
          SELECT
@@ -732,15 +876,15 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
          INNER JOIN `glpi_plugin_monitoring_hosts`
             ON (`glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_plugin_monitoring_hosts`.`items_id`
             AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype` = `glpi_plugin_monitoring_hosts`.`itemtype`)
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'
+         WHERE `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'
             AND CONCAT_WS('', `glpi_computers`.`entities_id`, `glpi_printers`.`entities_id`, `glpi_networkequipments`.`entities_id`) IN (" . $_SESSION['glpiactiveentities_string'] . ")
          ORDER BY entities_id ASC, name ASC";
-        // Toolbox::logInFile("pm", "query : $query\n");
+        // PluginMonitoringToolbox::log("query : $query\n");
 
         $result = $DB->query($query);
         while ($dataComponentscatalog_Host = $DB->fetch_array($result)) {
-            $ressources = array();
-            $fakeService = array();
+            $ressources = [];
+            $fakeService = [];
             $host_overall_state_ok = false;
 
             // Dummy service id ...
@@ -786,7 +930,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             WHERE `plugin_monitoring_componentscatalogs_hosts_id`='" . $dataComponentscatalog_Host['catalog_id'] . "'
                AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
             ORDER BY `glpi_plugin_monitoring_services`.`name` ASC;";
-            // Toolbox::logInFile("pm", "query services - $queryService\n");
+            // PluginMonitoringToolbox::log("query services - $queryService\n");
             $resultService = $DB->query($queryService);
             while ($dataService = $DB->fetch_array($resultService)) {
                 $nb_ressources++;
@@ -847,13 +991,13 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             $hosts_ressources[$dataComponentscatalog_Host['id']] = $ressources;
         }
 
-        return array($nb_ressources,
+        return [$nb_ressources,
             $stateg,
             $hosts_ids,
             $services_ids,
             $hosts_ressources,
             $hosts_states,
-            $a_componentscatalogs_hosts);
+            $a_componentscatalogs_hosts];
     }
 
 
@@ -861,7 +1005,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
     {
         global $DB;
 
-        $a_services = array();
+        $a_services = [];
 
         $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
         $pmService = new PluginMonitoringService();
@@ -870,7 +1014,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
          LEFT JOIN `" . $pmComponentscatalog_Host->getTable() . "`
             ON `plugin_monitoring_componentscatalogs_hosts_id`=
                `" . $pmComponentscatalog_Host->getTable() . "`.`id`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'
+         WHERE `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'
             AND `state_type` LIKE '" . $state_type . "'
          ORDER BY `name`";
         $result = $DB->query($query);
@@ -885,821 +1029,5 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             }
         }
         return $a_services;
-    }
-
-
-    function showSimpleReport($componentscatalogs_id)
-    {
-        global $CFG_GLPI;
-
-        $pmComponentscatalog_Component = new PluginMonitoringComponentscatalog_Component();
-        $pmComponent = new PluginMonitoringComponent();
-        $a_options = array();
-
-        $this->getFromDB($componentscatalogs_id);
-
-        echo "<form name='form' method='post'
-         action='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/report_componentscatalog.form.php'>";
-
-        echo "<table class='tab_cadre_fixe'>";
-        echo '<tr class="tab_bg_1">';
-        echo '<th colspan="5">';
-        echo __('Report');
-        echo "<input type='hidden' name='componentscatalogs_id' value='" . $componentscatalogs_id . "' />";
-        $a_options['componentscatalogs_id'] = $componentscatalogs_id;
-        echo '</th>';
-        echo '</tr>';
-
-        // ** simple report
-        echo '<tr class="tab_bg_1">';
-        echo '<tr class="tab_bg_1">';
-        echo '<td>';
-        echo '<input type="radio" name="reporttype" value="simplereport" checked />';
-        echo '</td>';
-        echo '<td colspan="4">';
-        echo '<strong>' . __('Simple report', "monitoring") . '</strong>';
-        echo '</td>';
-        echo '</tr>';
-
-        echo '<tr class="tab_bg_1">';
-        echo '<td>';
-        echo '</td>';
-        echo "<td>" . __('Start date') . " :</td>";
-        echo "<td>";
-        Html::showDateFormItem("date_start", date('Y-m-d H:i:s', date('U') - (24 * 3600 * 7)));
-        $a_options['date_start'] = date('Y-m-d H:i:s', date('U') - (24 * 3600 * 7));
-        // Fred ?
-        $a_options['date_start'] = '2013-01-01 01:01:01';
-        echo "</td>";
-        echo "<td>" . __('End date') . " :</td>";
-        echo "<td>";
-        Html::showDateFormItem("date_end", date('Y-m-d'));
-        $a_options['date_end'] = date('Y-m-d');
-        echo "</td>";
-        echo "</tr>";
-        echo "</table>";
-
-        echo "<table class='tab_cadre_fixe'>";
-        $a_composants = $pmComponentscatalog_Component->find("`plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'");
-        foreach ($a_composants as $comp_data) {
-            $pmComponent->getFromDB($comp_data['plugin_monitoring_components_id']);
-
-            echo "<tr class='tab_bg_1'>";
-            echo "<td width='10'>";
-            echo "<input type='checkbox' name='components_id[]' value='" . $pmComponent->getID() . "' checked />";
-            $a_options['components_id'][] = $pmComponent->getID();
-            echo "</td>";
-            echo "<td>";
-            echo $pmComponent->getLink();
-            echo "</td>";
-            echo "</tr>";
-
-            echo "<tr class='tab_bg_1'>";
-            echo "<td width='10'>";
-            echo "</td>";
-            echo "<td>";
-            PluginMonitoringToolbox::preferences($pmComponent->getID(), 1, 1);
-            echo "</td>";
-
-            echo "</tr>";
-        }
-        echo "<tr class='tab_bg_1'>";
-        echo "<td colspan='2' align='center'>";
-        echo "<input type='submit' class='submit' name='generate' value='" . __('Generate the report', 'monitoring') . "'/>";
-        echo "</td>";
-        echo "</tr>";
-        echo "</table>";
-
-        Html::closeForm();
-
-        $this->generateReport($a_options, FALSE);
-    }
-
-
-    function showSyntheseReport($componentscatalogs_id)
-    {
-        global $CFG_GLPI;
-
-        if (!isset($_SESSION['glpi_plugin_monitoring']['synthese'])) {
-            $_SESSION['glpi_plugin_monitoring']['synthese'] = array();
-        }
-        if (!isset($_SESSION['glpi_plugin_monitoring']['synthese'][$componentscatalogs_id])) {
-            $_SESSION['glpi_plugin_monitoring']['synthese'][$componentscatalogs_id] = array();
-        }
-        $sess = $_SESSION['glpi_plugin_monitoring']['synthese'][$componentscatalogs_id];
-        $pmComponentscatalog_Component = new PluginMonitoringComponentscatalog_Component();
-        $pmComponent = new PluginMonitoringComponent();
-        $a_options = array();
-
-        $this->getFromDB($componentscatalogs_id);
-
-        echo "<form name='form' method='post'
-         action='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/report_componentscatalog.form.php'>";
-
-        echo "<table class='tab_cadre_fixe'>";
-        echo '<tr class="tab_bg_1">';
-        echo '<th colspan="5">';
-        echo __('Report');
-        echo "<input type='hidden' name='componentscatalogs_id' value='" . $componentscatalogs_id . "' />";
-        echo "<input type='hidden' name='reporttype' value='synthese' />";
-        $a_options['componentscatalogs_id'] = $componentscatalogs_id;
-        echo '</th>';
-        echo '</tr>';
-
-        echo '<tr class="tab_bg_1">';
-        echo '<td>';
-        echo '</td>';
-        echo '<td colspan="2">';
-        $default_value = 12;
-        if (isset($sess['synthesenumber'])) {
-            $default_value = $sess['synthesenumber'];
-        }
-        Dropdown::showNumber("synthesenumber", array(
-                'value' => $default_value,
-                'min' => 2,
-                'max' => 30)
-        );
-        $a_options['synthesenumber'] = $default_value;
-        echo "&nbsp;";
-        $a_time = array('week' => __('Week'),
-            'month' => __('Month'),
-            'year' => __('Year'));
-        $default_value = 'week';
-        if (isset($sess['synthesenumber'])) {
-            $default_value = $sess['synthesenumber'];
-        }
-        Dropdown::showFromArray("syntheseperiod", $a_time, array('value' => $default_value));
-        $a_options['syntheseperiod'] = $default_value;
-        echo '</td>';
-        echo "<td>" . __('End date') . " :</td>";
-        echo "<td>";
-        $default_value = date('Y-m-d');
-        if (isset($sess['synthesedate_end'])) {
-            $default_value = $sess['synthesedate_end'];
-        }
-        Html::showDateFormItem("synthesedate_end", $default_value);
-        $a_options['synthesedate_end'] = $default_value;
-        echo "</td>";
-        echo '</tr>';
-
-        echo "</table>";
-
-        echo "<table class='tab_cadre_fixe'>";
-        $a_composants = $pmComponentscatalog_Component->find("`plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'");
-        foreach ($a_composants as $comp_data) {
-            $pmComponent->getFromDB($comp_data['plugin_monitoring_components_id']);
-
-            echo "<tr class='tab_bg_1'>";
-            echo "<td width='10'>";
-            //echo "<input type='checkbox' name='components_id[]' value='".$pmComponent->getID()."' checked />";
-            echo "<input type='hidden' name='components_id[]' value='" . $pmComponent->getID() . "' />";
-            $a_options['components_id'][] = $pmComponent->getID();
-            echo "</td>";
-            echo "<td>";
-            echo $pmComponent->getLink();
-            echo "</td>";
-            echo "</tr>";
-
-            echo "<tr class='tab_bg_1'>";
-            echo "<td width='10'>";
-            echo "</td>";
-            echo "<td>";
-
-            PluginMonitoringToolbox::loadPreferences($pmComponent->getID());
-
-            $a_perfnames = PluginMonitoringServicegraph::getperfdataNames($pmComponent->fields['graph_template']);
-            echo "<table class='tab_cadre_fixe'>";
-            echo "<tr class='tab_bg_3'>";
-            echo "<td rowspan='" . count($a_perfnames) . "' width='90'>";
-            echo __('Use for report', 'monitoring') . "&nbsp;:";
-
-            echo "</td>";
-            $i = 0;
-            $j = 0;
-            if (!isset($_SESSION['glpi_plugin_monitoring']['perfname'][$pmComponent->getID()])) {
-                foreach ($a_perfnames as $name) {
-                    $_SESSION['glpi_plugin_monitoring']['perfname'][$pmComponent->getID()][$name] = 'checked';
-                }
-            }
-
-            foreach ($a_perfnames as $name) {
-                if ($i > 0) {
-                    echo "<tr class='tab_bg_3'>";
-                }
-                echo "<td>";
-                $checked = "checked";
-                if (isset($sess['perfname'])
-                    && isset($sess['perfname'][$pmComponent->getID()])) {
-
-                    if (isset($sess['perfname'][$pmComponent->getID()])) {
-                        $checked = "";
-                    }
-                    if (isset($sess['perfname'][$pmComponent->getID()][$name])) {
-                        $checked = "checked";
-                    }
-                } else {
-                    if (isset($_SESSION['glpi_plugin_monitoring']['perfname'][$pmComponent->getID()])) {
-                        $checked = "";
-                    }
-                    if (isset($_SESSION['glpi_plugin_monitoring']['perfname'][$pmComponent->getID()][$name])) {
-                        $checked = $_SESSION['glpi_plugin_monitoring']['perfname'][$pmComponent->getID()][$name];
-                    }
-                }
-                echo "<input type='checkbox' name='perfname[" . $pmComponent->getID() . "][" . $name . "]' value='" . $name . "' " . $checked . "/> " . $name;
-                if ($checked == 'checked') {
-                    $a_options['perfname'][$pmComponent->getID()][] = $name;
-                }
-                echo "</td>";
-                echo "<td>";
-                echo __('Best is high value', 'monitoring') . ' :';
-                echo "</td>";
-                echo "<td>";
-                $default_value = 1;
-                if (isset($sess['perfname_val'])
-                    && isset($sess['perfname_val'][$pmComponent->getID()])) {
-
-                    if (isset($sess['perfname_val'][$pmComponent->getID()][$name])) {
-                        $default_value = $sess['perfname_val'][$pmComponent->getID()][$name];
-                    }
-                }
-                Dropdown::showYesNo('perfname_val[' . $pmComponent->getID() . '][' . $name . ']', $default_value);
-                if ($checked == 'checked') {
-                    $a_options['perfname_val'][$pmComponent->getID()][$name] = $default_value;
-                }
-                echo "</td>";
-                echo "</tr>";
-                $i++;
-            }
-
-            echo "</table>";
-
-            echo "</td>";
-
-            echo "</tr>";
-        }
-        echo "<tr class='tab_bg_1'>";
-        echo "<td colspan='2' align='center'>";
-        echo "<input type='submit' class='submit' name='update' value='" . __('Save') . "'/>";
-        echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-         <input type='submit' class='submit' name='generatepdf' value='" . __('Generate PDF', 'monitoring') . "'/>";
-        echo "</td>";
-        echo "</tr>";
-        echo "</table>";
-
-        Html::closeForm();
-
-//      if (isset($_SESSION['plugin_monitoring_report'])) {
-//         $a_options = $_SESSION['plugin_monitoring_report'];
-//      }
-        $this->generateSyntheseReport(
-            $_SESSION['glpi_plugin_monitoring']['synthese'][$componentscatalogs_id],
-            FALSE);
-    }
-
-
-    function generateReport($array, $pdf = TRUE)
-    {
-        global $DB, $CFG_GLPI;
-
-        $componentscatalogs_id = $array['componentscatalogs_id'];
-
-        // define time for the report:
-        // Week, week -1, week -2, month, month -1, month -2, year, year -1
-
-        $pmUnavailability = new PluginMonitoringUnavailability();
-        $pmComponent = new PluginMonitoringComponent();
-        $pmServiceevent = new PluginMonitoringServiceevent();
-
-        if ($pdf) {
-            PluginMonitoringReport::beginCapture();
-        }
-
-        $this->getFromDB($componentscatalogs_id);
-        echo '<h1>' . $this->getTypeName() . ' : ' . $this->getName() . '<br/>
-         Mois de Novembre</h1>';
-
-        echo '<br/>';
-
-        foreach ($array['components_id'] as $components_id) {
-            $pmComponent->getFromDB($components_id);
-
-            $a_name = $array['perfname'];
-
-            echo "<table class='tab_cadre_fixe'>";
-            echo '<tr class="tab_bg_1">';
-            echo '<th colspan="' . (6 + (count($a_name) * 3)) . '">';
-            echo $pmComponent->getName();
-            echo '</th>';
-            echo '</tr>';
-
-            echo '<tr class="tab_bg_1">';
-            echo '<th rowspan="2">';
-            echo __('Name');
-            echo '</th>';
-            echo '<th rowspan="2">';
-            echo __('Entity');
-            echo '</th>';
-            echo '<th rowspan="2">';
-            echo __('Itemtype');
-            echo '</th>';
-            echo '<th rowspan="2">';
-            echo __('Trend', 'monitoring');
-            echo '</th>';
-            echo '<th colspan="2">';
-            echo __('Avaibility', 'monitoring');
-            echo '</th>';
-            foreach ($a_name as $name) {
-                echo '<th colspan="3">';
-                echo str_replace('_', ' ', $name);
-                echo '</th>';
-            }
-            echo '</tr>';
-
-            echo '<tr class="tab_bg_1">';
-            echo '<th>';
-            echo __('%', 'monitoring');
-            echo '</th>';
-            echo '<th>';
-            echo __('Time', 'monitoring');
-            echo '</th>';
-            foreach ($a_name as $name) {
-                echo '<th>';
-                echo __('Min', 'monitoring');
-                echo '</th>';
-                echo '<th>';
-                echo __('Avg', 'monitoring');
-                echo '</th>';
-                echo '<th>';
-                echo __('Max', 'monitoring');
-                echo '</th>';
-            }
-            echo '</tr>';
-
-
-            $query = "SELECT `glpi_plugin_monitoring_componentscatalogs_hosts`.*,
-               `glpi_plugin_monitoring_services`.`id` as sid FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-            LEFT JOIN `glpi_plugin_monitoring_services`
-               ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`=`plugin_monitoring_componentscatalogs_hosts_id`
-            WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'
-               AND `plugin_monitoring_components_id`='" . $components_id . "'";
-            $result = $DB->query($query);
-            $rownb = true;
-            while ($data = $DB->fetch_array($result)) {
-                /* @var $item CommonDBTM */
-                $itemtype = $data['itemtype'];
-                $item = new $itemtype();
-                $item->getFromDB($data['items_id']);
-
-                $_SESSION['plugin_monitoring_checkinterval'] = PluginMonitoringComponent::getTimeBetween2Checks($pmComponent->fields['id']);
-
-                $ret = array();
-                if (count($a_name) > 0) {
-                    $queryevents = "SELECT * FROM `glpi_plugin_monitoring_serviceevents`
-                  WHERE `plugin_monitoring_services_id`='" . $data['sid'] . "'
-                     AND `date` >= '" . $array['date_start'] . "'
-                     AND `date` <= '" . $array['date_end'] . "'
-                  ORDER BY `date`";
-                    $resultevents = $DB->query($queryevents);
-                    $ret = $pmServiceevent->getData($resultevents, $pmComponent->fields['graph_template'], $array['date_start'], $array['date_end']);
-                }
-
-                echo '<tr class="tab_bg_1' . (($rownb = !$rownb) ? '_2' : '') . '">';
-                echo '<td>';
-                echo $item->getName();
-                echo '</td>';
-                echo '<td>';
-                echo Dropdown::getDropdownName("glpi_entities", $item->fields['entities_id']);
-                echo '</td>';
-                echo '<td>';
-                echo $item->getTypeName();
-                echo '</td>';
-                echo '<td>';
-                $a_times = $pmUnavailability->parseEvents($data['id'], '', $array['date_start'], $array['date_end']);
-                // previous unavailability
-                $str_start = strtotime($array['date_start']);
-                $str_end = strtotime($array['date_end']);
-                $a_times_previous = $pmUnavailability->parseEvents($data['id'], '',
-                    date('Y-m-d', $str_start - ($str_end - $str_start)),
-                    $array['date_start']);
-                $previous_percentage = round(((($a_times_previous[1] - $a_times_previous[0]) / $a_times_previous[1]) * 100), 3);
-                $percentage = round(((($a_times[1] - $a_times[0]) / $a_times[1]) * 100), 3);
-                if ($previous_percentage < $percentage) {
-                    echo '<img alt="Arrow up right" src="../pics/arrow-up-right.png" width="16" />';
-                } else if ($previous_percentage == $percentage) {
-                    echo '<img alt="Arrow right" src="../pics/arrow-right.png" width="16" />';
-                } else if ($previous_percentage > $percentage) {
-                    echo '<img alt="Arrow down right" src="../pics/arrow-down-right.png" width="16" />';
-                }
-                echo '</td>';
-                echo '<td>';
-                echo $percentage . "%";
-                echo '</td>';
-                echo '<td>';
-                if ($a_times[0] == 0) {
-                    echo "-";
-                } else {
-                    echo Html::timestampToString($a_times[0]);
-                }
-                echo '</td>';
-                foreach ($a_name as $name) {
-                    echo '<td>';
-                    echo min($ret[0][$name]);
-                    echo '</td>';
-                    echo '<td>';
-                    echo round(array_sum($ret[0][$name]) / count($ret[0][$name]), 3);
-                    echo '</td>';
-                    echo '<td>';
-                    echo max($ret[0][$name]);
-                    echo '</td>';
-                }
-                echo '</tr>';
-            }
-            echo '</table>';
-        }
-        if ($pdf) {
-            $content = PluginMonitoringReport::endCapture();
-            PluginMonitoringReport::generatePDF($content);
-        }
-    }
-
-
-    function generateSyntheseReport($array, $pdf = TRUE)
-    {
-        global $DB;
-
-        if (count($array) == 0) {
-            return;
-        }
-        $end_date = $array['synthesedate_end'];
-        $end_date_timestamp = strtotime($end_date);
-        $number = $array['synthesenumber'];
-        $period = $array['syntheseperiod'];
-
-        $componentscatalogs_id = $array['componentscatalogs_id'];
-
-        $pmComponent = new PluginMonitoringComponent();
-        $pmUnavailability = new PluginMonitoringUnavailability();
-        $pmServiceevent = new PluginMonitoringServiceevent();
-
-        if ($pdf) {
-            PluginMonitoringReport::beginCapture();
-        }
-        echo "<table class='tab_cadrehov'>";
-        foreach ($array['components_id'] as $components_id) {
-            $pmComponent->getFromDB($components_id);
-            array_unshift($array['perfname'][$components_id], 'avaibility');
-            array_unshift($array['perfname_val'][$components_id], 1);
-            echo '<tr class="tab_bg_1">';
-            echo '<th colspan="' . (3 + ($number * 2)) . '">';
-            echo $pmComponent->getName();
-            echo '</th>';
-            echo '</tr>';
-
-            foreach ($array['perfname'][$components_id] as $num => $groupname) {
-                echo '<tr class="tab_bg_1">';
-                echo '<th colspan="' . (3 + ($number * 2)) . '">';
-                if ($groupname == 'avaibility') {
-                    echo __('Avaibility', 'monitoring');
-                } else {
-                    echo $groupname;
-                }
-                echo '</th>';
-                echo '</tr>';
-
-                echo '<tr class="tab_bg_1">';
-                echo '<th rowspan="2">';
-                echo __('Name');
-                echo '</th>';
-                echo '<th rowspan="2">';
-                echo __('Entity');
-                echo '</th>';
-                echo '<th rowspan="2">';
-                echo __('Itemtype');
-                echo '</th>';
-                $a_year = array();
-                for ($i = $number; $i >= 1; $i--) {
-                    $year = date('Y', strtotime("-" . $i . " " . $period, $end_date_timestamp));
-                    if (!isset($a_year[$year])) {
-                        $a_year[$year] = 2;
-                    } else {
-                        $a_year[$year] += 2;
-                    }
-                }
-                foreach ($a_year as $year => $colspan) {
-                    echo '<th colspan="' . $colspan . '">';
-                    echo $year;
-                    echo '</th>';
-                }
-                echo '</tr>';
-
-                echo '<tr class="tab_bg_1">';
-                for ($i = $number; $i >= 1; $i--) {
-                    echo '<th colspan="2">';
-                    echo Html::convDate(date('m-d', strtotime("-" . $i . " " . $period, $end_date_timestamp)));
-                    echo "<br/>";
-                    echo Html::convDate(date('m-d', strtotime("-" . ($i - 1) . " " . $period, $end_date_timestamp)));
-                    echo '</th>';
-                }
-                echo '</tr>';
-
-                $query = "SELECT `glpi_plugin_monitoring_componentscatalogs_hosts`.*,
-                  `glpi_plugin_monitoring_services`.`id` as sid FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-               LEFT JOIN `glpi_plugin_monitoring_services`
-                  ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`=`plugin_monitoring_componentscatalogs_hosts_id`
-               WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'
-                  AND `plugin_monitoring_components_id`='" . $components_id . "'";
-                $result = $DB->query($query);
-                $rownb = true;
-                while ($data = $DB->fetch_array($result)) {
-                    $itemtype = $data['itemtype'];
-                    $item = new $itemtype();
-                    $item->getFromDB($data['items_id']);
-
-                    if ($groupname == 'avaibility') {
-                        $a_times = $pmUnavailability->parseEvents($data['id'], '',
-                            date('Y-m-d', strtotime("-" . ($number + 1) . " " . $period, $end_date_timestamp)),
-                            date('Y-m-d', strtotime("-" . $number . " " . $period, $end_date_timestamp)));
-                        $previous_value = round(((($a_times[1] - $a_times[0]) / $a_times[1]) * 100), 3);
-                    } else {
-                        $previous_value = 0;
-                    }
-                    echo '<tr class="tab_bg' . (($rownb = !$rownb) ? '_4' : '_1') . '">';
-                    echo '<td>';
-                    echo $item->getLink();
-                    echo '</td>';
-                    echo '<td>';
-                    echo Dropdown::getDropdownName("glpi_entities", $item->fields['entities_id']);
-                    echo '</td>';
-                    echo '<td>';
-                    echo $item->getTypeName();
-                    echo '</td>';
-                    for ($i = $number; $i >= 1; $i--) {
-                        $startdatet = date('Y-m-d', strtotime("-" . $i . " " . $period, $end_date_timestamp));
-                        $enddatet = date('Y-m-d', strtotime("-" . ($i - 1) . " " . $period, $end_date_timestamp));
-                        if ($groupname == 'avaibility') {
-                            $a_times = $pmUnavailability->parseEvents($data['id'], '', $startdatet, $enddatet);
-                            $value = round(((($a_times[1] - $a_times[0]) / $a_times[1]) * 100), 2);
-                        } else {
-                            $queryevents = "SELECT * FROM `glpi_plugin_monitoring_serviceevents`
-                        WHERE `plugin_monitoring_services_id`='" . $data['sid'] . "'
-                           AND `date` >= '" . $startdatet . "'
-                           AND `date` <= '" . $enddatet . "'
-                        ORDER BY `date`";
-                            $resultevents = $DB->query($queryevents);
-                            $_SESSION['plugin_monitoring_checkinterval'] = PluginMonitoringComponent::getTimeBetween2Checks($pmComponent->fields['id']);
-                            $ret = $pmServiceevent->getData($resultevents, $pmComponent->fields['graph_template'], $startdatet, $enddatet);
-                            if (!isset($ret[0][$groupname])) {
-                                $value = 0;
-                            } else {
-                                $value = round(array_sum($ret[0][$groupname]) / count($ret[0][$groupname]), 2);
-                            }
-                        }
-
-                        $bgcolor = '';
-                        if ($array['perfname_val'][$components_id][$num] == 1) {
-                            if ($previous_value < $value) {
-                                $bgcolor = 'style="background-color:#d1ffc3"';
-                            } else if ($previous_value > $value) {
-                                $bgcolor = 'style="background-color:#ffd1d3"';
-                            }
-                        } else {
-                            if ($previous_value < $value) {
-                                $bgcolor = 'style="background-color:#ffd1d3"';
-                            } else if ($previous_value > $value) {
-                                $bgcolor = 'style="background-color:#d1ffc3"';
-                            }
-                        }
-
-                        echo '<td ' . $bgcolor . '>';
-                        if ($groupname == 'avaibility') {
-                            echo $value . "%";
-                        } else {
-                            if ($value > 3000000000) {
-                                echo round($value / 1000000000, 2) . 'T';
-                            } else if ($value > 3000000) {
-                                echo round($value / 1000000, 2) . 'M';
-                            } else if ($value > 3000) {
-                                echo round($value / 1000, 2) . 'K';
-                            } else {
-                                echo $value;
-                            }
-                        }
-                        echo '</td>';
-                        echo '<td ' . $bgcolor . '>';
-                        if ($array['perfname_val'][$components_id][$num] == 1) {
-                            if ($previous_value < $value) {
-                                echo '<img alt="Arrow up right" src="../pics/arrow-up-right.png" width="16" />';
-                            } else if ($previous_value == $value) {
-                                echo '<img alt="Arrow right" src="../pics/arrow-right.png" width="16" />';
-                            } else if ($previous_value > $value) {
-                                echo '<img alt="Arrow down right" src="../pics/arrow-down-right.png" width="16" />';
-                            }
-                        } else {
-                            if ($previous_value < $value) {
-                                echo '<img alt="Arrow up right" src="../pics/arrow-up-right_inv.png" width="16" />';
-                            } else if ($previous_value == $value) {
-                                echo '<img alt="Arrow right" src="../pics/arrow-right.png" width="16" />';
-                            } else if ($previous_value > $value) {
-                                echo '<img alt="Arrow down right" src="../pics/arrow-down-right_inv.png" width="16" />';
-                            }
-                        }
-                        $previous_value = $value;
-                        echo '</td>';
-                    }
-                    echo "</tr>";
-
-                }
-            }
-            echo '<tr class="tab_bg_1" height="50">';
-            echo '<td colspan="' . (3 + ($number * 2)) . '">';
-            echo '</td>';
-            echo '</tr>';
-        }
-        echo "</table>";
-        if ($pdf) {
-            $content = PluginMonitoringReport::endCapture();
-            PluginMonitoringReport::generatePDF($content, 'L');
-        }
-    }
-
-
-    function create_default_templates()
-    {
-        global $PM_CONFIG;
-        /*
-         * for test use templates :
-         * host_http_template      => http
-         *                            https
-         * host_standard           => cpu
-         *                         => memory
-         *                         => load
-         *                         => ssh
-         */
-        $abc = new Alignak_Backend_Client($PM_CONFIG['alignak_backend_url']);
-        $abc->login('admin', 'admin');
-
-        $abc->delete('command');
-        $abc->delete('host');
-        $abc->delete('service');
-
-        $realms = $abc->get('realm');
-        $realm = "All";
-        foreach ($realms['_items'] as $data) {
-            $realm = $data['_id'];
-        }
-
-        $data = array(
-            'name' => 'check_ping',
-            'command_line' => '$PLUGINSDIR$/check_icmp -H $HOSTADDRESS$ -w 3000,100% -c 5000,100% -p 10',
-            '_realm' => $realm
-        );
-        $cmd_check_ping = $abc->post('command', $data);
-
-        $data = array(
-            'name' => 'check_http',
-            'command_line' => '$PLUGINSDIR$/check_http -H $HOSTADDRESS$',
-            '_realm' => $realm
-        );
-        $cmd_check_http = $abc->post('command', $data);
-
-        $data = array(
-            'name' => 'check_https',
-            'command_line' => '$PLUGINSDIR$/check_http -H $HOSTADDRESS$ -S --sni',
-            '_realm' => $realm
-        );
-        $cmd_check_https = $abc->post('command', $data);
-
-        $data = array(
-            'name' => 'check_snmp_cpu',
-            'command_line' => '$PLUGINSDIR$/check_snmp_load.pl -H $HOSTADDRESS$ -C public -f -w 75 -c 80',
-            '_realm' => $realm
-        );
-        $cmd_check_cpu = $abc->post('command', $data);
-
-        $data = array(
-            'name' => 'check_snmp_memory',
-            'command_line' => '$PLUGINSDIR$/check_snmp_mem.pl -w 80 -c 90 -- -v 2c -c public $HOSTADDRESS$',
-            '_realm' => $realm
-        );
-        $cmd_check_mem = $abc->post('command', $data);
-
-        $data = array(
-            'name' => 'check_snmp_load',
-            'command_line' => '$PLUGINSDIR$/check_snmp_load.pl -H $HOSTADDRESS$ -C public -f -w 0.8 -c 1 -T netsl',
-            '_realm' => $realm
-        );
-        $cmd_check_load = $abc->post('command', $data);
-
-        $data = array(
-            'name' => 'check_ssh',
-            'command_line' => '$PLUGINSDIR$/check_tcp -H $HOSTADDRESS$ -p 22',
-            '_realm' => $realm
-        );
-        $cmd_check_ssh = $abc->post('command', $data);
-
-
-        // Add standard host //
-        $data = array(
-            'name' => 'standard_template',
-            '_is_template' => True,
-            'retry_interval' => 1,
-            'check_interval' => 3,
-            'check_command' => $cmd_check_ping['_id'],
-            'max_check_attempts' => 2,
-            '_realm' => $realm
-        );
-        $standard_host = $abc->post('host', $data);
-
-        $data = array(
-            'name' => 'check_cpu',
-            '_is_template' => True,
-            '_templates_from_host_template' => True,
-            'retry_interval' => 1,
-            'check_interval' => 5,
-            'check_command' => $cmd_check_cpu['_id'],
-            'max_check_attempts' => 2,
-            '_realm' => $realm,
-            'host' => $standard_host['_id']
-        );
-        $standard_service_cpu = $abc->post('service', $data);
-
-        $data = array(
-            'name' => 'check_memory',
-            '_is_template' => True,
-            '_templates_from_host_template' => True,
-            'retry_interval' => 1,
-            'check_interval' => 5,
-            'check_command' => $cmd_check_mem['_id'],
-            'max_check_attempts' => 2,
-            '_realm' => $realm,
-            'host' => $standard_host['_id']
-        );
-        $standard_service_memory = $abc->post('service', $data);
-
-        $data = array(
-            'name' => 'check_load',
-            '_is_template' => True,
-            '_templates_from_host_template' => True,
-            'retry_interval' => 1,
-            'check_interval' => 5,
-            'check_command' => $cmd_check_load['_id'],
-            'max_check_attempts' => 2,
-            '_realm' => $realm,
-            'host' => $standard_host['_id']
-        );
-        $standard_service_load = $abc->post('service', $data);
-
-        $data = array(
-            'name' => 'check_ssh',
-            '_is_template' => True,
-            '_templates_from_host_template' => True,
-            'retry_interval' => 1,
-            'check_interval' => 5,
-            'check_command' => $cmd_check_ssh['_id'],
-            'max_check_attempts' => 2,
-            '_realm' => $realm,
-            'host' => $standard_host['_id']
-        );
-        $standard_service_ssh = $abc->post('service', $data);
-
-
-        // Add http host //
-        $data = array(
-            'name' => 'http_template',
-            '_is_template' => True,
-            'retry_interval' => 1,
-            'check_interval' => 3,
-            'check_command' => $cmd_check_ping['_id'],
-            'max_check_attempts' => 2,
-            '_realm' => $realm
-        );
-        $http_host = $abc->post('host', $data);
-
-        $data = array(
-            'name' => 'check_http',
-            '_is_template' => True,
-            '_templates_from_host_template' => True,
-            'retry_interval' => 1,
-            'check_interval' => 5,
-            'check_command' => $cmd_check_http['_id'],
-            'max_check_attempts' => 2,
-            '_realm' => $realm,
-            'host' => $http_host['_id']
-        );
-        $http_service_http = $abc->post('service', $data);
-
-        $data = array(
-            'name' => 'check_https',
-            '_is_template' => True,
-            '_templates_from_host_template' => True,
-            'retry_interval' => 1,
-            'check_interval' => 5,
-            'check_command' => $cmd_check_https['_id'],
-            'max_check_attempts' => 2,
-            '_realm' => $realm,
-            'host' => $http_host['_id']
-        );
-        $http_service_https = $abc->post('service', $data);
     }
 }

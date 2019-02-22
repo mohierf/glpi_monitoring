@@ -32,12 +32,25 @@
 
 include("../../../inc/includes.php");
 
-Session::checkCentralAccess();
+$title = __('Monitoring', 'monitoring');
+if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
+    Session::checkCentralAccess();
+    Html::header($title, $_SERVER["PHP_SELF"], "plugins",
+        "PluginMonitoringDashboard", "dashboard");
+} else {
+    Session::checkHelpdeskAccess();
+    Html::helpHeader($title, $_SERVER['PHP_SELF']);
+}
 
-Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-    "monitoring", "display");
+$pmDisplay = new PluginMonitoringDisplay();
+$pmTag = new PluginMonitoringTag();
 
+$pmDisplay->dashboard();
 
-Html::redirect($CFG_GLPI['root_doc'] . "/plugins/monitoring/front/status_services.php?perfdatas=1");
+$pmTag->servers_status();
 
-Html::footer();
+if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
+    Html::footer();
+} else {
+    Html::helpFooter();
+}

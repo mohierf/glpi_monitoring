@@ -52,6 +52,7 @@ if(isset($_POST['updateperfdata'])) {
    $pmComponent = new PluginMonitoringComponent();
 
    if (isset($_POST["perfnameinvert"])) {
+       /* @var CommonDBTM $item */
       $itemtype = $_GET['itemtype'];
       $items_id = $_GET['items_id'];
       $item = new $itemtype();
@@ -65,6 +66,7 @@ if(isset($_POST['updateperfdata'])) {
    }
 
    if (isset($_POST["perfnamecolor"])) {
+       /* @var CommonDBTM $item */
       $itemtype = $_GET['itemtype'];
       $items_id = $_GET['items_id'];
       $item = new $itemtype();
@@ -91,5 +93,3 @@ if (isset($_GET['itemtype']) AND isset($_GET['items_id'])) {
 }
 
 Html::footer();
-
-?>

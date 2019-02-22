@@ -43,5 +43,3 @@ $pmService->manageServices($_GET['itemtype'], $_GET['items_id']);
 
 
 Html::footer();
-
-?>

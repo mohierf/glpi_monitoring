@@ -41,45 +41,56 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
 
     static function getTypeName($nb = 0)
     {
-        return __('Hosts', 'monitoring');
+        return __('CC Host', 'monitoring');
     }
 
 
+    /**
+     * Show the list of hosts linked to the provided components catalog
+     *
+     * @param integer $componentscatalogs_id
+     * @param boolean $static       true for statically related hosts
+     */
     function showHosts($componentscatalogs_id, $static)
     {
-        global $DB, $CFG_GLPI;
+        global $DB;
 
-        if ($static == '1') {
-            $this->addHost($componentscatalogs_id);
+        $can_edit = $static and $this->canUpdate();
+
+        if ($can_edit) {
+            // Display the hosts adding section
+            $this->relatedComputers($componentscatalogs_id, $static);
         }
 
         $rand = mt_rand();
 
-        $query = "SELECT * FROM `" . $this->getTable() . "`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'
-            AND `is_static`='" . $static . "'";
-        $result = $DB->query($query);
+        echo '<table class="tab_cadre_fixe">';
+        echo '<tr>';
+        echo '<th>';
+        echo __('Associated hosts', 'monitoring');
+        echo '</th>';
+        echo '</tr>';
+        echo '</table>';
 
-        echo "<form method='post' name='componentscatalog_host_form$rand' id='componentscatalog_host_form$rand' action=\"" .
-            $CFG_GLPI["root_doc"] . "/plugins/monitoring/front/componentscatalog_host.form.php\">";
-
-        echo "<table class='tab_cadre_fixe'>";
-        echo "<tr>";
-        echo "<th colspan='5'>";
-        if ($DB->numrows($result) == 0) {
-            echo __('No associated hosts', 'monitoring');
-        } else {
-            echo __('Associated hosts', 'monitoring');
+        // Still related hosts
+        $a_list = $this->find("`plugin_monitoring_componentscatalogs_id`='".$componentscatalogs_id."' AND `is_static`='". ($static ? '1':'0') ."'");
+        if (empty($a_list)) {
+            echo __('No hosts are yet associated to this catalog.', 'monitoring');
+            return;
         }
-        echo "</th>";
-        echo "</tr>";
-        echo "</table>";
 
+        if ($can_edit) {
+            Html::openMassiveActionsForm('mass'.__CLASS__.$rand);
+            $massiveactionparams = [
+                'container' => 'mass' . __CLASS__ . $rand,
+                'specific_actions' => ['purge' => _x('button', 'Unlink')],
+            ];
+            Html::showMassiveActions($massiveactionparams);
+        }
 
         echo "<table class='tab_cadre_fixe'>";
-
         echo "<tr>";
-        echo "<th width='10'>&nbsp;</th>";
+        echo "<th width='10'>" . ($this->canUpdate() ? Html::getCheckAllAsCheckbox('mass'.__CLASS__.$rand) : "&nbsp;") . "</th>";
         echo "<th>" . __('Type') . "</th>";
         echo "<th>" . __('Entity') . "</th>";
         echo "<th>" . __('Name') . "</th>";
@@ -87,11 +98,14 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
         echo "<th>" . __('Inventory number') . "</th>";
         echo "</tr>";
 
-        while ($data = $DB->fetch_array($result)) {
+        foreach ($a_list as $data) {
+            $used_hosts[] = $data['plugin_monitoring_hosts_id'];
+
+            /* @var CommonDBTM $item */
             $itemtype = $data['itemtype'];
             $item = new $itemtype();
 
-            $display_normal = 1;
+            $display_normal = true;
             $networkports = false;
             if ($itemtype == 'NetworkEquipment') {
                 $querys = "SELECT * FROM `glpi_plugin_monitoring_services`
@@ -99,7 +113,7 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
                   AND `networkports_id`='0'";
                 $results = $DB->query($querys);
                 if ($DB->numrows($results) == 0) {
-                    $display_normal = 0;
+                    $display_normal = false;
                 }
 
                 $querys = "SELECT * FROM `glpi_plugin_monitoring_services`
@@ -111,10 +125,13 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
                 }
             }
             $item->getFromDB($data['items_id']);
-            if ($display_normal == 1) {
+            if ($display_normal) {
                 echo "<tr>";
-                echo "<td>";
-                echo "<input type='checkbox' name='item[" . $data["id"] . "]' value='1'>";
+
+                echo "<td width='10'>";
+                if ($can_edit) {
+                    Html::showMassiveActionCheckBox('PluginMonitoringComponentscatalog_Host', $data["id"]);
+                }
                 echo "</td>";
                 echo "<td class='center'>";
                 echo $item->getTypeName();
@@ -137,9 +154,10 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
                 while ($datas = $DB->fetch_array($results)) {
                     $itemport->getFromDB($datas['networkports_id']);
                     echo "<tr>";
-                    echo "<td>";
-                    echo "<input type='checkbox' name='item[" . $data["id"] . "]' value='1'>";
-                    echo "</td>";
+                    echo "<td width='10'>";
+                    if ($can_edit) {
+                        Html::showMassiveActionCheckBox('PluginMonitoringComponentscatalog_Host', $data["id"]);
+                    }
                     echo "<td class='center'>";
                     echo $itemport->getTypeName();
                     echo "</td>";
@@ -153,135 +171,90 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
             }
         }
 
-        if ($static == '1') {
-            Html::openArrowMassives("componentscatalog_host_form$rand", true);
-            Html::closeArrowMassives(array('deleteitem' => _sx('button', 'Delete permanently')));
-            Html::closeForm();
+        if ($can_edit) {
+            $massiveactionparams = [
+                'container' => 'mass' . __CLASS__ . $rand,
+                'specific_actions' => ['purge' => _x('button', 'Unlink')],
+            ];
+            Html::showMassiveActions($massiveactionparams);
         }
-
-        echo "</table>";
+        Html::closeForm();
+        echo '</table>';
     }
 
 
-    function addHost($componentscatalogs_id)
+    function relatedComputers($componentscatalogs_id, $static)
     {
-        global $DB;
-
-        if (!Session::haveRight("plugin_monitoring_componentscatalog", UPDATE)) return;
-
         $this->getEmpty();
-
         $this->showFormHeader();
 
-        echo "<tr>";
-        echo "<td colspan='2'>";
-        echo __('Add a new host', 'monitoring') . "&nbsp;:";
-        echo "<input type='hidden' name='plugin_monitoring_componentscalalog_id' value='" . $componentscatalogs_id . "'/>";
-        echo "<input type='hidden' name='is_static' value='1'/>";
-        echo "</td>";
-        echo "<td colspan='2'>";
-        Dropdown::showAllItems('items_id');
-        echo "</td>";
-        echo "</tr>";
+        // Yet related hosts (computers)
+        $used = [];
+        $a_list = $this->find("`plugin_monitoring_componentscatalogs_id`='".$componentscatalogs_id."' AND `is_static`='". $static ? '1':'0' ."'");
+        foreach ($a_list as $data) {
+            $used[] = $data['plugin_monitoring_hosts_id'];
+        }
+
+        echo '<tr>';
+        echo '<td colspan="2">';
+        echo __('Add a new host', 'monitoring')."&nbsp;:";
+        echo '<input type="hidden" name="plugin_monitoring_componentscatalogs_id" value="'.$componentscatalogs_id."'/>";
+        echo '<input type="hidden" name="is_static" value="1"/>';
+        echo '<input type="hidden" name="itemtype" value="Computer"/>';
+        echo '</td>';
+        echo '<td colspan="2">';
+        Dropdown::show("Computer", array('name'=>'items_id', 'used'=>$used));
+        echo '</td>';
+        echo '</tr>';
 
         $this->showFormButtons();
     }
 
 
     /**
-     * @0.90+2.0
-     * add / update templates for the host in the backend with result of the
-     * rules
+     * add / update templates for the host in the backend with result of the rules
      *
      * @param integer $componentscatalogs_id
      * @param integer $componentscatalogs_hosts_id
      * @param integer $networkports_id
-     * @throws Exception
      */
-    function linkComponentsToItem($componentscatalogs_id, $componentscatalogs_hosts_id, $networkports_id = 0)
+    function linkComponents($componentscatalogs_id, $componentscatalogs_hosts_id, $networkports_id = 0)
     {
         global $DB, $PM_CONFIG;
 
-        $pmService = new PluginMonitoringService();
-        $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
         $pmHost = new PluginMonitoringHost();
+        $pmService = new PluginMonitoringService();
 
-        $pmComponentscatalog_Host->getFromDB($componentscatalogs_hosts_id);
+        $pmCC_Host = new PluginMonitoringComponentscatalog_Host();
+        $pmCC_Host->getFromDB($componentscatalogs_hosts_id);
 
-        $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_components`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'";
-        $result = $DB->query($query);
-        while ($data = $DB->fetch_array($result)) {
-
+        // Get catalog components
+        $pmCC_Components = new PluginMonitoringComponentscatalog_Component();
+        $components = $pmCC_Components->find("`plugin_monitoring_componentscatalogs_id`='".$componentscatalogs_id."'");
+        foreach ($components as $data) {
             /* @var $item CommonDBTM */
-            $itemtype = $pmComponentscatalog_Host->fields['itemtype'];
+            $itemtype = $pmCC_Host->fields['itemtype'];
             $item = new $itemtype();
-            $item->getFromDB($pmComponentscatalog_Host->fields['items_id']);
+            $item->getFromDB($pmCC_Host->fields['items_id']);
 
             if ($networkports_id == 0) {
-                $abc = new Alignak_Backend_Client($PM_CONFIG['alignak_backend_url']);
-                $abc->login('admin', 'admin');
-
-                $realms = $abc->get('realm');
-                $realm = "All";
-                foreach ($realms['_items'] as $datar) {
-                    $realm = $datar['_id'];
-                }
-
-                // Get in glpi_plugin_monitoring_hosts if the host has yet added
-                // in the backend
-                $backend_host_id = '';
-                $ourhost = current($pmHost->find("`itemtype`='" . $pmComponentscatalog_Host->fields['itemtype'] . "' "
-                    . "AND `items_id`='" . $pmComponentscatalog_Host->fields['items_id'] . "'", "", 1));
-                if (count($ourhost) > 0) {
-                    $backend_host_id = $ourhost['backend_host_id'];
-                }
-                if ($backend_host_id == '') {
-                    $datap = array(
-                        'name' => $item->fields['name'],
-                        'address' => PluginMonitoringHostaddress::getIp(
-                            $pmComponentscatalog_Host->fields['items_id'],
-                            $pmComponentscatalog_Host->fields['itemtype'],
-                            $item->fields['name']),
-                        '_templates' => array($data['backend_host_template']),
-                        '_realm' => $realm,
-                        '_templates_with_services' => True
-                    );
-                    try {
-                        $response = $abc->post('host', $datap);
-                    } catch (\Exception $e) {
-                        // have yet host with this name, so add -id of glpi in name
-                        $datap['name'] .= "-" . $item->fields['id'];
-                        $response = $abc->post('host', $datap);
-                    }
-                    $datap = array(
-                        'itemtype' => $pmComponentscatalog_Host->fields['itemtype'],
-                        'items_id' => $pmComponentscatalog_Host->fields['items_id'],
-                        'entities_id' => 0,
-                        'backend_host_id' => $response['_id'],
-                        'backend_host_id_auto' => 1
-                    );
-                    $pmHost->add($datap);
-                } else {
-                    $backend_host = $abc->get('host/' . $backend_host_id);
-                    if (!in_array($backend_host['_templates'], $data['backend_host_template'])) {
-                        array_push($data['_templates'], $backend_host['_templates']);
-                        $update_data = array(
-                            '_templates' => array_unique($data['_templates'])
-                        );
-                        $abc->patch("host/" . $backend_host_id, $update_data, array(), True);
-                    }
-                }
+                $input['entities_id'] =  $item->fields['entities_id'];
+                $input['plugin_monitoring_componentscatalogs_hosts_id'] = $componentscatalogs_hosts_id;
+                $input['plugin_monitoring_components_id'] = $data['plugin_monitoring_components_id'];
+                $input['name'] = Dropdown::getDropdownName("glpi_plugin_monitoring_components", $data['plugin_monitoring_components_id']);
+                $input['state'] = 'WARNING';
+                $input['state_type'] = 'HARD';
+                $pmService->add($input);
             } else if ($networkports_id > 0) {
-                $a_services = $pmService->find("`plugin_monitoring_components_id`='" . $data['plugin_monitoring_components_id'] . "'
-               AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $componentscatalogs_hosts_id . "'
-               AND `networkports_id`='" . $networkports_id . "'", "", 1);
+                $a_services = $pmService->find("`plugin_monitoring_components_id`='".$data['plugin_monitoring_components_id']."'
+               AND `plugin_monitoring_componentscatalogs_hosts_id`='".$componentscatalogs_hosts_id."'
+               AND `networkports_id`='".$networkports_id."'", "", 1);
                 $item = new NetworkPort();
                 $item->getFromDB($networkports_id);
                 if (count($a_services) == 0) {
                     $input = array();
                     $input['networkports_id'] = $networkports_id;
-                    $input['entities_id'] = $item->fields['entities_id'];
+                    $input['entities_id'] =  $item->fields['entities_id'];
                     $input['plugin_monitoring_componentscatalogs_hosts_id'] = $componentscatalogs_hosts_id;
                     $input['plugin_monitoring_components_id'] = $data['plugin_monitoring_components_id'];
                     $input['name'] = Dropdown::getDropdownName("glpi_plugin_monitoring_components", $data['plugin_monitoring_components_id']);
@@ -291,73 +264,47 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
                 } else {
                     $a_service = current($a_services);
                     $queryu = "UPDATE `glpi_plugin_monitoring_services`
-                  SET `entities_id`='" . $item->fields['entities_id'] . "'
-                     WHERE `id`='" . $a_service['id'] . "'";
+                  SET `entities_id`='".$item->fields['entities_id']."'
+                     WHERE `id`='".$a_service['id']."'";
                     $DB->query($queryu);
                 }
             }
+
         }
     }
 
 
     /**
-     * @0.90+2.0
      * The componentscatalog_host is deleted, so we need remove the template(s)
      * configured in the componentscatalog.
      *
-     * @param type $parm
+     * @param PluginMonitoringComponentscatalog_Host $cc_host
      * @throws Exception
      */
-    static function unlinkComponentsToItem($parm)
+    static function unlinkComponents($cc_host)
     {
-        global $DB, $PM_CONFIG;
+        global $PM_CONFIG;
 
-        $abc = new Alignak_Backend_Client($PM_CONFIG['alignak_backend_url']);
-        PluginMonitoringUser::myToken($abc);
+        PluginMonitoringToolbox::log("unlinkComponents: " . print_r($cc_host, true));
 
-        $pmHost = new PluginMonitoringHost();
-        $pmC_Host = new PluginMonitoringComponentscatalog_Host();
-        $pmC_Component = new PluginMonitoringComponentscatalog_Component();
-        $ourhost = current($pmHost->find("`itemtype`='" . $parm->fields['itemtype'] . "' "
-            . "AND `items_id`='" . $parm->fields['items_id'] . "'", "", 1));
-        if (count($ourhost) > 0) {
-            $backend_host_id = $ourhost['backend_host_id'];
-
-            // search where this host is in componentscatalogs and get all templates
-            // it must have and after update 'templates' field in backend
-            $componentscatalogs = array();
-            $componentscatalog_hosts = $pmC_Host->find(
-                "`itemtype`='" . $parm->fields['itemtype'] . "' "
-                . "AND `items_id`='" . $parm->fields['items_id'] . "'");
-            foreach ($componentscatalog_hosts as $c_hosts) {
-                $componentscatalogs[] = $c_hosts['plugin_monitoring_componentscalalog_id'];
-            }
-            $componentscatalogs = array_unique($componentscatalogs);
-            if (count($componentscatalogs) > 0) {
-                $components = $pmC_Component->find("`plugin_monitoring_componentscalalog_id` in (" . implode("', ''", $componentscatalogs) . "')");
-                $templates = array();
-                foreach ($components as $component) {
-                    $templates[] = $component['backend_host_template'];
-                }
-                $templates = array_unique($templates);
-
-                $update_data = array(
-                    '_templates' => $templates
-                );
-                $abc->patch("host/" . $backend_host_id, $update_data, array(), True);
-            }
+        // Get related host services
+        $pmService  = new PluginMonitoringService();
+        $services = $pmService->find("`plugin_monitoring_componentscatalogs_hosts_id`='". $cc_host->getID() ."'");
+        foreach ($services as $data) {
+            $_SESSION['plugin_monitoring_cc_host'] = $cc_host->fields;
+            $pmService->delete(array('id' => $data['id']));
         }
     }
 
 
     /**
-     * Put in session informations for add in log what change in config
+     * Store information in the session to log the configuration change
      *
      * @return boolean
      */
     function pre_deleteItem()
     {
-        $_SESSION['plugin_monitoring_hosts'] = $this->fields;
+        $_SESSION['plugin_monitoring_cc_host'] = $this->fields;
 
         return true;
     }
@@ -370,13 +317,13 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
         } else {
             if (isset($this->input['networkports_id'])
                 && $this->input['networkports_id'] > 0) {
-                $this->linkComponentsToItem(
-                    $this->fields['plugin_monitoring_componentscalalog_id'],
+                $this->linkComponents(
+                    $this->fields['plugin_monitoring_componentscatalogs_id'],
                     $this->fields['id'],
                     $this->input['networkports_id']);
             } else {
-                $this->linkComponentsToItem(
-                    $this->fields['plugin_monitoring_componentscalalog_id'],
+                $this->linkComponents(
+                    $this->fields['plugin_monitoring_componentscatalogs_id'],
                     $this->fields['id']);
             }
         }

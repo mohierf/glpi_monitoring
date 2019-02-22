@@ -34,13 +34,16 @@ if (!defined('GLPI_ROOT')) {
     die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringTag extends CommonDBTM
+class PluginMonitoringTag extends CommonDropdown
 {
-    public $display_dropdowntitle  = false;
+    const URL_PING = "/ping";
+    const URL_STATUS = "/status";
 
-    public $first_level_menu = "plugins";
-    public $second_level_menu = "pluginmonitoringmenu";
-    public $third_level_menu = "tag";
+    public $display_dropdowntitle = false;
+
+//    public $first_level_menu = "plugins";
+//    public $second_level_menu = "pluginmonitoringmenu";
+//    public $third_level_menu = "tag";
 
     static $rightname = 'plugin_monitoring_tag';
 
@@ -57,16 +60,8 @@ class PluginMonitoringTag extends CommonDBTM
     }
 
 
-    /**
-     * @since version 0.85
-     *
-     * @see commonDBTM::getRights()
-     * @param string $interface
-     * @return array
-     */
     function getRights($interface = 'central')
     {
-
         $values = parent::getRights();
         unset($values[CREATE]);
 
@@ -74,63 +69,6 @@ class PluginMonitoringTag extends CommonDBTM
     }
 
 
-//    function getSearchOptions()
-//    {
-//        $tab = array();
-//
-//        $tab['common'] = __('Commands', 'monitoring');
-//
-//        $tab[1]['table'] = $this->getTable();
-//        $tab[1]['field'] = 'tag';
-//        $tab[1]['linkfield'] = 'tag';
-//        $tab[1]['name'] = __('Shinken tag', 'monitoring');
-//        $tab[1]['datatype'] = 'itemlink';
-//
-//        $tab[2]['table'] = $this->getTable();
-//        $tab[2]['field'] = 'ip';
-//        $tab[2]['linkfield'] = 'ip';
-//        $tab[2]['name'] = __('Shinken IP address', 'monitoring');
-//
-//        $tab[3]['table'] = $this->getTable();
-//        $tab[3]['field'] = 'username';
-//        $tab[3]['linkfield'] = 'username';
-//        $tab[3]['name'] = __('Username (Shinken webservice)', 'monitoring');
-//
-//        $tab[4]['table'] = $this->getTable();
-//        $tab[4]['field'] = 'password';
-//        $tab[4]['linkfield'] = 'password';
-//        $tab[4]['name'] = __('Password (Shinken webservice)', 'monitoring');
-//
-//        $tab[5]['table'] = $this->getTable();
-//        $tab[5]['field'] = 'iplock';
-//        $tab[5]['linkfield'] = 'iplock';
-//        $tab[5]['name'] = __('Lock shinken address', 'monitoring');
-//        $tab[5]['datatype'] = 'bool';
-//
-//        $tab[6]['table'] = $this->getTable();
-//        $tab[6]['field'] = 'port';
-//        $tab[6]['linkfield'] = 'port';
-//        $tab[6]['name'] = __('Port', 'monitoring');
-//
-//        $tab[7]['table'] = $this->getTable();
-//        $tab[7]['field'] = 'comment';
-//        $tab[7]['name'] = __('Comments');
-//        $tab[7]['datatype'] = 'text';
-//
-//        return $tab;
-//    }
-
-
-    /**
-     * Display form for tag configuration
-     *
-     * @param $items_id integer ID
-     * @param $options array
-     *
-     * @param array $copy
-     * @return bool true if form is ok
-     *
-     */
     function showForm($items_id, $options = array(), $copy = array())
     {
         if (count($copy) > 0) {
@@ -147,48 +85,67 @@ class PluginMonitoringTag extends CommonDBTM
         echo "<td>";
         echo $this->fields["tag"];
         echo "</td>";
-        echo "<td>" . __('Username (Shinken webservice)', 'monitoring') . "&nbsp;:</td>";
+        echo "<td>" . __('Name') . " :</td>";
+        echo "<td>";
+        echo "<input type='text' name='name' value='" . $this->fields["name"] . "' size='30'/>";
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Comment', 'monitoring') . "</td>";
+        echo "<td colspan='3'>";
+        echo "<textarea cols='80' rows='4' name='comment' >" . $this->fields['comment'] . "</textarea>";
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Active ?', 'monitoring') . "</td>";
+        echo "<td>";
+        if (self::canCreate()) {
+            Dropdown::showYesNo('is_active', $this->fields['is_active']);
+        } else {
+            echo Dropdown::getYesNo($this->fields['is_active']);
+        }
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Monitoring framework web services URI', 'monitoring') . " :</td>";
+        echo "<td>";
+        if (! $this->fields["url"]) {
+            $url = "http://" . $this->fields["tag"] . ':7770';
+            echo '<span class="red">' . __('Default URL: ', 'monitoring'). $url . '</span>';
+        }
+        Html::autocompletionTextField($this, 'url');
+        echo "</td>";
+        echo "<td>" . __('Username (web service)', 'monitoring') . "&nbsp;:</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'username');
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Shinken IP address', 'monitoring') . " :</td>";
+        echo "<td>" . __('Monitoring framework IP address', 'monitoring') . " :</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'ip');
         echo "</td>";
-        echo "<td>" . __('Password (Shinken webservice)', 'monitoring') . "&nbsp;:</td>";
+        echo "<td>" . __('Password (web service)', 'monitoring') . "&nbsp;:</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'password');
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Lock shinken IP', 'monitoring') . " :</td>";
+        echo "<td>" . __('Lock IP address', 'monitoring') . " :</td>";
         echo "<td>";
-        Dropdown::showYesNo('iplock', $this->fields["iplock"]);
+        Dropdown::showYesNo('locked_ip', $this->fields["locked_ip"]);
         echo "</td>";
-        echo "<td rowspan='2'>" . __('Comments') . "</td>";
-        echo "<td rowspan='2' class='middle'>";
-        echo "<textarea cols='45' rows='3' name='comment' >" . $this->fields["comment"];
-        echo "</textarea></td>";
-        echo "</tr>";
 
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Port', 'monitoring') . " :</td>";
+        echo "<td>" . __('Automatic restart on configuration change', 'monitoring') . " :</td>";
         echo "<td>";
-        Html::autocompletionTextField($this, 'port', array('size' => 10));
-        echo "</td>";
-        echo "<td colspan='2'>";
+        Dropdown::showYesNo('auto_restart', $this->fields["auto_restart"]);
         echo "</td>";
         echo "</tr>";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td colspan='4'>";
-        echo "</td>";
-        echo "</tr>";
-
 
         $this->showFormButtons($options);
 
@@ -196,23 +153,41 @@ class PluginMonitoringTag extends CommonDBTM
     }
 
 
-    function setIP($tag, $ip)
+    function setIP($ip, $tag='', $name='')
     {
-        if (!$this->isIPLocked($tag)) {
-            $id = $this->getTagID($tag);
-            $input = array();
-            $input['id'] = $id;
+        // Tag value
+        if (empty($tag)) {
+            if (empty($name)) {
+                $tag = $ip;
+            } else {
+                $tag = $name;
+            }
+        }
+        // Tag exist?
+        if (! $this->getFromDBByCrit(['tag' => $tag])) {
+            $this->add([
+                'tag' => $tag,
+                'name' => $name,
+                'ip' => $ip
+            ]);
+            PluginMonitoringToolbox::log("Created a new server declaration: $tag ($name) @$ip");
+        }
+        $this->getFromDBByCrit(['tag' => $tag]);
+
+        if (!$this->getField('locked_ip') and $this->fields['ip'] != $ip) {
+            $input = [];
+            $input['id'] = $this->getID();
             $input['ip'] = $ip;
             $this->update($input);
+            PluginMonitoringToolbox::log("Updated a server address: $tag @$ip");
         }
     }
 
 
     function getIP($tag)
     {
-
         $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
-        if (count($a_tags) == 1) {
+        if (count($a_tags) > 0) {
             $a_tag = current($a_tags);
             return $a_tag['ip'];
         }
@@ -222,11 +197,21 @@ class PluginMonitoringTag extends CommonDBTM
 
     function getPort($tag)
     {
-
         $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
-        if (count($a_tags) == 1) {
+        if (count($a_tags) > 0) {
             $a_tag = current($a_tags);
             return $a_tag['port'];
+        }
+        return '';
+    }
+
+
+    function getUrl($tag)
+    {
+        if ($this->getFromDBByCrit(['tag' => $tag])) {
+            if (empty($this->getField('url'))) {
+                return "http://" . $this->getField('tag') . ':7770';
+            }
         }
         return '';
     }
@@ -246,25 +231,13 @@ class PluginMonitoringTag extends CommonDBTM
 
     function getTagID($tag)
     {
-
         $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
-        if (count($a_tags) == 1) {
+        if (count($a_tags) > 0) {
             $a_tag = current($a_tags);
             return $a_tag['id'];
         }
 
         return $this->add(array('tag' => $tag));
-    }
-
-
-    function isIPLocked($tag)
-    {
-        $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
-        if (count($a_tags) == 1) {
-            $a_tag = current($a_tags);
-            return $a_tag['iplock'];
-        }
-        return FALSE;
     }
 
 
@@ -275,6 +248,14 @@ class PluginMonitoringTag extends CommonDBTM
 
         echo "<table class='tab_cadre' width='950'>";
         foreach ($servers as $data) {
+            PluginMonitoringToolbox::log("- " . $data['tag']);
+
+            $url = $data["url"];
+            if (! $data["url"]) {
+                $url = "http://" . $data["tag"] . ':7770';
+            }
+            PluginMonitoringToolbox::log("-> " . $url . self::URL_STATUS);
+
             echo "<tr class='tab_bg_1'>";
             echo "<th colspan='2'>";
             echo $data['ip'];
@@ -287,7 +268,7 @@ class PluginMonitoringTag extends CommonDBTM
             echo "</td>";
             echo "<td>";
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'http://' . $data['ip'] . ':7770/ping');
+            curl_setopt($ch, CURLOPT_URL, $url . self::URL_PING);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
             curl_setopt($ch, CURLOPT_TIMEOUT, 4);
@@ -298,7 +279,7 @@ class PluginMonitoringTag extends CommonDBTM
             echo "</tr>";
 
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'http://' . $data['ip'] . ':7770/get-all-states');
+            curl_setopt($ch, CURLOPT_URL, $url . self::URL_STATUS);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
             curl_setopt($ch, CURLOPT_TIMEOUT, 4);
@@ -325,19 +306,32 @@ class PluginMonitoringTag extends CommonDBTM
     }
 
 
-    function get_servers_status()
+    static function get_servers_status()
     {
         $ok = true;
-        $servers = $this->find();
+        $pmTag = new self();
+        $servers = $pmTag->find("`is_active`='1'");
+
+        PluginMonitoringToolbox::logIfDebug("PluginMonitoringTag::get servers status");
 
         foreach ($servers as $data) {
+            PluginMonitoringToolbox::log("- " . $data['tag']);
+
+            $url = $data["url"];
+            if (! $data["url"]) {
+                $url = "http://" . $data["tag"] . ':7770';
+            }
+            PluginMonitoringToolbox::log("-> " . $url . self::URL_STATUS);
+
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'http://' . $data['ip'] . ':7770/get-all-states');
+            curl_setopt($ch, CURLOPT_URL, $url . self::URL_STATUS);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
             curl_setopt($ch, CURLOPT_TIMEOUT, 4);
             $ret = curl_exec($ch);
             curl_close($ch);
+            PluginMonitoringToolbox::log("= " . $ret);
+
             if (strstr($ret, 'Not found')) {
                 $ok = false;
             } else if ($ret != '') {

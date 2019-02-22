@@ -72,5 +72,3 @@ if (isset ($_POST["update"])) {
 $pmConfig->showForm(0, array('canedit' => Session::haveRight("config", UPDATE)));
 
 Html::footer();
-
-?>

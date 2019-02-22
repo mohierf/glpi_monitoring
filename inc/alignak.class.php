@@ -55,7 +55,7 @@ class PluginMonitoringAlignak
                 $this->abc->login('admin', 'admin');
                 $_SESSION['glpi_plugin_monitoring']['alignak_token'] = $this->abc->token;
             } catch (Exception $exp) {
-                Toolbox::logInFile("pm", "PluginMonitoringAlignak, __construct, exception:". $exp->getMessage() ."\n");
+                PluginMonitoringToolbox::log("PluginMonitoringAlignak, __construct, exception:". $exp->getMessage());
                 if (isset($_SESSION['glpi_plugin_monitoring']['alignak_token'])) {
                     unset($_SESSION['glpi_plugin_monitoring']['alignak_token']);
                 }
@@ -100,7 +100,7 @@ class PluginMonitoringAlignak
             $data['data']['end'] = 1;
             $data['data']['cols'] = array();
         } catch (Exception $exp) {
-            Toolbox::logInFile("pm", "PluginMonitoringAlignak, constructDatas, exception:". $exp->getMessage() ."\n");
+            PluginMonitoringToolbox::log("PluginMonitoringAlignak, constructDatas, exception:". $exp->getMessage());
             return;
         }
 

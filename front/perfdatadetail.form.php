@@ -52,5 +52,3 @@ if (isset ($_POST["update"])) {
    $pmPerfdataDetail->update($_POST);
    Html::back();
 }
-
-?>

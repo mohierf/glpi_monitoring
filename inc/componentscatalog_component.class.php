@@ -41,68 +41,113 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
 
     static function getTypeName($nb = 0)
     {
-        return __('Template', 'monitoring');
+        return __('Component', 'monitoring');
     }
 
 
+    /**
+     * Show the list of components linked to the provided components catalog
+     *
+     * @param $componentscatalogs_id
+     */
     function showComponents($componentscatalogs_id)
     {
-        global $DB, $CFG_GLPI, $PM_CONFIG;
+        global $DB, $PM_CONFIG;
 
-        $this->addComponent($componentscatalogs_id);
+        $can_edit = $this->canUpdate();
+
+        if ($can_edit) {
+            // Display the component adding section
+            $this->addComponent($componentscatalogs_id);
+        }
+
+        $pmComponent = new PluginMonitoringComponent();
+        $pmCommand = new PluginMonitoringCommand();
+        $pmCheck = new PluginMonitoringCheck();
+        $calendar = new Calendar();
 
         $rand = mt_rand();
 
-        $abc = new Alignak_Backend_Client($PM_CONFIG['alignak_backend_url']);
-        $abc->login('admin', 'admin');
+        echo '<table class="tab_cadre_fixe">';
+        echo '<tr>';
+        echo '<th>';
+        echo __('Associated components', 'monitoring');
+        echo '</th>';
+        echo '</tr>';
+        echo '</table>';
 
-        echo "<form method='post' name='componentscatalog_component_form$rand' id='componentscatalog_component_form$rand' action=\"" .
-            $CFG_GLPI["root_doc"] . "/plugins/monitoring/front/componentscatalog_component.form.php\">";
-
-        echo "<table class='tab_cadre_fixe'>";
-
-        echo "<tr>";
-        echo "<th>";
-        echo __('Associated templates', 'monitoring');
-        echo "</th>";
-        echo "</tr>";
-
-        echo "</table>";
-
-        echo "<table class='tab_cadre_fixe'>";
-
-        echo "<tr>";
-        echo "<th width='10'>&nbsp;</th>";
-        echo "<th>" . __('Name') . "</th>";
-        echo "</tr>";
-
-        $used = array();
-        $query = "SELECT * FROM `" . $this->getTable() . "`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'";
-        $result = $DB->query($query);
-        while ($data = $DB->fetch_array($result)) {
-            echo "<tr>";
-            echo "<td>";
-            echo "<input type='checkbox' name='item[" . $data["id"] . "]' value='1'>";
-            echo "</td>";
-            echo "<td class='center'>";
-            $template_info = $abc->get('host/' . $data['backend_host_template']);
-            echo $template_info['name'];
-            echo "</td>";
-            echo "</tr>";
+        // Still used components
+        $a_list = $this->find("`plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'");
+        if (empty($a_list)) {
+            echo __('No components are yet associated to this catalog.', 'monitoring');
+            return;
         }
 
-        Html::openArrowMassives("componentscatalog_host_form$rand", true);
-        Html::closeArrowMassives(array('deleteitem' => _sx('button', 'Delete permanently')));
-        Html::closeForm();
-        echo "</table>";
+        if ($can_edit) {
+            Html::openMassiveActionsForm('mass' . __CLASS__ . $rand);
+            $massiveactionparams = [
+                'container' => 'mass' . __CLASS__ . $rand,
+                'specific_actions' => ['purge' => _x('button', 'Unlink')],
+            ];
+            Html::showMassiveActions($massiveactionparams);
+        }
 
+        echo '<table class="tab_cadre_fixe">';
+        echo '<tr>';
+        echo "<th width='10'>" . ($can_edit ? Html::getCheckAllAsCheckbox('mass' . __CLASS__ . $rand) : "&nbsp;") . "</th>";
+        echo '<th>' . __('Name') . '</th>';
+        echo '<th>' . __('Command name', 'monitoring') . '</th>';
+        echo '<th>' . __('Check strategy', 'monitoring') . '</th>';
+        echo '<th>' . __('Check period', 'monitoring') . '</th>';
+        echo '</tr>';
+
+        foreach ($a_list as $data) {
+            $pmComponent->getFromDB($data['plugin_monitoring_components_id']);
+            echo '<tr>';
+
+            echo "<td width='10'>";
+            if ($can_edit) {
+                Html::showMassiveActionCheckBox('PluginMonitoringComponentscatalog_Component', $data["id"]);
+            }
+            echo "</td>";
+
+            echo '<td class="center">';
+            echo $pmComponent->getLink(["comments" => true]);
+            echo '</td>';
+
+            echo '<td class="center">';
+            $pmCommand->getFromDB($pmComponent->fields['plugin_monitoring_commands_id']);
+            echo $pmCommand->getLink();
+            echo '</td>';
+
+            echo '<td class="center">';
+            $pmCheck->getFromDB($pmComponent->fields['plugin_monitoring_checks_id']);
+            echo $pmCheck->getLink();
+            echo '</td>';
+
+            echo '<td class="center">';
+            $calendar->getFromDB($pmComponent->fields['calendars_id']);
+            echo $calendar->getLink();
+            echo '</td>';
+
+            echo '</tr>';
+        }
+
+        if ($can_edit) {
+            $massiveactionparams = [
+                'container' => 'mass' . __CLASS__ . $rand,
+                'specific_actions' => ['purge' => _x('button', 'Unlink')],
+            ];
+            Html::showMassiveActions($massiveactionparams);
+        }
+        Html::closeForm();
+        echo '</table>';
     }
 
 
     function addComponent($componentscatalogs_id)
     {
-        global $DB, $PM_CONFIG;
+        global $PM_CONFIG;
 
         if (!Session::haveRight("plugin_monitoring_componentscatalog", UPDATE)) {
             return;
@@ -112,22 +157,22 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
 
         $this->showFormHeader();
 
-        echo "<tr>";
-        echo "<td colspan='2'>";
-        echo __('Add a new template', 'monitoring') . "&nbsp;:";
-        echo "<input type='hidden' name='plugin_monitoring_componentscalalog_id' value='" . $componentscatalogs_id . "'/>";
-        echo "</td>";
-        echo "<td colspan='2'>";
-        $abc = new Alignak_Backend_Client($PM_CONFIG['alignak_backend_url']);
-        $abc->login('admin', 'admin');
-        $hosts = $abc->get('host', array('where' => '{"_is_template": true}'));
-        $elements = array();
-        foreach ($hosts['_items'] as $key => $value) {
-            $elements[$value['_id']] = $value['name'];
+        // Still related components
+        $used = [];
+        $a_list = $this->find("`plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'");
+        foreach ($a_list as $data) {
+            $used[] = $data['plugin_monitoring_components_id'];
         }
-        Dropdown::showFromArray('backend_host_template', $elements);
-        echo "</td>";
-        echo "</tr>";
+
+        echo '<tr>';
+        echo '<td colspan="2">';
+        echo __('Add a new component', 'monitoring') . "&nbsp;:";
+        echo '<input type="hidden" name="plugin_monitoring_componentscatalogs_id" value="' . $componentscatalogs_id . "'/>";
+        echo '</td>';
+        echo '<td colspan="2">';
+        Dropdown::show("PluginMonitoringComponent", ['name' => 'plugin_monitoring_components_id', 'used' => $used]);
+        echo '</td>';
+        echo '</tr>';
 
         $this->showFormButtons();
     }
@@ -142,61 +187,67 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
         $pmNetworkport = new PluginMonitoringNetworkport();
 
         $pluginMonitoringNetworkport = 0;
-        $query = "SELECT * FROM `" . $pmComponentscatalog_rule->getTable() . "`
-         WHERE `itemtype`='PluginMonitoringNetworkport'
-            AND `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'
-         LIMIT 1";
+        $query = "SELECT * FROM `" . $pmComponentscatalog_rule->getTable() . "` 
+        WHERE `itemtype`='PluginMonitoringNetworkport' 
+        AND `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "' 
+        LIMIT 1";
+
         $result = $DB->query($query);
         if ($DB->numrows($result) > 0) {
             $pluginMonitoringNetworkport = 1;
         }
 
-        $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'";
+        $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts` 
+        WHERE `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'";
+
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
+            /* @var CommonDBTM $item */
             $itemtype = $data['itemtype'];
             $item = new $itemtype();
             $item->getFromDB($data['items_id']);
             if ($pluginMonitoringNetworkport == '0') {
-                $input = array();
+                $input = [];
                 $input['entities_id'] = $item->fields['entities_id'];
                 $input['plugin_monitoring_componentscatalogs_hosts_id'] = $data['id'];
                 $input['plugin_monitoring_components_id'] = $components_id;
                 $input['name'] = Dropdown::getDropdownName("glpi_plugin_monitoring_components", $components_id);
+                // TODO: initial states
                 $input['state'] = 'WARNING';
                 $input['state_type'] = 'HARD';
                 $pmService->add($input);
             } else if ($pluginMonitoringNetworkport == '1') {
-                $a_services_created = array();
+                $a_services_created = [];
                 $querys = "SELECT * FROM `glpi_plugin_monitoring_services`
-               WHERE `plugin_monitoring_components_id`='" . $components_id . "'
-                  AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $data['id'] . "'";
+                WHERE `plugin_monitoring_components_id`='" . $components_id . "'
+                AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $data['id'] . "'";
+
                 $results = $DB->query($querys);
                 while ($datas = $DB->fetch_array($results)) {
                     $a_services_created[$datas['networkports_id']] = $datas['id'];
                 }
 
-                $a_ports = $pmNetworkport->find("`itemtype`='" . $data['itemtype'] . "'
-               AND `items_id`='" . $data['items_id'] . "'");
+                $a_ports = $pmNetworkport->find("`itemtype`='" . $data['itemtype'] . "' 
+                AND `items_id`='" . $data['items_id'] . "'");
                 foreach ($a_ports as $datap) {
                     if (isset($a_services_created[$datap["id"]])) {
                         unset($a_services_created[$datap["id"]]);
                     } else {
-                        $input = array();
+                        $input = [];
                         $input['networkports_id'] = $datap['networkports_id'];
                         $input['entities_id'] = $item->fields['entities_id'];
                         $input['plugin_monitoring_componentscatalogs_hosts_id'] = $data['id'];
                         $input['plugin_monitoring_components_id'] = $components_id;
                         $input['name'] = Dropdown::getDropdownName("glpi_plugin_monitoring_components", $components_id);
+                        // TODO: initial states
                         $input['state'] = 'WARNING';
                         $input['state_type'] = 'HARD';
                         $pmService->add($input);
                     }
                 }
                 foreach ($a_services_created as $id) {
-                    $_SESSION['plugin_monitoring_hosts'] = $data;
-                    $pmService->delete(array('id' => $id));
+                    $_SESSION['plugin_monitoring_cc_host'] = $data;
+                    $pmService->delete(['id' => $id]);
                 }
             }
         }
@@ -210,7 +261,7 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
         $pmService = new PluginMonitoringService();
 
         $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-         WHERE `plugin_monitoring_componentscalalog_id`='" . $componentscatalogs_id . "'";
+         WHERE `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'";
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
             $querys = "SELECT * FROM `glpi_plugin_monitoring_services`
@@ -218,8 +269,8 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
                AND `plugin_monitoring_components_id`='" . $components_id . "'";
             $results = $DB->query($querys);
             while ($datas = $DB->fetch_array($results)) {
-                $_SESSION['plugin_monitoring_hosts'] = $data;
-                $pmService->delete(array('id' => $datas['id']));
+                $_SESSION['plugin_monitoring_cc_host'] = $data;
+                $pmService->delete(['id' => $datas['id']]);
             }
         }
     }
@@ -233,25 +284,25 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
 
         echo "<table class='tab_cadre' width='400'>";
 
-        echo "<tr class='tab_bg_1'>";
-        echo "<th>" . __('Components catalog', 'monitoring') . "</th>";
-        echo "</tr>";
+        echo '<tr class="tab_bg_1">';
+        echo '<th>' . __('Components catalog', 'monitoring') . '</th>';
+        echo '</tr>';
 
         $query = "SELECT `glpi_plugin_monitoring_componentscatalogs`.* FROM `glpi_plugin_monitoring_componentscatalogs_components`
          LEFT JOIN `glpi_plugin_monitoring_componentscatalogs`
-            ON `plugin_monitoring_componentscalalog_id` =
+            ON `plugin_monitoring_componentscatalogs_id` =
                `glpi_plugin_monitoring_componentscatalogs`.`id`
          WHERE `plugin_monitoring_components_id`='" . $components_id . "'
          ORDER BY `glpi_plugin_monitoring_componentscatalogs`.`name`";
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
-            echo "<tr class='tab_bg_1'>";
-            echo "<td>";
+            echo '<tr class="tab_bg_1">';
+            echo '<td>';
             $pmComponentscatalog->getFromDB($data['id']);
             echo $pmComponentscatalog->getLink(1);
-            echo "</td>";
-            echo "</tr>";
+            echo '</td>';
+            echo '</tr>';
         }
-        echo "</table>";
+        echo '</table>';
     }
 }

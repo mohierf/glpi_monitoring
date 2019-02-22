@@ -36,8 +36,35 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringContact extends CommonDBTM
 {
-
     static $rightname = 'plugin_monitoring_contact';
+
+    // Default user identifier
+    public static $default_user = 'monitoring';
+
+    /**
+     * Initialization called on plugin installation
+     * @param Migration $migration
+     */
+    function initialize($migration)
+    {
+        $template_id = -1;
+        $contact_template = new PluginMonitoringContacttemplate();
+        if ($contact_template->getFromDBByCrit(['name' => "Default notifications"])) {
+            $template_id = $contact_template->getID();
+        }
+
+        $user_id = -1;
+        $user = new User();
+        if ($user->getFromDBByCrit(['name' => self::$default_user])) {
+            $user_id = $user->getID();
+        }
+
+        $input = [];
+        $input['users_id'] = $user_id;
+        $input['plugin_monitoring_contacttemplates_id'] = $template_id;
+        $this->add($input);
+    }
+
 
     static function getTypeName($nb = 0)
     {
@@ -47,11 +74,9 @@ class PluginMonitoringContact extends CommonDBTM
 
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-
         $array_ret = array();
         if (($item->getID() > 0) && (PluginMonitoringContact::canView())) {
-            $array_ret[0] = self::createTabEntry(
-                __('Monitoring', 'monitoring') . "-" . __('Contact', 'monitoring'));
+            $array_ret[0] = self::createTabEntry(__('Monitoring', 'monitoring'));
         }
         return $array_ret;
     }
@@ -59,7 +84,6 @@ class PluginMonitoringContact extends CommonDBTM
 
     static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
-
         if ($item->getID() > 0) {
             $pmContact = new PluginMonitoringContact();
             $pmContact->showForm(0);
@@ -68,15 +92,6 @@ class PluginMonitoringContact extends CommonDBTM
     }
 
 
-    /**
-     * Display form for contact configuration
-     *
-     * @param $items_id integer ID
-     * @param $options array
-     *
-     * @return bool true if form is ok
-     *
-     **/
     function showForm($items_id, $options = array())
     {
         if ($items_id == '0') {
@@ -113,7 +128,7 @@ class PluginMonitoringContact extends CommonDBTM
 
             $this->showFormButtons($options);
         } else {
-            // Add button for host creation
+            // Add button for contact creation
             echo "<tr>";
             echo "<td colspan='4' align='center'>";
             echo "<input name='users_id' type='hidden' value='" . $_GET['id'] . "' />";

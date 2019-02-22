@@ -41,4 +41,3 @@ Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
 Search::show('PluginMonitoringDisplayview');
 
 Html::footer();
-?>

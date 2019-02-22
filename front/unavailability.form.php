@@ -30,23 +30,21 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_unavailability", READ);
 
 Html::header(__('Monitoring - unavailabilities', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "unavailability");
+    "monitoring", "unavailability");
 
 if (isset($_GET['id'])) {
-   $pmUnavailability = new PluginMonitoringUnavailability();
-   $pmUnavailability->getFromDB($_GET['id']);
+    $pmUnavailability = new PluginMonitoringUnavailability();
+    $pmUnavailability->getFromDB($_GET['id']);
 
-   $input = array();
-   $input['id'] = $_GET['id'];
-   $input['scheduled'] = $_GET['scheduled'];
-   $pmUnavailability->update($input);
+    $input = [];
+    $input['id'] = $_GET['id'];
+    $input['scheduled'] = $_GET['scheduled'];
+    $pmUnavailability->update($input);
 }
 
 Html::redirect($_SERVER['HTTP_REFERER']);
-
-?>

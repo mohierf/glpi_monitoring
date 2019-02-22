@@ -89,14 +89,6 @@ class PluginMonitoringDashboard extends CommonGLPI {
                   $main_menu => '/plugins/monitoring/front/menu.php',
                   'search' => '/plugins/monitoring/front/tag.php'
               )),
-         'weathermap' => array(
-              'title' => PluginMonitoringWeathermap::getTypeName(),
-              'page'  => PluginMonitoringWeathermap::getSearchURL(false),
-              'links' => array(
-                  $main_menu => '/plugins/monitoring/front/menu.php',
-                  'search' => '/plugins/monitoring/front/weathermap.php',
-                  'add'    => '/plugins/monitoring/front/weathermap.form.php'
-              )),
          'displayview' => array(
               'title' => PluginMonitoringDisplayview::getTypeName(),
               'page'  => PluginMonitoringDisplayview::getSearchURL(false),

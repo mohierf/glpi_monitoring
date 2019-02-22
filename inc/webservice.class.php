@@ -36,349 +36,258 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringWebservice
 {
+    static function _manageConnection($params)
+    {
+        $fmwk_instance = (isset($params['name']) and !empty($params['name'])) ? $params['name'] : '';
+        if (empty($fmwk_instance)) {
+            if (isset($params['tag']) and !empty($params['tag'])) {
+                $fmwk_instance = $params['tag'];
+            } else {
+                $fmwk_instance = $_SERVER['REMOTE_ADDR'];
+            }
+        }
+
+        // Update server with connection parameters
+        $pmTag = new PluginMonitoringTag();
+        $pmTag->setIP($_SERVER['REMOTE_ADDR'], isset($params['tag']) ? $params['tag'] : '', isset($params['name']) ? $params['name'] : '');
+
+        PluginMonitoringToolbox::logIfDebug("Manage connection from $fmwk_instance: ". print_r($params, true));
+
+        return $fmwk_instance;
+    }
 
 
     /**
+     * Parameters are:
+     * - tag, for the server unique identification tag
+     * - name, for the server friendly name
+     * -
      * @param $params
-     * @param $protocol
-     * @return array|string
+     * @return array
      */
-    static function methodShinkenGetConffiles($params, $protocol)
+    static function methodgetConfig($params)
     {
-        global $PM_EXPORTFOMAT;
-
-        PluginMonitoringToolbox::logIfExtradebug(
-            "Starting methodShinkenGetConffiles ...\n"
-        );
+        PluginMonitoringToolbox::logIfDebug("methodgetConfig, " . print_r($params, true));
 
         if (isset ($params['help'])) {
-            return array('file' => 'config filename to get : commands.cfg, hosts.cfg, ... use all to get all files.',
-                'help' => 'bool,optional',
-                'format' => 'boolean (true, false) or integer (0, 1). Default boolean');
+            return [
+                'file' => "string, mandatory. The config filename to get : commands.cfg, hosts.cfg, ... use 'all' to get all files.",
+                'file_output' => "format the output as a Nagios legacy configuration file",
+                'tag' => "string, optional. The server unique identification tag",
+                'name' => "string, optional. The server friendly name. Alignak sends its alignak_name property",
+                'entity' => "string, optional. The required entity tag. If none, get all entities.",
+                'help' => "bool, optional",
+                'format' => "string, optional. 'boolean' (true, false) or 'integer' (0, 1) for boolean values. Default boolean"
+            ];
         }
 
-        if (!isset($params['tag'])) {
-            $params['tag'] = '';
+        if (!isset($_SESSION['plugin_monitoring'])) {
+            $_SESSION['plugin_monitoring'] = [];
         }
 
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
+        $fmwk_instance = self::_manageConnection($params);
+
+        $entity = (isset($params['entity']) and !empty($params['entity'])) ? $params['entity'] : '';
+        /*
+         * If file_output is set, the output of the called functions will be formated according to the
+         * Nagios legacy file format: define host{...}, else the output will be a standard PHP mapped array!
+         */
+        $file_output = (isset($params['file_output']) and !empty($params['file_output'])) ? true : false;
+        /*
+         * If file is not set, then it is considerd that all available data are built and returned. Same behavior
+         * as if file were set to 'all'
+         */
+        $file = (isset($params['file']) and !empty($params['file'])) ? $params['file'] : 'all';
 
         ini_set("max_execution_time", "0");
         ini_set("memory_limit", "-1");
 
-        $pmShinken = new PluginMonitoringShinken();
-        switch ($params['file']) {
+        // Get entities concerned by the provided tag and get the definition order of the highest entty
+        $pmEntity = new PluginMonitoringEntity();
+        $a_entities_allowed = $pmEntity->getEntitiesByTag($entity, true);
+        if (!isset($_SESSION['plugin_monitoring']['allowed_entities'])) {
+            $_SESSION['plugin_monitoring']['allowed_entities'] = $a_entities_allowed;
+            $_SESSION['plugin_monitoring']['entities'] = [];
+            foreach ($a_entities_allowed as $entity_id) {
+                $pmEntity = PluginMonitoringEntity::getForEntity($entity_id);
+                if (! $pmEntity) {
+                    // This should not happen thanks to the default configuration
+                    continue;
+                }
 
+                // Get main entity information: tag, jet lag, definitiuon order, graphite prefix
+                $_SESSION['plugin_monitoring']['entities'][$entity_id] = $pmEntity->fields;
+            }
+        }
+
+        if (!isset($_SESSION['plugin_monitoring']['default_contact_template'])) {
+            $_SESSION['plugin_monitoring']['default_contact_template'] = null;
+            $pmContactTemplate = new PluginMonitoringContacttemplate();
+            $pmDefaultContacttemplate = null;
+            if ($pmContactTemplate->getFromDBByCrit(['is_default' => '1'])) {
+                $_SESSION['plugin_monitoring']['default_contact_template'] = $pmContactTemplate->fields;
+            } else {
+                PluginMonitoringToolbox::log("[ERROR] No default contact template, configuration problem!");
+            }
+        }
+
+
+        $output = [];
+        $pmShinken = new PluginMonitoringShinken();
+        switch ($file) {
             case 'commands.cfg':
-                $array = $pmShinken->generateCommandsCfg(1);
-                return array($array[0] => $array[1]);
+                $output = $pmShinken->generateCommandsCfg($entity, $file_output);
                 break;
 
             case 'hosts.cfg':
-                $array = $pmShinken->generateHostsCfg(1, $params['tag']);
-                return array($array[0] => $array[1]);
+                // Log monitoring framework restart event ...
+                PluginMonitoringLog::logRestart($fmwk_instance);
+
+                $output = $pmShinken->generateHostsCfg($entity, $file_output);
+                break;
+
+            case 'realms.cfg':
+                $output = $pmShinken->generateRealmsCfg($entity, $file_output);
                 break;
 
             case 'hostgroups.cfg':
-                $array = $pmShinken->generateHostgroupsCfg(1, $params['tag']);
-                return array($array[0] => $array[1]);
+                $output = $pmShinken->generateHostgroupsCfg($entity, $file_output);
                 break;
 
             case 'contacts.cfg':
-                $array = $pmShinken->generateContactsCfg(1, $params['tag']);
-                return array($array[0] => $array[1]);
+                $output = $pmShinken->generateContactsCfg($entity, $file_output);
                 break;
 
             case 'timeperiods.cfg':
-                $array = $pmShinken->generateTimeperiodsCfg(1, $params['tag']);
-                return array($array[0] => $array[1]);
+                $output = $pmShinken->generateTimeperiodsCfg($entity, $file_output);
                 break;
 
             case 'services.cfg':
-                $array = $pmShinken->generateServicesCfg(1, $params['tag']);
-                return array($array[0] => $array[1]);
+                $output = $pmShinken->generateServicesCfg($entity, $file_output);
                 break;
 
-            case 'templates.cfg':
-                $array = $pmShinken->generateTemplatesCfg(1, $params['tag']);
-                return array($array[0] => $array[1]);
+            case 'services_templates.cfg':
+                $output = $pmShinken->generateServicesTemplatesCfg($entity, $file_output);
                 break;
 
             case 'all':
-                $output = array();
-                $array = $pmShinken->generateCommandsCfg(1);
-                $output[$array[0]] = $array[1];
-                $array = $pmShinken->generateHostsCfg(1, $params['tag']);
-                $output[$array[0]] = $array[1];
-                $array = $pmShinken->generateHostgroupsCfg(1, $params['tag']);
-                $output[$array[0]] = $array[1];
-                $array = $pmShinken->generateContactsCfg(1, $params['tag']);
-                $output[$array[0]] = $array[1];
-                $array = $pmShinken->generateTemplatesCfg(1, $params['tag']);
-                $output[$array[0]] = $array[1];
-                $array = $pmShinken->generateServicesCfg(1, $params['tag']);
-                $output[$array[0]] = $array[1];
-                $array = $pmShinken->generateTimeperiodsCfg(1, $params['tag']);
-                $output[$array[0]] = $array[1];
-                return $output;
+                // Log monitoring framework restart event ...
+                PluginMonitoringLog::logRestart($fmwk_instance);
+                $output = [
+                    'commands.cfg' => $pmShinken->generateCommandsCfg($entity, $file_output),
+                    'hosts.cfg' => $pmShinken->generateHostsCfg($entity, $file_output),
+                    'hostgroups.cfg' => $pmShinken->generateHostgroupsCfg($entity, $file_output),
+                    'contacts.cfg' => $pmShinken->generateContactsCfg($entity, $file_output),
+                    'servicetemplates.cfg' => $pmShinken->generateServicesTemplatesCfg($entity, $file_output),
+                    'services.cfg' => $pmShinken->generateServicesCfg($entity, $file_output),
+                    'timeperiods.cfg' => $pmShinken->generateTimeperiodsCfg($entity, $file_output),
+                    'realms.cfg' => $pmShinken->generateRealmsCfg($entity, $file_output)
+                ];
                 break;
         }
-        return "";
+
+        return $output;
     }
 
 
     /**
+     * Parameters are:
+     * - entity, for the required entity tag. If not set or empty, then get all the configured entities
+     *
+     * Returns the available entities.
+     *
      * @param $params
-     * @param $protocol
      * @return array
      */
-    static function methodShinkenTags($params, $protocol)
+    static function methodgetMonitoredEntities($params)
     {
-        global $PM_EXPORTFOMAT;
+        self::_manageConnection($params);
 
-        if (!isset($params['tag'])) {
-            return array();
+        if (isset ($params['help'])) {
+            return [
+                'entity' => "string, optional. The required entity tag. If none, get all entities that are monitored.",
+                'sons' => "string, optional. Set to get the required entity with its sons.",
+                'id' => "string, optional. Set to get the identifiers rather than names.",
+                'help' => "bool, optional",
+            ];
         }
-
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
-
-        $tag = $params['tag'];
-        PluginMonitoringToolbox::logIfExtradebug(
-            " - shinkenTags, get tags for: $tag\n"
-        );
-
-        $a_tags = array();
 
         // Get list of entities tagged with the tag ...
         $pmEntity = new PluginMonitoringEntity();
-        $Entity = new Entity();
-        $a_entities_allowed = $pmEntity->getEntitiesByTag($tag);
-        if (!isset($a_entities_allowed['-1'])) {
-            $a_entities_list = array();
-            foreach ($a_entities_allowed as $idEntity) {
-                PluginMonitoringToolbox::logIfExtradebug(
-                    " - shinkenTags, found entity: $idEntity\n"
-                );
+        $a_entities = $pmEntity->getMonitoredEntities(isset($params['entity']) ? $params['entity'] : '');
+//        $a_entities = $pmEntity->getEntitiesByTag(isset($params['entity']) ? $params['entity'] : '',
+//            isset($params['sons']) ? true : false, isset($params['id']) ? false : true);
 
-                foreach ($Entity->find("entities_id='$idEntity'") as $son) {
-                    PluginMonitoringToolbox::logIfExtradebug(
-                        " - shinkenTags, found son entity: {$son['id']}\n"
-                    );
-                    $a_entities_list[] = $son['id'];
-                }
-            }
-            foreach ($a_entities_list as $idEntity) {
-                PluginMonitoringToolbox::logIfExtradebug(
-                    " - shinkenTags, search tags for entity: $idEntity\n"
-                );
+        PluginMonitoringToolbox::log("Monitored entities: " . print_r($a_entities, true));
 
-                $tag = $pmEntity->getTagByEntities($idEntity);
-                if (!empty($tag)) {
-                    $a_tags[] = $tag;
-                }
-            }
-        }
+        return $a_entities;
+    }
 
-        PluginMonitoringToolbox::logIfExtradebug(
-            " - shinkenTags, tags: " . serialize($a_tags) . "\n"
-        );
 
-        return $a_tags;
+    static function methodgetConfigCommands($params)
+    {
+        $params['file'] = 'commands.cfg';
+        return self::methodgetConfig($params);
+    }
+
+
+    static function methodgetConfigRealms($params)
+    {
+        $params['file'] = 'realms.cfg';
+        return self::methodgetConfig($params);
+    }
+
+
+    static function methodgetConfigHosts($params)
+    {
+        $params['file'] = 'hosts.cfg';
+        return self::methodgetConfig($params);
+    }
+
+
+    static function methodgetConfigHostgroups($params)
+    {
+        $params['file'] = 'hostgroups.cfg';
+        return self::methodgetConfig($params);
+    }
+
+
+    static function methodgetConfigServices($params)
+    {
+        $params['file'] = 'services.cfg';
+        return self::methodgetConfig($params);
+    }
+
+
+    static function methodgetConfigServicesTemplates($params)
+    {
+        $params['file'] = 'services_templates.cfg';
+        return self::methodgetConfig($params);
+    }
+
+
+    static function methodgetConfigContacts($params)
+    {
+        $params['file'] = 'contacts.cfg';
+        return self::methodgetConfig($params);
+    }
+
+
+    static function methodgetConfigTimeperiods($params)
+    {
+        $params['file'] = 'timeperiods.cfg';
+        return self::methodgetConfig($params);
     }
 
 
     /**
      * @param $params
-     * @param $protocol
      * @return array
      */
-    static function methodShinkenCommands($params, $protocol)
+    static function methodDashboard($params)
     {
-        global $PM_EXPORTFOMAT;
+        self::_manageConnection($params);
 
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
-
-        $pmShinken = new PluginMonitoringShinken();
-        $array = $pmShinken->generateCommandsCfg();
-        return $array;
-    }
-
-
-    /**
-     * @param $params
-     * @param $protocol
-     * @return array
-     */
-    static function methodShinkenHosts($params, $protocol)
-    {
-        global $PM_EXPORTFOMAT;
-
-        if (!isset($params['tag'])) {
-            $params['tag'] = '';
-        }
-
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
-
-        // Update ip with Tag
-        if (isset($_SERVER['REMOTE_ADDR'])) {
-            $pmTag = new PluginMonitoringTag();
-            $pmTag->setIP($params['tag'], $_SERVER['REMOTE_ADDR']);
-        }
-
-        $pmShinken = new PluginMonitoringShinken();
-        $array = $pmShinken->generateHostsCfg(0, $params['tag']);
-        return $array;
-    }
-
-
-    /**
-     * @param $params
-     * @param $protocol
-     * @return array
-     */
-    static function methodShinkenHostgroups($params, $protocol)
-    {
-        global $PM_EXPORTFOMAT;
-
-        if (!isset($params['tag'])) {
-            $params['tag'] = '';
-        }
-
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
-
-        $pmShinken = new PluginMonitoringShinken();
-        $array = $pmShinken->generateHostgroupsCfg(0, $params['tag']);
-        return $array;
-    }
-
-
-    /**
-     * @param $params
-     * @param $protocol
-     * @return array
-     */
-    static function methodShinkenServices($params, $protocol)
-    {
-        global $PM_EXPORTFOMAT;
-
-        if (!isset($params['tag'])) {
-            $params['tag'] = '';
-        }
-
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
-
-        $pmShinken = new PluginMonitoringShinken();
-        $array = $pmShinken->generateServicesCfg(0, $params['tag']);
-        return $array;
-    }
-
-
-    /**
-     * @param $params
-     * @param $protocol
-     * @return array
-     */
-    static function methodShinkenTemplates($params, $protocol)
-    {
-        global $PM_EXPORTFOMAT;
-
-        if (!isset($params['tag'])) {
-            $params['tag'] = '';
-        }
-
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
-
-        $pmShinken = new PluginMonitoringShinken();
-        $array = $pmShinken->generateTemplatesCfg(0, $params['tag']);
-        return $array;
-    }
-
-
-    /**
-     * @param $params
-     * @param $protocol
-     * @return array
-     */
-    static function methodShinkenContacts($params, $protocol)
-    {
-        global $PM_EXPORTFOMAT;
-
-        if (!isset($params['tag'])) {
-            $params['tag'] = '';
-        }
-
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
-
-        $pmShinken = new PluginMonitoringShinken();
-        $array = $pmShinken->generateContactsCfg(0, $params['tag']);
-        return $array;
-    }
-
-
-    /**
-     * @param $params
-     * @param $protocol
-     * @return array
-     */
-    static function methodShinkenTimeperiods($params, $protocol)
-    {
-        global $PM_EXPORTFOMAT;
-
-        if (!isset($params['tag'])) {
-            $params['tag'] = '';
-        }
-
-        if (isset($params['format']) && $params['format'] == 'integer') {
-            $PM_EXPORTFOMAT = 'integer';
-        } else {
-            $PM_EXPORTFOMAT = 'boolean';
-        }
-
-        $pmShinken = new PluginMonitoringShinken();
-        $array = $pmShinken->generateTimeperiodsCfg(0, $params['tag']);
-        return $array;
-    }
-
-
-    /**
-     * @param $params
-     * @param $protocol
-     * @return array
-     */
-    static function methodDashboard($params, $protocol)
-    {
         $response = array();
 
         if (!isset($params['view'])) {
@@ -396,14 +305,13 @@ class PluginMonitoringWebservice
 
     /**
      * @param $params
-     * @param $protocol
      * @return array
      */
-    static function methodGetServicesList($params, $protocol)
+    static function methodGetServicesList($params)
     {
-        $array = PluginMonitoringWebservice::getServicesList($params['statetype'], $params['view']);
+        self::_manageConnection($params);
 
-        return $array;
+        return PluginMonitoringWebservice::getServicesList($params['statetype'], $params['view']);
     }
 
 
@@ -482,7 +390,7 @@ class PluginMonitoringWebservice
             while ($data = $DB->fetch_array($resultCat)) {
 
                 $query = "SELECT * FROM `" . $pmComponentscatalog_Host->getTable() . "`
-               WHERE `plugin_monitoring_componentscalalog_id`='" . $data['id'] . "'";
+               WHERE `plugin_monitoring_componentscatalogs_id`='" . $data['id'] . "'";
                 $result = $DB->query($query);
                 $state = array();
                 $state['ok'] = 0;
@@ -527,11 +435,12 @@ class PluginMonitoringWebservice
 
     /**
      * @param $params
-     * @param $protocol
      * @return array
      */
-    static function methodGetHostsStates($params, $protocol)
+    static function methodGetHostsStates($params)
     {
+        self::_manageConnection($params);
+
         return PluginMonitoringWebservice::getHostsStates($params);
     }
 
@@ -565,7 +474,7 @@ class PluginMonitoringWebservice
         // Entities
         if (isset($params['entitiesList'])) {
             if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
-                return self::Error(WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
+                return PluginWebservicesMethodCommon::Error(PluginWebservicesMethodCommon::WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
             }
             $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
                 $where;
@@ -611,7 +520,7 @@ class PluginMonitoringWebservice
          ORDER BY $order
          LIMIT $start,$limit;
       ";
-        // Toolbox::logInFile("pm-ws", "getHostsStates, query : $query\n");
+        // PluginMonitoringToolbox::log("pm-ws", "getHostsStates, query : $query\n");
         $rows = array();
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
@@ -630,11 +539,12 @@ class PluginMonitoringWebservice
 
     /**
      * @param $params
-     * @param $protocol
      * @return array
      */
-    static function methodGetHostsLocations($params, $protocol)
+    static function methodGetHostsLocations($params)
     {
+        self::_manageConnection($params);
+
         return PluginMonitoringWebservice::getHostsLocations($params);
     }
 
@@ -670,7 +580,7 @@ class PluginMonitoringWebservice
         // Entities
         if (isset($params['entitiesList'])) {
             if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
-                return self::Error(WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
+                return PluginWebservicesMethodCommon::Error(PluginWebservicesMethodCommon::WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
             }
             $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
                 $where;
@@ -727,7 +637,7 @@ class PluginMonitoringWebservice
          ORDER BY $order
          LIMIT $start,$limit;
       ";
-        // Toolbox::logInFile("pm-ws", "getHostsLocations, query : $query\n");
+        // PluginMonitoringToolbox::log("pm-ws", "getHostsLocations, query : $query\n");
         $rows = array();
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
@@ -771,11 +681,12 @@ class PluginMonitoringWebservice
 
     /**
      * @param $params
-     * @param $protocol
      * @return array
      */
-    static function methodGetServicesStates($params, $protocol)
+    static function methodGetServicesStates($params)
     {
+        self::_manageConnection($params);
+
         return PluginMonitoringWebservice::getServicesStates($params);
     }
 
@@ -785,8 +696,8 @@ class PluginMonitoringWebservice
      * - filter
      * - entity
      * - order:
-          'hostname' : sort by hostname
-          'day' : sort by day
+     * 'hostname' : sort by hostname
+     * 'day' : sort by day
      */
     static function getServicesStates($params)
     {
@@ -799,7 +710,7 @@ class PluginMonitoringWebservice
          INNER JOIN `glpi_plugin_monitoring_hosts`
             ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_plugin_monitoring_hosts`.`items_id` AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype` = `glpi_plugin_monitoring_hosts`.`itemtype`
          INNER JOIN `glpi_plugin_monitoring_componentscatalogs`
-            ON `plugin_monitoring_componentscalalog_id` = `glpi_plugin_monitoring_componentscatalogs`.`id`
+            ON `plugin_monitoring_componentscatalogs_id` = `glpi_plugin_monitoring_componentscatalogs`.`id`
          INNER JOIN `glpi_plugin_monitoring_components`
             ON (`glpi_plugin_monitoring_services`.`plugin_monitoring_components_id` = `glpi_plugin_monitoring_components`.`id`)
          LEFT JOIN `glpi_computers`
@@ -823,7 +734,7 @@ class PluginMonitoringWebservice
         // Entities
         if (isset($params['entitiesList'])) {
             if (!Session::haveAccessToAllOfEntities($params['entitiesList'])) {
-                return self::Error(WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
+                return PluginWebservicesMethodCommon::Error(WEBSERVICES_ERROR_NOTALLOWED, '', 'entity');
             }
             $where = getEntitiesRestrictRequest("WHERE", "glpi_computers", '', $params['entitiesList']) .
                 $where;
@@ -868,7 +779,7 @@ class PluginMonitoringWebservice
          ORDER BY $order
          LIMIT $start,$limit;
       ";
-        // Toolbox::logInFile("pm-ws", "getServicesStates, query : $query\n");
+        // PluginMonitoringToolbox::log("pm-ws", "getServicesStates, query : $query\n");
         $rows = array();
         $result = $DB->query($query);
         while ($data = $DB->fetch_array($result)) {
@@ -882,191 +793,5 @@ class PluginMonitoringWebservice
         }
 
         return $rows;
-    }
-
-
-    /**
-     * @param $params
-     * @param $protocol
-     * @return false|string
-     */
-    static function methodGetUnavailabilities($params, $protocol)
-    {
-        global $DB;
-
-        if (isset($params['help'])) {
-            return array(
-                'heures' => 'bool,optional',
-                'from' => 'date,mandatory',
-                'to' => 'date,mandatory',
-                'help' => 'bool,optional'
-            );
-        }
-        if (!Session::getLoginUserID()) {
-            return self::Error($protocol, WEBSERVICES_ERROR_NOTAUTHENTICATED);
-        }
-        if (!isset($params['from'])) {
-            return self::Error($protocol, WEBSERVICES_ERROR_MISSINGPARAMETER, '', 'profile');
-        }
-        if (!isset($params['to'])) {
-            return self::Error($protocol, WEBSERVICES_ERROR_MISSINGPARAMETER, '', 'profile');
-        }
-
-        if (isset($params['heure'])) {
-            $heure_begin = "08";
-            $heure_end = "17";
-        } else {
-            $heure_begin = "00";
-            $heure_end = "23";
-        }
-
-        // Voir pour le format de dates
-        list($month, $day, $year) = explode('/', $_GET['from']);
-        $from = "$year-$month-$day";
-        $qbegin = strtotime("$from $heure_begin:00:00");
-
-        list($month, $day, $year) = explode('/', $_GET['to']);
-        $to = "$year-$month-$day";
-        $qend = strtotime("$to $heure_end:59:59");
-
-        $diff = $qend - $qbegin;
-
-        $query = "SELECT
-`e`.`name` as 'entity',
-`c`.`name` as 'name',
-`u`.`begin_date` as 'begin_date',
-`u`.`end_date` as 'end_date'
-FROM
-`glpi_computers` as `c`,
-`glpi_plugin_monitoring_unavailabilities` as `u`,
-`glpi_plugin_monitoring_services` as `s`,
-`glpi_plugin_monitoring_componentscatalogs_hosts` as `cch`,
-`glpi_entities` as `e`
-WHERE
-`u`.`plugin_monitoring_services_id` = `s`.`id`
-AND
-`s`.`plugin_monitoring_componentscatalogs_hosts_id` = `cch`.`id`
-AND
-`cch`.`items_id` = `c`.`id`
-AND
-`s`.`entities_id` = `e`.`id`
-AND
-(
-(`u`.`begin_date` <= '$from $heure_begin:00:00' AND `u`.`end_date` >= '$from $heure_begin:00:00')
-OR
-(`u`.`begin_date` >= '$from $heure_begin:00:00' AND `u`.`end_date` <= '$to $heure_end:59:59')
-OR
-(`u`.`begin_date` <= '$to $heure_end:59:59' AND `u`.`end_date` >= '$to $heure_end:59:59' )
-)
-ORDER BY `c`.`name`
-";
-
-        $result = $DB->query($query);
-
-        $indispo = array();
-
-        while ($data = $DB->fetch_array($result)) {
-            $begin = strtotime($data['begin_date']);
-            $end = strtotime($data['end_date']);
-
-            if ($begin < $qbegin) {
-                $begin = $qbegin;
-            }
-            if ($end > $qend) {
-                $end = $qend;
-            }
-            $indispo[$data['name']]['entity'] = $data['entity'];
-            $indispo[$data['name']]['name'] = $data['name'];
-            $indispo[$data['name']]['indispo'][] = array(
-                'begin' => $begin,
-                'end' => $end,
-                'duration' => ($end - $begin)
-            );
-        }
-
-        foreach ($indispo as &$borne) {
-            $borne['indispo'] = PluginMonitoringWebservice::checkLimits($borne['indispo']);
-        }
-
-        $indispo_result = array();
-        $i = 0;
-        foreach ($indispo as $value) {
-            $indispo_result[$i]['name'] = $value['name'];
-            $indispo_result[$i]['entity'] = $value['entity'];
-            $duration = 0;
-            foreach ($value['indispo'] as $indispo_begin_end) {
-                $duration += $indispo_begin_end['end'] - $indispo_begin_end['begin'];
-            }
-            $indispo_result[$i]['duration'] = $duration;
-            $indispo_result[$i]['percent'] = round((($diff - $duration) / $diff) * 100, 2);
-            $i++;
-        }
-        return (json_encode($indispo_result));
-    }
-
-
-    /**
-     * @param $bornes
-     * @return array
-     */
-    private function checkLimits($bornes, $read=true)
-    {
-        $new_indispos = array();
-        $i = 0;
-        $recheck = 0;
-        foreach ($bornes as $datas) {
-            $begin = $datas['begin'];
-            $end = $datas['end'];
-
-            if (count($new_indispos) == 0) {
-                $new_indispos[0]['begin'] = $begin;
-                $new_indispos[0]['end'] = $end;
-                $new_indispos[0]['duration'] = $end - $begin;
-            } else {
-
-                $found = 0;
-                foreach ($new_indispos as &$begin_end) {
-                    if (($begin_end['begin'] > $begin) && ($begin_end['end'] < $end)) {
-                        echo($read ? "$begin - $end -> zone plus grande\n" : '');
-                        $begin_end['begin'] = $begin;
-                        $begin_end['end'] = $end;
-                        $begin_end['duration'] = $begin_end['end'] - $begin_end['begin'];
-                        $found = 1;
-                        $recheck = 1;
-                        break;
-                    } elseif (($begin_end['begin'] < $begin) && ($begin_end['end'] > $begin) && ($begin_end['end'] < $end)) {
-                        echo($read ? "$begin - $end -> fin apres\n" : '');
-                        $begin_end['end'] = $end;
-                        $begin_end['duration'] = $begin_end['end'] - $begin_end['begin'];
-                        $found = 1;
-                        $recheck = 1;
-                        break;
-                    } elseif (($begin_end['begin'] > $begin) && ($begin_end['begin'] < $end) && ($begin_end['end'] > $end)) {
-                        echo($read ? "$begin - $end -> debut avant \n" : '');
-                        $begin_end['begin'] = $begin;
-                        $begin_end['duration'] = $begin_end['end'] - $begin_end['begin'];
-                        $found = 1;
-                        $recheck = 1;
-                        break;
-                    } elseif (($begin_end['begin'] <= $begin) && ($begin_end['end'] >= $end)) {
-                        echo($read ? "$begin - $end -> dans la zone\n" : '');
-                        $found = 1;
-                        break;
-                    }
-                }
-                if (!$found) {
-                    $new_indispos[] = array(
-                        'begin' => $begin,
-                        'end' => $end,
-                        'duration' => ($end - $begin)
-                    );
-                }
-            }
-        }
-
-        if ($recheck) {
-            $new_indispos = PluginMonitoringWebservice::checkLimits($new_indispos);
-        }
-        return $new_indispos;
     }
 }

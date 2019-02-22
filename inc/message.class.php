@@ -31,192 +31,174 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringMessage extends CommonDBTM {
+class PluginMonitoringMessage extends CommonDBTM
+{
+    /**
+     * Get important messages
+     */
+    static function getMessages()
+    {
+        PluginMonitoringToolbox::logIfDebug("PluginMonitoringMessage::getMessages");
 
-
-   static function getMessages() {
-      // TODO: check this!
-      return;
-      $pmMessage = new self();
-
-      $confchanges = $pmMessage->configurationchangesMessage();
-      $runningshinken = $pmMessage->ShinkennotrunMessage();
-      $i = 0;
-      if ($confchanges != '') {
-         echo "<div class='msgboxmonit msgboxmonit-orange'>";
-         if ($confchanges != '') {
+        $pmMessage = new self();
+        $confchanges = $pmMessage->configuration_changes_messages();
+        if (!empty($confchanges)) {
+            echo '<div class="msgboxmonit msgboxmonit-orange">';
             echo $confchanges;
-            $i++;
-         }
-         if ($runningshinken != '') {
-            if($i > 0) {
-               echo "</div>";
-               echo "<div class='msgboxmonit msgboxmonit-red'>";
+            echo '</div>';
+        }
+
+        $runningshinken = $pmMessage->framework_running_messages();
+        if (!empty($runningshinken)) {
+            echo '<div class="msgboxmonit msgboxmonit-orange">';
+            echo $runningshinken;
+            echo '</div>';
+        }
+    }
+
+
+    /**
+     * Get modifications of resources (if have modifications);
+     */
+    function configuration_changes_messages()
+    {
+        $input = '';
+
+        // Get id of the last restart
+        $id_restart = 0;
+        $pmLog = new PluginMonitoringLog();
+        $a_restarts = $pmLog->find("(`action`='restart' OR `action`='restart_planned')", "`id` DESC", 1);
+        if (count($a_restarts) > 0) {
+            $a_restart = current($a_restarts);
+            $id_restart = $a_restart['id'];
+        }
+
+        // Get change counters since the last restart
+        $dbu = new DbUtils();
+        $nb_deleted = $dbu->countElementsInTable(PluginMonitoringLog::getTable(),
+            ['WHERE' => "`id` > '" . $id_restart . "' AND `action`='delete'"]);
+        $nb_added = $dbu->countElementsInTable(PluginMonitoringLog::getTable(),
+            ['WHERE' => "`id` > '" . $id_restart . "' AND `action`='add'"]);
+        $nb_updated = $dbu->countElementsInTable(PluginMonitoringLog::getTable(),
+            ['WHERE' => "`id` > '" . $id_restart . "' AND `action`='update'"]);
+
+        if ($nb_deleted > 0 OR $nb_added > 0 OR $nb_updated > 0) {
+            $input .= __('The configuration changed', 'monitoring') . "<br/>";
+            if ($nb_added > 0) {
+                $input .= '<div>';
+                $input .= '&dash; <a onClick="$(\'#added_elements\').toggle()">'. $nb_added . "&nbsp;" . __('resources added', 'monitoring') . '</a>';
+
+                $added = $pmLog->find("`action`='add' AND `id` > $id_restart", "`id` ASC");
+                if (count($added) > 0) {
+                    $input .= '<div id="added_elements" style="background: lightgrey; font-size: x-small; margin-left: 10px; display: none">';
+                    $input .= '<ul>';
+                    $idx = 0;
+                    foreach ($added as $data) {
+                        $input .= '<li>[' . Html::convDateTime($data['date_mod']) . '] ' .__('added: ', 'monitoring'). $data['value'] . '</li>';
+                        if ($idx++ > 20) {
+                            $input .= '<li>'. __('Do not display more than 20 items.', 'monitoring') . '</li>';
+                            break;
+                        }
+                    }
+                    $input .= '</ul>';
+                    $input .= '</div>';
+                }
+                $input .= '</div>';
             }
-            echo $runningshinken."!";
-            $i++;
-         }
-         echo "</div>";
-      }
-   }
+            if ($nb_deleted> 0) {
+                $input .= '<div>';
+                $input .= '&dash; <a onClick="$(\'#deleted_elements\').toggle()">'. $nb_deleted . "&nbsp;" . __('resources deleted', 'monitoring') . '</a>';
 
-
-
-   /**
-    * This fonction search if a services catalog has a resource deleted
-    *
-    */
-   function servicescatalogMessage() {
-      global $DB;
-
-      $pmServicescatalog = new PluginMonitoringServicescatalog();
-      $input = '';
-      $a_catalogs = array();
-
-      $servicescatalog_links = array();
-
-      $query = "SELECT `plugin_monitoring_servicescatalogs_id` FROM `glpi_plugin_monitoring_businessrulegroups`
-
-         LEFT JOIN `glpi_plugin_monitoring_businessrules` ON `glpi_plugin_monitoring_businessrulegroups`.`id` = `plugin_monitoring_businessrulegroups_id`
-
-         LEFT JOIN `glpi_plugin_monitoring_services` ON `plugin_monitoring_services_id` = `glpi_plugin_monitoring_services`.`id`
-
-         WHERE `glpi_plugin_monitoring_services`.`id` IS NULL";
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
-         if (!isset($servicescatalog_links[$data['plugin_monitoring_servicescatalogs_id']])) {
-            $pmServicescatalog->getFromDB($data['plugin_monitoring_servicescatalogs_id']);
-            $servicescatalog_links[$data['plugin_monitoring_servicescatalogs_id']] = $pmServicescatalog->getLink();
-         }
-         $a_catalogs[$data['plugin_monitoring_servicescatalogs_id']] = $servicescatalog_links[$data['plugin_monitoring_servicescatalogs_id']];
-      }
-      if (count($a_catalogs) > 0) {
-         $input = __('Services catalog with resources not available', 'monitoring')." : <br/>";
-         $input .= implode(" - ", $a_catalogs);
-      }
-      return $input;
-   }
-
-
-
-   /**
-    * Get modifications of resources (if have modifications);
-    */
-   function configurationchangesMessage() {
-      global $DB;
-
-      $input = '';
-      $pmLog = new PluginMonitoringLog();
-      // Get id of last Shinken restart
-      $id_restart = 0;
-      $a_restarts = $pmLog->find("(`action`='restart' OR `action`='restart_planned')", "`id` DESC", 1);
-      if (count($a_restarts) > 0) {
-         $a_restart = current($a_restarts);
-         $id_restart = $a_restart['id'];
-      }
-      // get number of modifications
-      $nb_delete  = 0;
-      $nb_add     = 0;
-      $nb_update  = 0;
-      $nb_delete = countElementsInTable(getTableForItemType('PluginMonitoringLog'), "`id` > '".$id_restart."'
-         AND `action`='delete'");
-      $nb_add = countElementsInTable(getTableForItemType('PluginMonitoringLog'), "`id` > '".$id_restart."'
-         AND `action`='add'");
-      $nb_update = countElementsInTable(getTableForItemType('PluginMonitoringLog'), "`id` > '".$id_restart."'
-         AND `action`='update'");
-      if ($nb_delete > 0 OR $nb_add > 0 OR $nb_update > 0) {
-         $input .= __('The configuration has changed', 'monitoring')."<br/>";
-         if ($nb_add > 0) {
-            $input .= "<a onClick='Ext.get(\"added_elements\").toggle();'>".$nb_add."</a> ".__('resources added', 'monitoring');
-            echo "<div style='position:absolute;z-index:10;left: 50%;
-               margin-left: -350px;margin-top:40px;display:none'
-               class='msgboxmonit msgboxmonit-grey' id='added_elements'>";
-            $query = "SELECT * FROM `".getTableForItemType('PluginMonitoringLog')."`
-               WHERE `id` > '".$id_restart."' AND `action`='add'
-               ORDER BY `id` DESC";
-            $result = $DB->query($query);
-            while ($data=$DB->fetch_array($result)) {
-               echo "[".Html::convDateTime($data['date_mod'])."] Add ".$data['value']."<br/>";
+                $added = $pmLog->find("`action`='delete' AND `id` > $id_restart", "`id` ASC");
+                if (count($added) > 0) {
+                    $input .= '<div id="deleted_elements" style="background: lightgrey; font-size: x-small; margin-left: 10px; display: none">';
+                    $input .= '<ul>';
+                    $idx = 0;
+                    foreach ($added as $data) {
+                        $input .= '<li>[' . Html::convDateTime($data['date_mod']) . '] ' .__('deleted: ', 'monitoring'). $data['value'] . '</li>';
+                        if ($idx++ > 20) {
+                            $input .= '<li>'. __('Do not display more than 20 items.', 'monitoring') . '</li>';
+                            break;
+                        }
+                    }
+                    $input .= '</ul>';
+                    $input .= '</div>';
+                }
+                $input .= '</div>';
             }
-            echo "</div>";
-         }
-         if ($nb_delete > 0) {
-            if ($nb_add > 0) {
-               $input .= " / ";
+            if ($nb_updated> 0) {
+                $input .= '<div>';
+                $input .= '&dash; <a onClick="$(\'#updated_elements\').toggle()">'. $nb_updated . "&nbsp;" . __('resources updated', 'monitoring') . '</a>';
+
+                $added = $pmLog->find("`action`='update' AND `id` > $id_restart", "`id` ASC");
+                if (count($added) > 0) {
+                    $input .= '<div id="updated_elements" style="background: lightgrey; font-size: x-small; margin-left: 10px; display: none">';
+                    $input .= '<ul>';
+                    $idx = 0;
+                    foreach ($added as $data) {
+                        $input .= '<li>[' . Html::convDateTime($data['date_mod']) . '] ' .__('updated: ', 'monitoring'). $data['value'] . '</li>';
+                        if ($idx++ > 20) {
+                            $input .= '<li>'. __('Do not display more than 20 items.', 'monitoring') . '</li>';
+                            break;
+                        }
+                    }
+                    $input .= '</ul>';
+                    $input .= '</div>';
+                }
+                $input .= '</div>';
             }
-            $input .= "<a onClick='Ext.get(\"deleted_elements\").toggle();'>".$nb_delete."</a> ".__('resources deleted', 'monitoring');
-            echo "<div style='position:absolute;z-index:10;left: 50%;
-               margin-left: -350px;margin-top:40px;display:none'
-               class='msgboxmonit msgboxmonit-grey' id='deleted_elements'>";
-            $query = "SELECT * FROM `".getTableForItemType('PluginMonitoringLog')."`
-               WHERE `id` > '".$id_restart."' AND `action`='delete'
-               ORDER BY `id` DESC";
-            $result = $DB->query($query);
-            while ($data=$DB->fetch_array($result)) {
-               echo "[".Html::convDateTime($data['date_mod'])."] Delete ".$data['value']."<br/>";
+
+            // Try to restart Shinken via webservice
+            $input .= "<br>";
+            $pmShinkenwebservice = new PluginMonitoringShinkenwebservice();
+            $pmShinkenwebservice->sendRestartArbiter();
+//            $input .= __('Shinken is restarted automatically', 'monitoring');
+            $input .= '<strong>' . __('The monitoring framework should reload this new configuration', 'monitoring') . '</strong>';
+            $input .= "<br>";
+        }
+
+        return $input;
+    }
+
+
+    /**
+     * Get maximum time between 2 checks and see if have one event in this period
+     *
+     */
+    function framework_running_messages()
+    {
+        global $DB, $PM_CONFIG;
+
+        $message = '';
+
+        // One hour per default - convert to seconds
+        $time_s = $PM_CONFIG['fmwk_check_period'] * 60;
+
+        PluginMonitoringToolbox::logIfDebug("PluginMonitoringMessage::framework_running_messages, check period: " . $time_s);
+
+        // If some hosts are configured
+        $result = $DB->query("SELECT count(id) as hosts_total FROM `glpi_plugin_monitoring_hosts`");
+        $data = $DB->fetch_assoc($result);
+        if ($data['hosts_total'] > 0) {
+            PluginMonitoringToolbox::logIfDebug("PluginMonitoringMessage::framework_running_messages, hosts count: " . $data['hosts_total']);
+            // If some services are configured
+            $result = $DB->query("SELECT count(id) as services_total FROM `glpi_plugin_monitoring_services`");
+            $data = $DB->fetch_assoc($result);
+            if ($data['services_total'] > 0) {
+                PluginMonitoringToolbox::logIfDebug("PluginMonitoringMessage::framework_running_messages, services count: " . $data['services_total']);
+                $result = $DB->query("SELECT * FROM `glpi_plugin_monitoring_services` 
+                    WHERE UNIX_TIMESTAMP(last_check) > UNIX_TIMESTAMP() - " . $time_s . "
+                    ORDER BY `last_check` DESC
+                    LIMIT 1");
+                if ($DB->numrows($result) <= 0) {
+                    $message = __('No events found recently. The monitoring framework seems to be stopped', 'monitoring');
+                }
             }
-            echo "</div>";
-         }
-         if ($nb_update > 0) {
-            if ($nb_add > 0 OR $nb_delete > 0) {
-               $input .= " / ";
-            }
-            $input .= "<a onClick='Ext.get(\"updated_elements\").toggle();'>".$nb_update."</a> ".__('resources updated', 'monitoring');
-            echo "<div style='position:absolute;z-index:10;left: 50%;
-               margin-left: -350px;margin-top:40px;display:none'
-               class='msgboxmonit msgboxmonit-grey' id='updated_elements'>";
-            $query = "SELECT * FROM `".getTableForItemType('PluginMonitoringLog')."`
-               WHERE `id` > '".$id_restart."' AND `action`='update'
-               ORDER BY `id` DESC";
-            $result = $DB->query($query);
-            while ($data=$DB->fetch_array($result)) {
-               echo "[".Html::convDateTime($data['date_mod'])."] Update ".$data['value']."<br/>";
-            }
-            echo "</div>";
-         }
-         $input .= "<br/>";
-
-         // Try to restart Shinken via webservice
-         $pmShinkenwebservice = new PluginMonitoringShinkenwebservice();
-         $pmShinkenwebservice->sendRestartArbiter();
-         $input .= __('Shinken is restarted automatically', 'monitoring');
-         //$input .= __('Restart Shinken to reload this new configuration', 'monitoring');
-      }
-      return $input;
-   }
-
-
-   /**
-    * Get maximum time between 2 checks and see if have one event in this period
-    *
-    */
-   function ShinkennotrunMessage() {
-      global $DB;
-
-      $input = '';
-      $query = "SELECT * FROM `glpi_plugin_monitoring_checks` ORDER BY `check_interval` DESC LIMIT 1";
-
-      $result = $DB->query($query);
-      $data = $DB->fetch_assoc($result);
-      $time_s = $data['check_interval'] * 60;
-
-      $query = "SELECT count(id) as cnt FROM `glpi_plugin_monitoring_services`";
-      $result = $DB->query($query);
-      $data = $DB->fetch_assoc($result);
-      if ($data['cnt'] > 0) {
-         $query = "SELECT * FROM `glpi_plugin_monitoring_services`
-            WHERE UNIX_TIMESTAMP(last_check) > UNIX_TIMESTAMP()-".$time_s."
-               ORDER BY `last_check`
-               LIMIT 1";
-         $result = $DB->query($query);
-         if ($DB->numrows($result) == '0') {
-            $input = __('No events found in last minutes, so Shinken seems stopped', 'monitoring');
-         }
-      }
-      return $input;
-   }
+        }
+        return $message;
+    }
 }
 

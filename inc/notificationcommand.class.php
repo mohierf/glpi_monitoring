@@ -51,7 +51,11 @@ class PluginMonitoringNotificationcommand extends CommonDBTM
      *  $PLUGINSDIR$
      */
 
-    function initialize()
+    /**
+     * Initialization called on plugin installation
+     * @param Migration $migration
+     */
+    function initialize($migration)
     {
         global $DB;
 
@@ -59,6 +63,7 @@ class PluginMonitoringNotificationcommand extends CommonDBTM
         // Host notifications
         $input = [];
         $input['name'] = 'Host : mail notification';
+        $input['is_active'] = "0";
         $input['command_name'] = 'notify-host-by-email';
         $input['command_line'] = $DB->escape('/usr/bin/printf "%b" "Shinken Notification\n\nType:$NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\nDate/Time: $DATE$ $TIME$\n" | /usr/bin/mail -s "Host $HOSTSTATE$ alert for $HOSTNAME$" $CONTACTEMAIL$');
         $this->add($input);
@@ -71,18 +76,21 @@ class PluginMonitoringNotificationcommand extends CommonDBTM
 
         $input = [];
         $input['name'] = 'Host : mail notification (python)';
+        $input['is_active'] = "0";
         $input['command_name'] = 'notify-host-by-email-py';
         $input['command_line'] = $DB->escape('$PLUGINSDIR$/send_mail_host.py -n "$NOTIFICATIONTYPE$" -H "$HOSTALIAS$" -a "$HOSTADDRESS$" -i "$SHORTDATETIME$" -o "$HOSTOUTPUT$" -t "$CONTACTEMAIL$" -r "$HOSTSTATE$" -S shinken@localhost');
         $this->add($input);
 
         $input = [];
         $input['name'] = 'Host : mail detailed notification';
+        $input['is_active'] = "0";
         $input['command_name'] = 'detailled-host-by-email';
         $input['command_line'] = $DB->escape('/usr/bin/printf "%b" "Shinken Notification\n\nType:$NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nDate/Time: $DATE$/$TIME$\n Host Output : $HOSTOUTPUT$\n\nHost description: $_HOSTDESC$\nHost Impact: $_HOSTIMPACT$" | /usr/bin/mail -s "Host $HOSTSTATE$ alert for $HOSTNAME$" $CONTACTEMAIL$');
         $this->add($input);
 
         $input = [];
         $input['name'] = 'Host : XMPP notification';
+        $input['is_active'] = "0";
         $input['command_name'] = 'notify-host-by-xmpp';
         $input['command_line'] = $DB->escape('$PLUGINSDIR$/notify_by_xmpp.py -a $PLUGINSDIR$/notify_by_xmpp.ini "Host $HOSTNAME$ is $HOSTSTATE$ - Info : $HOSTOUTPUT$" $CONTACTEMAIL$');
         $this->add($input);
@@ -90,6 +98,7 @@ class PluginMonitoringNotificationcommand extends CommonDBTM
         // Service notifications
         $input = [];
         $input['name'] = 'Service : mail notification';
+        $input['is_active'] = "0";
         $input['command_name'] = 'notify-service-by-email';
         $input['command_line'] = $DB->escape('/usr/bin/printf "%b" "Shinken Notification\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTNAME$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $DATE$ $TIME$\nAdditional Info : $SERVICEOUTPUT$\n" | /usr/bin/mail -s "** $NOTIFICATIONTYPE$ alert - $HOSTNAME$/$SERVICEDESC$ is $SERVICESTATE$ **" $CONTACTEMAIL$');
         $this->add($input);
@@ -102,21 +111,26 @@ class PluginMonitoringNotificationcommand extends CommonDBTM
 
         $input = [];
         $input['name'] = 'Service : mail notification (python)';
+        $input['is_active'] = "0";
         $input['command_name'] = 'notify-service-by-email-py';
         $input['command_line'] = $DB->escape('$PLUGINSDIR$/send_mail_service.py -s "$SERVICEDESC$" -n "$NOTIFICATIONTYPE$" -H "$HOSTALIAS$" -a "$HOSTADDRESS$" -i "$SHORTDATETIME$" -o "$SERVICEOUTPUT$" -t "$CONTACTEMAIL$" -r "$SERVICESTATE$" -S shinken@localhost');
         $this->add($input);
 
         $input = [];
         $input['name'] = 'Service : mail detailed notification';
+        $input['is_active'] = "0";
         $input['command_name'] = 'detailled-service-by-email';
         $input['command_line'] = $DB->escape('/usr/bin/printf "%b" "Shinken Notification\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $DATE$ at $TIME$\nService Output : $SERVICEOUTPUT$\n\nService Description: $_SERVICEDETAILLEDESC$\nService Impact: $_SERVICEIMPACT$\nFix actions: $_SERVICEFIXACTIONS$" | /usr/bin/mail -s "$SERVICESTATE$ on Host : $HOSTALIAS$/Service : $SERVICEDESC$" $CONTACTEMAIL$');
         $this->add($input);
 
         $input = [];
         $input['name'] = 'Service : XMPP notification';
+        $input['is_active'] = "0";
         $input['command_name'] = 'notify-service-by-xmpp';
         $input['command_line'] = $DB->escape('$PLUGINSDIR$/notify_by_xmpp.py -a $PLUGINSDIR$/notify_by_xmpp.ini "$NOTIFICATIONTYPE$ $HOSTNAME$ $SERVICEDESC$ $SERVICESTATE$ $SERVICEOUTPUT$ $LONGDATETIME$" $CONTACTEMAIL$');
         $this->add($input);
+
+        $migration->displayMessage("  created default notification commands");
     }
 
 
@@ -234,6 +248,13 @@ class PluginMonitoringNotificationcommand extends CommonDBTM
         } else {
             echo Dropdown::getYesNo($this->fields['is_active']);
         }
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Comment', 'monitoring') . "</td>";
+        echo "<td >";
+        echo "<textarea cols='80' rows='4' name='comment' >" . $this->fields['comment'] . "</textarea>";
         echo "</td>";
         echo "</tr>";
 

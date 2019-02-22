@@ -30,19 +30,18 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_service", READ);
 
-Html::header(__('Monitoring - resources events', 'monitoring'),'', "plugins", "monitoring", "event");
+Html::header(__('Monitoring - resources events', 'monitoring'), '', "plugins", "monitoring", "event");
 
 $pmMessage = new PluginMonitoringMessage();
 $pmMessage->getMessages();
 
 $pmDisplay = new PluginMonitoringDisplay();
-$pmDisplay->menu();
+$pmDisplay->dashboard();
 
 Search::show('PluginMonitoringServiceevent');
 
 Html::footer();
-?>

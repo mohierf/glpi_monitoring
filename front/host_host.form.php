@@ -60,5 +60,3 @@ if (isset($_POST['parent_add'])) {
 }
 
 Html::footer();
-
-?>

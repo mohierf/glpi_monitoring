@@ -313,7 +313,7 @@ class PluginMonitoringCustomitem_Counter extends CommonDBTM
                                 $a_services[$dataq['id']] = $data4;
                             }
                             // foreach ($a_services as $serviceId) {
-                            //    Toolbox::logInFile("pm", "service ".array_keys($serviceId)."\n");
+                            //    PluginMonitoringToolbox::log("service ".array_keys($serviceId)."\n");
                             // }
                             $func = 'get_' . $type;
                             $a_ret = $this->$func(

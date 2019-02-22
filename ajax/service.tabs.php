@@ -30,22 +30,22 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 header("Content-Type: text/html; charset=UTF-8");
 Html::header_nocache();
 
 if (!isset($_POST["id"])) {
-   exit();
+    exit();
 }
 if (!isset($_POST["sort"])) {
-   $_POST["sort"] = "";
+    $_POST["sort"] = "";
 }
 if (!isset($_POST["order"])) {
-   $_POST["order"] = "";
+    $_POST["order"] = "";
 }
 if (!isset($_POST["withtemplate"])) {
-   $_POST["withtemplate"] = "";
+    $_POST["withtemplate"] = "";
 }
 
 
@@ -54,21 +54,19 @@ $pmBusinessrule = new PluginMonitoringBusinessrule();
 //show computer form to add
 //if ($_POST["id"]>0 && $pmBusinessrule->can($_POST["id"],'r')) {
 
-   switch($_POST['glpi_tab']) {
-      case -1 :
+switch ($_POST['glpi_tab']) {
+    case -1 :
 
-         break;
+        break;
 
-      case 2 :
-         $pmBusinessrule->showForm();
-         break;
+    case 2 :
+        $pmBusinessrule->showForm();
+        break;
 
-      default :
+    default :
 
-   }
+}
 
 //}
 
 Html::ajaxFooter();
-
-?>

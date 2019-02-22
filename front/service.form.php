@@ -30,12 +30,12 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "host_service");
+Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
+    "monitoring", "host_service");
 
 
 $pMonitoringService = new PluginMonitoringService();
@@ -44,66 +44,64 @@ $pMonitoringService = new PluginMonitoringService();
 
 if (isset($_POST['add'])) {
 
-   $pMonitoringServicedef = new PluginMonitoringServicedef();
-   $_POST['plugin_monitoring_servicedefs_id'] = $pMonitoringServicedef->add($_POST);
-   if (isset($_POST['arg'])) {
-      $_POST['arguments'] = exportArrayToDB($_POST['arg']);
-   }
-   if (isset($_POST['alias_commandservice'])) {
-      $_POST['alias_command'] = $_POST['alias_commandservice'];
-   }
-   if ($_POST['plugin_monitoring_servicedefs_id'] == '0') {
-      $_POST['plugin_monitoring_servicedefs_id'] = $_POST['plugin_monitoring_servicedefs_id_s'];
-   }
-   $pMonitoringService->add($_POST);
-   Html::back();
+    $pMonitoringServicedef = new PluginMonitoringServicedef();
+    $_POST['plugin_monitoring_servicedefs_id'] = $pMonitoringServicedef->add($_POST);
+    if (isset($_POST['arg'])) {
+        $_POST['arguments'] = exportArrayToDB($_POST['arg']);
+    }
+    if (isset($_POST['alias_commandservice'])) {
+        $_POST['alias_command'] = $_POST['alias_commandservice'];
+    }
+    if ($_POST['plugin_monitoring_servicedefs_id'] == '0') {
+        $_POST['plugin_monitoring_servicedefs_id'] = $_POST['plugin_monitoring_servicedefs_id_s'];
+    }
+    $pMonitoringService->add($_POST);
+    Html::back();
 } else if (isset($_POST['update'])) {
-   if (is_array($_POST['id'])) {
-      foreach ($_POST['id'] as $key=>$id) {
-         $input = array();
-         $input['id'] = $id;
-         $input['plugin_monitoring_servicedefs_id'] = $_POST['plugin_monitoring_servicedefs_id'][$key];
-         $a_arguments = array();
-         foreach ($_POST as $key=>$value) {
-            if (strstr($key, "arg".$id."||")) {
-               $a_ex = explode("||", $key);
-               $a_arguments[$a_ex[1]] = $value;
+    if (is_array($_POST['id'])) {
+        foreach ($_POST['id'] as $key => $id) {
+            $input = [];
+            $input['id'] = $id;
+            $input['plugin_monitoring_servicedefs_id'] = $_POST['plugin_monitoring_servicedefs_id'][$key];
+            $a_arguments = [];
+            foreach ($_POST as $key => $value) {
+                if (strstr($key, "arg" . $id . "||")) {
+                    $a_ex = explode("||", $key);
+                    $a_arguments[$a_ex[1]] = $value;
+                }
             }
-         }
-         $input['arguments'] = exportArrayToDB($a_arguments);
-         $pMonitoringService->update($input);
-      }
-   } else {
-      $pMonitoringServicedef = new PluginMonitoringServicedef();
-      if ($_POST['plugin_monitoring_servicedefs_id'] == '0') {
-         // Add the service
-         $id = $_POST['id'];
-         unset($_POST['id']);
-         $_POST['plugin_monitoring_servicedefs_id'] = $pMonitoringServicedef->add($_POST);
-         $_POST['id'] = $id;
-      } else {
-         $pMonitoringServicedef->getFromDB($_POST['plugin_monitoring_servicedefs_id']);
-         if ($pMonitoringServicedef->fields['is_template'] == '0') {
-            $pMonitoringServicedef->update($_POST);
-         }
-      }
-      if (isset($_POST['arg'])) {
-         $_POST['arguments'] = exportArrayToDB($_POST['arg']);
-      }
-      if (isset($_POST['alias_commandservice'])) {
-         $_POST['alias_command'] = $_POST['alias_commandservice'];
-      }
-      $pMonitoringService->update($_POST);
-   }
-   Html::back();
+            $input['arguments'] = exportArrayToDB($a_arguments);
+            $pMonitoringService->update($input);
+        }
+    } else {
+        $pMonitoringServicedef = new PluginMonitoringServicedef();
+        if ($_POST['plugin_monitoring_servicedefs_id'] == '0') {
+            // Add the service
+            $id = $_POST['id'];
+            unset($_POST['id']);
+            $_POST['plugin_monitoring_servicedefs_id'] = $pMonitoringServicedef->add($_POST);
+            $_POST['id'] = $id;
+        } else {
+            $pMonitoringServicedef->getFromDB($_POST['plugin_monitoring_servicedefs_id']);
+            if ($pMonitoringServicedef->fields['is_template'] == '0') {
+                $pMonitoringServicedef->update($_POST);
+            }
+        }
+        if (isset($_POST['arg'])) {
+            $_POST['arguments'] = exportArrayToDB($_POST['arg']);
+        }
+        if (isset($_POST['alias_commandservice'])) {
+            $_POST['alias_command'] = $_POST['alias_commandservice'];
+        }
+        $pMonitoringService->update($_POST);
+    }
+    Html::back();
 }
 
 if (isset($_GET["id"])) {
-   $pMonitoringService->showForm($_GET["id"]);
+    $pMonitoringService->showForm($_GET["id"]);
 } else {
-   $pMonitoringService->showForm('', array(), $_GET['services_id']);
+    $pMonitoringService->showForm('', [], $_GET['services_id']);
 }
 
 Html::footer();
-
-?>

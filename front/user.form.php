@@ -30,28 +30,23 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_componentscatalog", UPDATE);
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "user");
+Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
+    "monitoring", "user");
 
 $pmUser = new PluginMonitoringUser();
 if (isset($_POST["add"])) {
-   $pmUser->add($_POST);
-   Html::back();
+    $pmUser->add($_POST);
+    Html::back();
 } else if (isset ($_POST["update"])) {
-   $pmUser->update($_POST);
-   Html::back();
+    $pmUser->update($_POST);
+    Html::back();
 } else if (isset ($_POST["delete"])) {
-   $pmUser->delete($_POST);
-   Html::back();
-} else if (isset ($_POST["import"])) {
-   $pmUser->createInBackend($_POST['users_id']);
-   Html::back();
+    $pmUser->delete($_POST);
+    Html::back();
 }
 
 Html::footer();
-
-?>

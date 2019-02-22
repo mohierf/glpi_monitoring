@@ -32,14 +32,15 @@
 
 include ("../../../inc/includes.php");
 
-Session::checkRight("plugin_monitoring_componentscatalog", UPDATE);
+Session::checkRight("plugin_monitoring_contact", UPDATE);
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "host");
+Html::header(__('Monitoring - contacts', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "contact");
 
 $pmContact = new PluginMonitoringContact();
 if (isset($_POST["add"])) {
    if ($_POST['users_id'] != "0") {
+       // Get default contact template
       $pmContacttemplate = new PluginMonitoringContacttemplate();
       $a_template = current($pmContacttemplate->find("`is_default`='1'", '', 1));
       if (isset($a_template['id'])) {

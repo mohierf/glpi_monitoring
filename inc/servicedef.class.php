@@ -223,7 +223,7 @@ class PluginMonitoringServicedef extends CommonDBTM {
       echo "<td>";
       $input = array();
       $input[''] = '------';
-      $input['byssh'] = __('By ssh', 'monitoring');
+//      $input['byssh'] = __('By ssh', 'monitoring');
       $input['nrpe'] = 'nrpe';
       $input['nsca'] = 'nsca';
       if ($this->fields['is_template'] == '1') {

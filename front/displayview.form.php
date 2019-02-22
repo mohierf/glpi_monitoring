@@ -113,5 +113,3 @@ if (!isset($_GET["id"])) {
 $pmDisplayview->display(array('id' => $_GET["id"]));
 
 Html::footer();
-
-?>

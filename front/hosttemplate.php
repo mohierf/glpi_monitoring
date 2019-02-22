@@ -30,14 +30,14 @@
  *
  */
 
-include("../../../inc/includes.php");
+include ("../../../inc/includes.php");
 
-Session::checkCentralAccess();
+// Check if current user have the appropriate right
+Session::checkRight("plugin_monitoring_componentscatalog", READ);
 
-Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-    "monitoring", "display");
+Html::header(
+    __('Monitoring - hosts templates', 'monitoring'),
+    '', 'config', 'pluginmonitoringmenu', 'host_template');
 
-
-Html::redirect($CFG_GLPI['root_doc'] . "/plugins/monitoring/front/status_services.php?perfdatas=1");
-
-Html::footer();
+$dropdown = new PluginMonitoringHosttemplate();
+include (GLPI_ROOT . "/front/dropdown.common.php");

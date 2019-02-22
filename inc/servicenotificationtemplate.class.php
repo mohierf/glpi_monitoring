@@ -40,20 +40,23 @@ class PluginMonitoringServicenotificationtemplate extends CommonDBTM
 
     /**
      * Initialization called on plugin installation
+     * @param Migration $migration
      */
-    function initialize()
+    function initialize($migration)
     {
-        $check_period = -1;
+        $sn_period = -1;
         $calendar = new Calendar();
         if ($calendar->getFromDBByCrit(['name' => "24x7"])) {
-            $check_period = $calendar->getID();
+            $sn_period = $calendar->getID();
         }
 
         $input = [];
         $input['name'] = 'Default service notification';
         $input['sn_enabled'] = '0';
-        $input['sn_period'] = $check_period;
+        $input['sn_period'] = $sn_period;
         $this->add($input);
+
+        $migration->displayMessage("  created default service notification template");
     }
 
 

@@ -30,31 +30,29 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "host");
+Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
+    "monitoring", "host");
 
 $pmHost = new PluginMonitoringHost();
 if (isset($_POST["add"])) {
-   $hosts_id = $pmHost->add($_POST);
-   Html::back();
+    $hosts_id = $pmHost->add($_POST);
+    Html::back();
 } else if (isset ($_POST["update"])) {
-   $pmHost->update($_POST);
-   Html::back();
+    $pmHost->update($_POST);
+    Html::back();
 } else if (isset ($_POST["delete"])) {
-   $pmHost->delete($_POST, 1);
-   Html::back();
+    $pmHost->delete($_POST, 1);
+    Html::back();
 }
 
 if (isset($_GET["id"])) {
-   $pmHost->showForm($_GET["id"]);
+    $pmHost->showForm($_GET["itemtype"], $_GET["id"]);
 } else {
-   $pmHost->showForm("");
+    $pmHost->showForm("", "");
 }
 
 Html::footer();
-
-?>
