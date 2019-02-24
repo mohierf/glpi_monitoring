@@ -240,7 +240,7 @@ class PluginMonitoringProfile extends Profile
                 'field' => 'plugin_monitoring_hostconfig'
             ],
             ['rights' => [CREATE => __('Create')],
-                'label' => __('Restart Shinken', 'monitoring'),
+                'label' => __('Restart monitoring framework', 'monitoring'),
                 'field' => 'plugin_monitoring_command_fmwk'
             ],
             ['itemtype' => 'PluginMonitoringService',

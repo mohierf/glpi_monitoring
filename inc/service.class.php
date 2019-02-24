@@ -57,6 +57,12 @@ class PluginMonitoringService extends CommonDBTM
         return $this->rawSearchOptions();
     }
 
+    /**
+     * WARNING: change the index order with very much care ... the display of the
+     * services table is using some fixed index values!
+     *
+     * @return array
+     */
     function rawSearchOptions()
     {
 
@@ -145,7 +151,7 @@ class PluginMonitoringService extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => $index,
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'state_type',
             'datatype' => 'string',
@@ -406,7 +412,7 @@ class PluginMonitoringService extends CommonDBTM
         if ($this->getID() == -1) return '';
 
         $link = $CFG_GLPI['root_doc'] .
-            "/plugins/monitoring/front/status_services.php?hidesearch=1"
+            "/plugins/monitoring/front/service.php?hidesearch=1"
             . "&criteria[0][field]=20"
             . "&criteria[0][searchtype]=equals"
             . "&criteria[0][value]=" . $this->getComputerID() . ""
@@ -418,6 +424,29 @@ class PluginMonitoringService extends CommonDBTM
         } else {
             return "<a href='$link'>" . $this->getName(['hostname' => true]) . "</a>" . "&nbsp;" . $this->getComments();
         }
+    }
+
+
+    function getClass($row = false, $state_type = false)
+    {
+        if ($this->getID() == -1) return '';
+
+        // Not yet known...
+        $class_state = 'greyed';
+        if (!empty($this->fields['state']) and !empty($this->fields['last_check'])) {
+            $class_state = strtolower($this->fields['state']);
+        }
+        $class_state = ($row ? 'background-' : 'font-') . $class_state;
+
+        if ($state_type) {
+            if ($this->fields['state_type'] == 'SOFT') {
+                $class_state .= ' state-type-soft';
+            } else {
+                $class_state .= ' state-type-hard';
+            }
+        }
+
+        return $class_state;
     }
 
 
@@ -1460,6 +1489,7 @@ class PluginMonitoringService extends CommonDBTM
 
     function post_addItem()
     {
+        PluginMonitoringToolbox::log("post_addItem: " . print_r($this, true));
 
         $pmLog = new PluginMonitoringLog();
         $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
@@ -1469,6 +1499,7 @@ class PluginMonitoringService extends CommonDBTM
         $input['items_id'] = $this->fields['id'];
         $input['action'] = "add";
         $pmComponentscatalog_Host->getFromDB($this->fields['plugin_monitoring_componentscatalogs_hosts_id']);
+        /* @var CommonDBTM $item */
         $itemtype = $pmComponentscatalog_Host->fields['itemtype'];
         $item = new $itemtype();
         $item->getFromDB($pmComponentscatalog_Host->fields['items_id']);
@@ -1479,6 +1510,7 @@ class PluginMonitoringService extends CommonDBTM
 
     function post_purgeItem()
     {
+        PluginMonitoringToolbox::log("post_addItem: " . print_r($this, true));
 
         $pmLog = new PluginMonitoringLog();
 
@@ -1489,7 +1521,7 @@ class PluginMonitoringService extends CommonDBTM
 
         // Find the service related host in the session (see PluginMonitoringComponentscatalog_Host::unlinkComponents)
         if (isset($_SESSION['plugin_monitoring_cc_host'])
-            && isset($_SESSION['plugin_monitoring_cc_host']['itemtype'])) {
+            and isset($_SESSION['plugin_monitoring_cc_host']['itemtype'])) {
             $itemtype = $_SESSION['plugin_monitoring_cc_host']['itemtype'];
             /* @var CommonDBTM $item */
             $item = new $itemtype();

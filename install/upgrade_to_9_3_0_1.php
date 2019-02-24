@@ -30,15 +30,22 @@
  *
  */
 
-include ("../../../inc/includes.php");
+class PluginFormcreatorUpgradeTo9_3_0_1 {
+   /**
+    * @param Migration $migration
+    */
+   public function upgrade(Migration $migration) {
+      global $DB;
 
-Session::checkRight("plugin_monitoring_componentscatalog", READ);
-
-$_SESSION['glpi_plugin_monitoring'][$_POST['reporttype']][$_POST['componentscatalogs_id']] = $_POST;
-if (isset($_POST['generatepdf'])) {
-   $pmComponentscatalog = new PluginMonitoringComponentscatalog();
-   $pmComponentscatalog->generateSyntheseReport(
-              $_SESSION['glpi_plugin_monitoring'][$_POST['reporttype']][$_POST['componentscatalogs_id']]);
-} else {
-   Html::back();
+//      $table = 'glpi_plugin_monitoring_display_views';
+//      $migration->renameTable('glpi_plugin_monitoring_displayviews', $table);
+//      $table = 'glpi_plugin_monitoring_display_views';
+//      $migration->changeField(
+//         $table,
+//         'is_frontview',
+//         'is_front_view',
+//         'integer'
+//      );
+//      $migration->migrationOneTable($table);
+   }
 }

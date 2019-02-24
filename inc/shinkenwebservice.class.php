@@ -52,8 +52,8 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
         $pmService = new PluginMonitoringService();
         $pmService->getFromDB($service_id);
         $service_description = $pmService->getName(array('shinken' => '1'));
-//        $pmHost = new PluginMonitoringHost();
-//        $pmHost->getFromDB(($host_id == -1) ? $pmService->getHostID() : $host_id);
+        $pmHost = new PluginMonitoringHost();
+        $pmHost->getFromDB(($host_id == -1) ? $pmService->getHostID() : $host_id);
 //        $hostname = $pmHost->getName(true);
 //
         $hostname = $pmService->getHostName();
@@ -186,6 +186,8 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
             }
         }
         foreach ($a_tags as $url => $data) {
+            if (empty($url)) continue;
+
             PluginMonitoringToolbox::log("sendRestartArbiter, framework url: $url");
 
             $auth = $pmTag->getAuth($data['tag']);

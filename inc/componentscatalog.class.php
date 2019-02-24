@@ -105,7 +105,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
                     }
                     return '';
             }
-
+            /* @var PluginMonitoringComponentscatalog $item */
             if ($item->getID() > 0) {
                 $ong = [];
                 $ong[1] = self::createTabEntry(__('Components', 'monitoring'), self::countForComponents($item));
@@ -313,7 +313,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         ];
 
         $tab[] = [
-            'id' => $index,
+            'id' => $index++,
             'table' => PluginMonitoringServicenotificationtemplate::getTable(),
             'field' => 'name',
             'datatype' => 'itemlink',
@@ -322,7 +322,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         ];
 
         $tab[] = [
-            'id' => $index++,
+            'id' => $index,
             'table' => $this->getTable(),
             'field' => 'additional_templates',
             'datatype' => 'string',
@@ -421,26 +421,6 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
     function showChecks()
     {
-        echo "
-      <script>
-         function toggleEntity(idEntity) {
-            Ext.select('#'+idEntity).each(function(el) {
-               var displayed = false;
-               el.select('tr.services').each(function(elTr) {
-                  elTr.setDisplayed(! elTr.isDisplayed());
-                  displayed = elTr.isDisplayed();
-               });
-               el.select('tr.header').each(function(elTr) {
-                  elTr.applyStyles(displayed ? {'height':'50px'} : {'height':'10px'});
-                  elTr.select('th').each(function(elTd) {
-                     elTd.applyStyles(displayed ? {'height':'50px'} : {'height':'10px'});
-                  });
-               });
-            });
-         };
-      </script>
-      ";
-
         echo "<table class='tab_cadre' width='100%'>";
         echo "<tr class='tab_bg_4' style='background: #cececc;'>";
 
@@ -452,8 +432,8 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
                 echo "<td style='vertical-align: top;'>";
 
                 echo $this->showWidget($data['id']);
-                if (isset($_SESSION['plugin_monitoring_reduced_interface'])) {
-                    $this->ajaxLoad($data['id'], !$_SESSION['plugin_monitoring_reduced_interface']);
+                if (isset($_SESSION['plugin_monitoring']['reduced_interface'])) {
+                    $this->ajaxLoad($data['id'], !$_SESSION['plugin_monitoring']['reduced_interface']);
                 } else {
                     $this->ajaxLoad($data['id'], TRUE);
                 }
@@ -519,7 +499,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
     function showWidgetFrame($id, $reduced_interface = false, $is_minemap = FALSE)
     {
-        global $DB, $CFG_GLPI;
+        global $CFG_GLPI;
 
         $this->getFromDB($id);
         $data = $this->fields;
@@ -551,7 +531,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             $count = $stateg['CRITICAL'];
             $colorclass = 'crit';
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/status_services.php?hidesearch=1"
+                "/plugins/monitoring/front/service.php?hidesearch=1"
 //                 . "&reset=reset&"
                 . "&criteria[0][field]=3"
                 . "&criteria[0][searchtype]=equals"
@@ -568,7 +548,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             $count = $stateg['WARNING'];
             $colorclass = 'warn';
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/status_services.php?hidesearch=1"
+                "/plugins/monitoring/front/service.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=3"
                 . "&criteria[0][searchtype]=equals"
@@ -616,7 +596,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             $count += $stateg['ACKNOWLEDGE'];
             $count += $stateg['UNKNOWN'];
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/status_services.php?hidesearch=1"
+                "/plugins/monitoring/front/service.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=3"
                 . "&criteria[0][searchtype]=equals"
@@ -638,7 +618,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
         if (Session::haveRight("plugin_monitoring_servicescatalog", PluginMonitoringService::DASHBOARD)) {
             $link_catalog = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/status_services.php?hidesearch=1"
+                "/plugins/monitoring/front/service.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=9"
                 . "&criteria[0][searchtype]=equals"
@@ -705,7 +685,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
             if (Session::haveRight("plugin_monitoring_service", READ)) {
                 $link = $CFG_GLPI['root_doc'] .
-                    "/plugins/monitoring/front/status_services.php?hidesearch=1"
+                    "/plugins/monitoring/front/service.php?hidesearch=1"
 //                    . "&reset=reset"
                     . "&criteria[0][field]=2"
                     . "&criteria[0][searchtype]=equals"
@@ -735,10 +715,6 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             if ($entityId != $pmHost->fields['entities_id']) {
                 if ($entityId != -1) {
                     if ($overallServicesState != 'OK') {
-                        echo "<script>
-                     Ext.onReady(function(){
-                        toggleEntity('entity-$id-$entityId');
-                     });</script>";
                         $overallServicesState = 'OK';
                     }
                 }
@@ -757,7 +733,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             }
 
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/status_services.php?hidesearch=1"
+                "/plugins/monitoring/front/service.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=" . $field_id . ""
                 . "&criteria[0][searchtype]=equals"
@@ -809,12 +785,6 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         }
         echo '</table>';
         echo '</div>';
-        if ($overallServicesState != 'OK') {
-            echo "<script>
-            $(document).ready(function(){
-               toggleEntity('entity-$id-$entityId');
-            });</script>";
-        }
     }
 
 

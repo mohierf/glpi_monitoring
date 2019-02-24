@@ -844,7 +844,7 @@ class PluginMonitoringDisplayview extends CommonDBTM
             }
 
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/status_services.php?hidesearch=1"
+                "/plugins/monitoring/front/service.php?hidesearch=1"
 //                 . "&reset=reset"
                 . "&criteria[0][field]=" . $field_id . ""
                 . "&criteria[0][searchtype]=equals"

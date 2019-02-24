@@ -296,7 +296,8 @@ class PluginMonitoringWebservice
 
         $pm = new PluginMonitoringDisplay();
         if ($params['view'] == 'Hosts') {
-            return $pm->displayHostsCounters(0);
+            // Return counters
+            return $pm->displayHostsCounters(false);
         } else {
             return $pm->displayCounters($params['view'], 0);
         }
@@ -502,8 +503,7 @@ class PluginMonitoringWebservice
             $order = $params['order'];
         }
 
-        $query = "
-         SELECT
+        $query = "SELECT
             `glpi_entities`.`name` AS entity_name,
             `glpi_computers`.`id`,
             `glpi_computers`.`name`,

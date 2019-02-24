@@ -32,7 +32,7 @@
 
 include("../../../inc/includes.php");
 
-$title = __('Monitoring - dashboard (resources)', 'monitoring');
+$title = __('Monitoring - dashboard (hosts)', 'monitoring');
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Session::checkCentralAccess();
     Html::header($title, $_SERVER["PHP_SELF"], "plugins",
@@ -43,32 +43,31 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
 }
 
 if (!isset($_GET['itemtype'])) {
-    $_GET['itemtype'] = "PluginMonitoringService";
+    $_GET['itemtype'] = "PluginMonitoringHost";
 }
-$params = Search::manageParams("PluginMonitoringService", $_GET);
+$params = Search::manageParams("PluginMonitoringHost", $_GET);
 
 // Reduced or normal interface ?
-if (!isset($_SESSION['plugin_monitoring_reduced_interface'])) {
-    $_SESSION['plugin_monitoring_reduced_interface'] = false;
+if (!isset($_SESSION['plugin_monitoring']['reduced_interface'])) {
+    $_SESSION['plugin_monitoring']['reduced_interface'] = false;
 }
 if (isset($_POST['reduced_interface'])) {
-    $_SESSION['plugin_monitoring_reduced_interface'] = $_POST['reduced_interface'];
+    $_SESSION['plugin_monitoring']['reduced_interface'] = $_POST['reduced_interface'];
 }
 
-$pmDisplay = new PluginMonitoringDisplay();
 $pmMessage = new PluginMonitoringMessage();
-
 $pmMessage->getMessages();
 
-$pmDisplay->dashboard('service');
+$pmDisplay = new PluginMonitoringDisplay();
+$pmDisplay->dashboard(true);
+$pmDisplay->showHostsCounters(1, 1);
 
-$pmDisplay->showCounters("Ressources", 1, 0);
 // Manage search
-if (isset($_SESSION['plugin_monitoring']['service'])) {
-    $_GET = $_SESSION['plugin_monitoring']['service'];
+if (isset($_SESSION['plugin_monitoring']['host'])) {
+    $_GET = $_SESSION['plugin_monitoring']['host'];
 }
 if (isset($_GET['reset'])) {
-    unset($_SESSION['glpisearch']['PluginMonitoringService']);
+    unset($_SESSION['glpisearch']['PluginMonitoringHost']);
 }
 if (isset($_GET['glpi_tab'])) {
     unset($_GET['glpi_tab']);
@@ -77,27 +76,20 @@ if (isset($_GET['hidesearch'])) {
     echo "<table class='tab_cadre_fixe'>";
     echo "<tr class='tab_bg_1'>";
     echo "<th>";
-    echo "<a onClick='$(\"#searchformservices\").toggle();'>
-      <img alt='Down' src='" . $CFG_GLPI["root_doc"] . "/pics/deplier_down.png' />&nbsp;
-         " . __('Display search form', 'monitoring') . "
-      &nbsp;<img alt='Down' src='" . $CFG_GLPI["root_doc"] . "/pics/deplier_down.png' /></a>";
+    echo "<a onClick='$(\"#search_form\").toggle();'>" . __('Display search form', 'monitoring') . "</a>";
     echo "</th>";
     echo "</tr>";
     echo "</table>";
-    echo "<div style='display: none;' id='searchformservices'>";
+    echo "<div style='display: none;' id='search_form'>";
 }
-Search::showGenericSearch("PluginMonitoringService", $params);
+Search::showGenericSearch("PluginMonitoringHost", $params);
 if (isset($_GET['hidesearch'])) {
     echo "</div>";
 }
-$perfdatas = false;
-if (isset($_GET['perfdatas'])) {
-    $perfdatas = true;
-}
 
-$pmDisplay->showResourcesBoard('', $perfdatas, $params);
-if (isset($_SESSION['glpisearch']['PluginMonitoringService']['reset'])) {
-    unset($_SESSION['glpisearch']['PluginMonitoringService']['reset']);
+$pmDisplay->showHostsBoard($params);
+if (isset($_SESSION['glpisearch']['PluginMonitoringHost']['reset'])) {
+    unset($_SESSION['glpisearch']['PluginMonitoringHost']['reset']);
 }
 
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {

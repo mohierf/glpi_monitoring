@@ -57,6 +57,12 @@ class PluginMonitoringHost extends CommonDBTM
         return $this->rawSearchOptions();
     }
 
+    /**
+     * WARNING: change the index order with very much care ... the display of the
+     * hosts table is using some fixed index values!
+     *
+     * @return array
+     */
     function rawSearchOptions()
     {
 
@@ -64,7 +70,7 @@ class PluginMonitoringHost extends CommonDBTM
 
         $tab[] = [
             'id' => 'common',
-            'name' => __('Resources', 'monitoring')
+            'name' => __('Monitored hosts', 'monitoring')
         ];
 
         $index = 1;
@@ -82,6 +88,20 @@ class PluginMonitoringHost extends CommonDBTM
             'field' => 'name',
             'name' => __('Name'),
             'datatype' => 'itemlink'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'itemtype',
+            'name' => __('Item type'),
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'items_id',
+            'name' => __('Item identifier'),
         ];
 
         $tab[] = [
@@ -530,6 +550,7 @@ class PluginMonitoringHost extends CommonDBTM
         if (isset($options['monitoring']) && $options['monitoring']) {
             $itemtype = $this->getField("itemtype");
             $item = new $itemtype();
+            /* @var CommonDBTM $item */
             $item->getFromDB($this->getField("items_id"));
             $search_id = 1;
             if ($itemtype == 'Computer') {
@@ -542,7 +563,7 @@ class PluginMonitoringHost extends CommonDBTM
 
 
             $link = $CFG_GLPI['root_doc'] .
-                "/plugins/monitoring/front/status_hosts.php?field[0]=" . $search_id . "&searchtype[0]=equals&contains[0]=" . $item->getID() . "&itemtype=PluginMonitoringHost&start=0";
+                "/plugins/monitoring/front/host.php?field[0]=" . $search_id . "&searchtype[0]=equals&contains[0]=" . $item->getID() . "&itemtype=PluginMonitoringHost&start=0";
             return $item->getLink() . " [<a href='$link'>" . __('Status', 'monitoring') . "</a>]" . "&nbsp;" . $this->getComments();
         } else {
             /* @var CommonDBTM $item */
@@ -551,6 +572,28 @@ class PluginMonitoringHost extends CommonDBTM
             $item->getFromDB($this->getField("items_id"));
             return $item->getLink() . "&nbsp;" . $this->getComments();
         }
+    }
+
+    function getClass($row=false, $state_type=false)
+    {
+        if ($this->getID() == -1) return '';
+
+        // Not yet known...
+        $class_state = 'greyed';
+        if (! empty($this->fields['state']) and !empty($this->fields['last_check'])) {
+            $class_state = strtolower($this->fields['state']);
+        }
+        $class_state = ($row ? 'background-' : 'font-') . $class_state;
+
+        if ($state_type) {
+            if ($this->fields['state_type'] == 'SOFT') {
+                $class_state .= ' state-type-soft';
+            } else {
+                $class_state .= ' state-type-hard';
+            }
+        }
+
+        return $class_state;
     }
 
 
@@ -617,7 +660,7 @@ class PluginMonitoringHost extends CommonDBTM
 
         }
         if ($state == 'WARNING'
-            && $event == '') {
+            and $event == '') {
             if ($acknowledge) {
                 $shortstate = 'yellowblue';
             } else {

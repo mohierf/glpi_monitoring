@@ -1,4 +1,5 @@
 <?php
+
 /**
  *    ------------------------------------------------------------------------
  *    Copyright notice:
@@ -29,33 +30,14 @@
  *
  */
 
-// ----------------------------------------------------------------------
-// Original Author of file: David DURIEUX
-// Purpose of file:
-// ----------------------------------------------------------------------
+include("../../../inc/includes.php");
 
-// Direct access to file
-if (strpos($_SERVER['PHP_SELF'],"updateWidgetServicescatalog.php")) {
-   include ("../../../inc/includes.php");
-   header("Content-Type: text/html; charset=UTF-8");
-   Html::header_nocache();
-}
-session_write_close();
+Session::checkRight("plugin_monitoring_command_fmwk", CREATE);
 
-if (!defined('GLPI_ROOT')) {
-   die("Can not acces directly to this file");
-}
+PluginMonitoringToolbox::logIfDebug("call sendRestartArbiter, tag: ". $_GET["tag"] .", action: ". $_GET["action"]);
+$pmShinkenwebservice = new PluginMonitoringShinkenwebservice();
+$pmShinkenwebservice->sendRestartArbiter(true,
+    isset($_GET["tag"]) ? $_GET["tag"] : null,
+    isset($_GET["action"]) ? $_GET["action"] : 'restart');
 
-Session::checkLoginUser();
-
-if (! isset($_SESSION['plugin_monitoring_reduced_interface'])) {
-   $_SESSION['plugin_monitoring_reduced_interface'] = false;
-}
-
-$pmServicescatalog = new PluginMonitoringServicescatalog();
-$pmServicescatalog->showWidgetFrame(
-        $_GET['id'],
-        $_SESSION['plugin_monitoring_reduced_interface'],
-        isset($_GET['is_minemap']) ? $_GET['is_minemap'] : false);
-
-?>
+Html::back();

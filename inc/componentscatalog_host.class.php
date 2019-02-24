@@ -283,8 +283,6 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
      */
     static function unlinkComponents($cc_host)
     {
-        global $PM_CONFIG;
-
         PluginMonitoringToolbox::log("unlinkComponents: " . print_r($cc_host, true));
 
         // Get related host services
@@ -333,6 +331,8 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
     function post_purgeItem()
     {
         global $DB;
+
+        PluginMonitoringToolbox::log("unlinkComponents: " . print_r($cc_host, true));
 
         $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
          WHERE `itemtype`='" . $this->fields['itemtype'] . "'

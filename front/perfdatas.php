@@ -38,6 +38,6 @@ Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
     "monitoring", "display");
 
 
-Html::redirect($CFG_GLPI['root_doc'] . "/plugins/monitoring/front/status_services.php?perfdatas=1");
+Html::redirect($CFG_GLPI['root_doc'] . "/plugins/monitoring/front/service.php?perfdatas=1");
 
 Html::footer();

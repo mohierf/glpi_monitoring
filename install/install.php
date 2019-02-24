@@ -36,6 +36,24 @@ class PluginMonitoringInstall
     protected $migration;
 
     /**
+     * From the very smart form_creator plugin upgrade process! Thanks ;)
+     * ---------------
+     * array of upgrade steps key => value
+     * key   is the version to upgrade from
+     * value is the version to upgrade to
+     *
+     * Exemple: an entry '2.0' => '2.1' tells that versions 2.0
+     * are upgradable to 2.1
+     *
+     * The key version is located in the glpi_plugin_configs table
+     *
+     * @var array
+     */
+    private $upgradeSteps = [
+        '9_3_0_1_dev'    => '9.3+0.1'
+    ];
+
+    /**
      * Install the plugin
      *
      * @param Migration $migration
@@ -45,7 +63,7 @@ class PluginMonitoringInstall
     public function install(Migration $migration)
     {
         $this->migration = $migration;
-        $_SESSION['plugin_monitoring_installation'] = true;
+        $_SESSION['plugin_monitoring']['installation'] = true;
 
         // Drop existing tables if some exist
         $this->dropTables();
@@ -63,9 +81,10 @@ class PluginMonitoringInstall
 
         $this->createDefaultDisplayPreferences();
 
-        Config::setConfigurationValues('monitoring', ['schema_version' => PLUGIN_MONITORING_VERSION]);
+        Config::setConfigurationValues('monitoring', [
+            'schema_version' => PLUGIN_MONITORING_VERSION]);
 
-        unset($_SESSION['plugin_monitoring_installation']);
+        unset($_SESSION['plugin_monitoring']['installation']);
 
         return true;
     }
@@ -75,14 +94,82 @@ class PluginMonitoringInstall
      *
      * @param Migration $migration
      *
+     * @return bool
+     */
+    public function upgrade(Migration $migration) {
+        $_SESSION['plugin_monitoring']['installation'] = true;
+
+        $this->migration = $migration;
+        if (isset($_SESSION['plugin_monitoring']['cli'])
+            and $_SESSION['plugin_monitoring']['cli'] == 'force-upgrade') {
+            // Might return false
+            $fromSchemaVersion = array_search(PLUGIN_MONITORING_VERSION, $this->upgradeSteps);
+        } else {
+            $fromSchemaVersion = $this->getSchemaVersion();
+        }
+        $version = str_replace('+', '_', $fromSchemaVersion);
+        $version = str_replace('.', '_', $version);
+        $version = str_replace('-', '_', $version);
+
+        $this->migration->displayMessage("From: $version");
+        while ($fromSchemaVersion && isset($this->upgradeSteps[$version])) {
+            $this->upgradeOneStep($this->upgradeSteps[$version]);
+            $fromSchemaVersion = $this->upgradeSteps[$fromSchemaVersion];
+        }
+
+        $this->migration->executeMigration();
+
+        // if the schema contains new tables
+        $this->installSchema();
+        $this->createDefaultDisplayPreferences();
+        $this->createCronTasks();
+        Config::setConfigurationValues('monitoring', [
+            'schema_version' => PLUGIN_MONITORING_VERSION]);
+
+        unset($_SESSION['plugin_monitoring']['installation']);
+
+        return true;
+    }
+
+    /**
+     * Proceed to upgrade of the plugin to the given version
+     *
+     * @param string $toVersion
+     */
+    protected function upgradeOneStep($toVersion) {
+        ini_set("max_execution_time", "0");
+        ini_set("memory_limit", "-1");
+
+        $this->migration->displayMessage("Request an upgrade to version: " . $toVersion);
+        $toVersion = str_replace('+', '_', $toVersion);
+        $toVersion = str_replace('.', '_', $toVersion);
+        $toVersion = str_replace('-', '_', $toVersion);
+        $includeFile = __DIR__ . "/upgrade_to_$toVersion.php";
+        $this->migration->displayMessage("Include file: ". $includeFile);
+        if (is_readable($includeFile) && is_file($includeFile)) {
+            include_once $includeFile;
+            $updateClass = "PluginFormcreatorUpgradeTo$toVersion";
+            $this->migration->addNewMessageArea("Upgrade to $toVersion");
+            $upgradeStep = new $updateClass();
+            $upgradeStep->upgrade($this->migration);
+            $this->migration->executeMigration();
+            $this->migration->displayMessage('Done');
+        }
+    }
+
+    /**
+     * Upgrade the plugin
+     *
+     * @param Migration $migration
+     *
      * @return boolean
      */
-    public function upgrade(Migration $migration)
+    public function upgrade_old(Migration $migration)
     {
         $this->migration = $migration;
         $fromSchemaVersion = $this->getSchemaVersion();
 
-        $_SESSION['plugin_monitoring_installation'] = true;
+        $_SESSION['plugin_monitoring']['installation'] = true;
 
         $this->installSchema();
 
@@ -91,6 +178,12 @@ class PluginMonitoringInstall
             case '0.0':
             case '1.0':
                 // Any schema version below or equal 1.0
+//                require_once(__DIR__ . '/update_0.0_1.0.php');
+//                plugin_alignak_update_1_0($this->migration);
+                break;
+
+            case '9.3+0.1-dev':
+                // From the very first installed version
 //                require_once(__DIR__ . '/update_0.0_1.0.php');
 //                plugin_alignak_update_1_0($this->migration);
                 break;
@@ -112,7 +205,7 @@ class PluginMonitoringInstall
         $this->createCronTasks();
         Config::setConfigurationValues('monitoring', ['schema_version' => PLUGIN_MONITORING_VERSION]);
 
-        unset($_SESSION['plugin_monitoring_installation']);
+        unset($_SESSION['plugin_monitoring']['installation']);
 
         return true;
     }
@@ -122,7 +215,7 @@ class PluginMonitoringInstall
      *
      * @return string|null
      */
-    protected function getSchemaVersion()
+    public function getSchemaVersion()
     {
         if ($this->isPluginInstalled()) {
             return $this->getSchemaVersionFromGlpiConfig();

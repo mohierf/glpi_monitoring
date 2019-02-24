@@ -65,6 +65,11 @@ class PluginMonitoringShinken extends CommonDBTM
             'gps' => '_GPS',
             // documents
             'documents' => '_DOCUMENTS',
+            // some interesting computer fields
+            'fields' => [
+                'id', 'entities_id', 'name', 'comment', 'serial', 'otherserial',
+                'contact', 'contactnum', 'date_creation', 'date_mod'
+            ]
         ],
         // Shinken configuration
         'shinken' => [
@@ -381,6 +386,10 @@ class PluginMonitoringShinken extends CommonDBTM
          CONCAT_WS('', `glpi_computers`.`comment`, `glpi_printers`.`comment`, `glpi_networkequipments`.`comment`) AS comment,
          `glpi_entities`.`id` AS entityId, `glpi_entities`.`name` AS entityName,
          `glpi_entities`.`completename` AS entityFullName,
+         `glpi_computertypes`.`name` AS typeName,
+         `glpi_computertypes`.`comment` AS typeComment,
+         `glpi_computermodels`.`name` AS modelName,
+         `glpi_computermodels`.`comment` AS modelComment,
          `glpi_locations`.`id`, `glpi_locations`.`completename` AS locationName,
          `glpi_locations`.`comment` AS locationComment, 
          `glpi_locations`.`latitude` AS lat, `glpi_locations`.`longitude` AS lng, `glpi_locations`.`altitude` AS alt,
@@ -404,6 +413,8 @@ class PluginMonitoringShinken extends CommonDBTM
                 OR (`glpi_networkequipments`.`entities_id` = `glpi_entities`.`id` AND `glpi_networkequipments`.`id` IS NOT NULL)
                 )
 
+         LEFT JOIN `glpi_computertypes` ON `glpi_computertypes`.`id` = `glpi_computers`.`computertypes_id`
+         LEFT JOIN `glpi_computermodels` ON `glpi_computermodels`.`id` = `glpi_computers`.`computermodels_id`
          LEFT JOIN `glpi_locations` ON `glpi_locations`.`id` = `glpi_computers`.`locations_id`
          LEFT JOIN `glpi_plugin_monitoring_services`
             ON `glpi_plugin_monitoring_services`.`plugin_monitoring_componentscatalogs_hosts_id`
@@ -423,6 +434,7 @@ class PluginMonitoringShinken extends CommonDBTM
                     PluginMonitoringToolbox::log('[ERROR] Host item not found: ' . print_r($data, true));
                     continue;
                 }
+                PluginMonitoringToolbox::log('[computer] : ' . print_r($my_host_item, true));
 
                 if (!$pmHost->getFromDBByCrit(['itemtype' => $data['itemtype'], 'items_id' => $data["items_id"]])) {
                     PluginMonitoringToolbox::log('[ERROR] Host monitoring item not found: ' . print_r($data, true));
@@ -488,6 +500,16 @@ class PluginMonitoringShinken extends CommonDBTM
                 */
 
                 // Host specific attributes
+                // Host customs variables - Glpi interesting fields
+                // Extra parameters
+                foreach (self::$default['glpi']['fields'] as $parm) {
+                    if (isset($my_host_item->fields[$parm])) {
+                        $this->set_value($my_host_item->fields[$parm], '_glpi_' . $parm, $my_host);
+                    }
+                }
+
+//                $this->set_value($my_host_item->fields[$parm], '_glpi_' . $parm, $my_host);
+
                 // Host customs variables
                 $this->set_value($pmHost->getID(), self::$default['glpi']['hostId'], $my_host);
                 if (isset(self::$default['glpi']['entityId'])) {
@@ -503,6 +525,14 @@ class PluginMonitoringShinken extends CommonDBTM
                     $this->set_value(strtolower(self::monitoringFilter($data['entityName'])),
                         self::$default['glpi']['entityName'], $my_host);
                 }
+                $this->set_value($data['entityId'], '_glpi_entity_id', $my_host);
+                $this->set_value($data['locationName'], '_glpi_location_name', $my_host);
+                $this->set_value($data['entityFullName'], '_glpi_entity_full_name', $my_host);
+                $this->set_value($data['entityName'], '_glpi_entity_name', $my_host);
+                $this->set_value($data['typeName'], '_glpi_type_name', $my_host);
+                $this->set_value($data['typeComment'], '_glpi_type_comment', $my_host);
+                $this->set_value($data['modelName'], '_glpi_model_name', $my_host);
+                $this->set_value($data['modelComment'], '_glpi_model_comment', $my_host);
 
                 // Dynamic setup of a default parameter ...
                 self::$default['glpi']['rootEntity'] = __('Root entity');
@@ -1057,11 +1087,11 @@ class PluginMonitoringShinken extends CommonDBTM
                 }
 
                 // Service component catalog host
-                $cc_host = $componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']];
                 if (!isset($componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']]) or empty($cc_host)) {
                     PluginMonitoringToolbox::log("[ERROR] service: {$data['id']} - no associated CC host !");
                     continue;
                 }
+                $cc_host = $componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']];
 
                 /* @var CommonDBTM $my_host_item */
                 $my_host_type = $cc_host['itemtype'];

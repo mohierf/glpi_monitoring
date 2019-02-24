@@ -33,8 +33,9 @@ include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring - dashboard', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-    "PluginMonitoringDashboard", "menu");
+Html::header(
+    __('Monitoring - dashboard', 'monitoring'),
+    '', 'config', 'pluginmonitoringmenu', 'dashboard');
 
 $pmMessage = new PluginMonitoringMessage();
 $pmMessage->getMessages();
@@ -45,15 +46,25 @@ $toDisplayArea = 0;
  * Redirect to the dashboard if acces is granted and no configuration is allowed
  */
 if (Session::haveRight("plugin_monitoring_dashboard", READ)
-    && !Session::haveRight("config", READ)) {
+    and !Session::haveRight("config", READ)) {
     Html::redirect($CFG_GLPI['root_doc'] . "/plugins/monitoring/front/dashboard.php");
 }
+
+echo "<table class='tab_cadre'>";
+echo "<tr>";
 
 /*
  * Add monitoring framework restart commands if necessary
  */
-if (Session::haveRight("plugin_monitoring_command_fmwk", READ)) {
+if (Session::haveRight("plugin_monitoring_command_fmwk", CREATE)) {
+    echo "<td style='width: 17%; padding: 1%;'>";
+
     PluginMonitoringDisplay::restartFramework();
+
+    echo "</td>";
+    echo "<td style='width: 77%; padding: 1%;'>";
+} else {
+    echo "<td style='width: 97%; padding: 1%;'>";
 }
 
 if (Session::haveRight("plugin_monitoring_dashboard", READ)) {
@@ -64,7 +75,6 @@ if (Session::haveRight("plugin_monitoring_dashboard", READ)) {
     echo '<tr class="tab_bg_1">';
     echo '<th class="center" height="40px">';
     echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/dashboard.php">' . __("Dashboard", "monitoring") . '</a>';
-    echo '&nbsp;&nbsp;&nbsp;<em>To be replaced with real views...</em>';
     echo '</th>';
     echo '</tr>';
     echo '</table>';
@@ -73,49 +83,49 @@ if (Session::haveRight("plugin_monitoring_dashboard", READ)) {
 }
 
 
-if (Session::haveRight("plugin_monitoring_displayview", READ)) {
-    $toDisplayArea++;
+//if (Session::haveRight("plugin_monitoring_displayview", READ)) {
+//    $toDisplayArea++;
+//
+//    echo '<table class="tab_cadre" style="width:100%; padding: 10px">';
+//
+//    echo '<tr class="tab_bg_1">';
+//    echo '<th colspan="6" height="15px" width="50%" style="border-bottom: 1px solid">';
+//    echo __('Monitoring views', 'monitoring');
+//    echo '</th>';
+//    echo '</tr>';
+//
+//    echo '<tr class="tab_bg_1">';
+//    echo '<th class="center" height="40px">';
+//    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/displayview.php">' . __("Views", "monitoring") . '</a>';
+//    echo '&nbsp;&nbsp;&nbsp;<em>To be replaced with real views...</em>';
+//    echo '</th>';
+//    echo '</tr>';
+//    echo '</table>';
+//
+//    echo '<br>';
+//}
 
-    echo '<table class="tab_cadre" style="width:100%; padding: 10px">';
 
-    echo '<tr class="tab_bg_1">';
-    echo '<th colspan="6" height="15px" width="50%" style="border-bottom: 1px solid">';
-    echo __('Monitoring views', 'monitoring');
-    echo '</th>';
-    echo '</tr>';
-
-    echo '<tr class="tab_bg_1">';
-    echo '<th class="center" height="40px">';
-    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/displayview.php">' . __("Views", "monitoring") . '</a>';
-    echo '&nbsp;&nbsp;&nbsp;<em>To be replaced with real views...</em>';
-    echo '</th>';
-    echo '</tr>';
-    echo '</table>';
-
-    echo '<br>';
-}
-
-
-if (Session::haveRight("plugin_monitoring_componentscatalog", READ)) {
-    $toDisplayArea++;
-
-    echo '<table class="tab_cadre" style="width:100%; padding: 10px">';
-
-    echo '<tr class="tab_bg_1">';
-    echo '<th class="center" height="40px">';
-    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/componentscatalog.php">' . __("Components catalogs", "monitoring") . '</a>';
-    echo '</th>';
-    echo '</tr>';
-
-    echo '<tr class="tab_bg_1">';
-    echo '<th class="center" height="40px">';
-    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/hosttemplate.php">' . __("Hosts templates", "monitoring") . '</a>';
-    echo '</th>';
-    echo '</tr>';
-    echo '</table>';
-
-    echo '<br>';
-}
+//if (Session::haveRight("plugin_monitoring_componentscatalog", READ)) {
+//    $toDisplayArea++;
+//
+//    echo '<table class="tab_cadre" style="width:100%; padding: 10px">';
+//
+//    echo '<tr class="tab_bg_1">';
+//    echo '<th class="center" height="40px">';
+//    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/componentscatalog.php">' . __("Components catalogs", "monitoring") . '</a>';
+//    echo '</th>';
+//    echo '</tr>';
+//
+//    echo '<tr class="tab_bg_1">';
+//    echo '<th class="center" height="40px">';
+//    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/hosttemplate.php">' . __("Hosts templates", "monitoring") . '</a>';
+//    echo '</th>';
+//    echo '</tr>';
+//    echo '</table>';
+//
+//    echo '<br>';
+//}
 
 
 if (Session::haveRight("config", READ)) {
@@ -124,13 +134,16 @@ if (Session::haveRight("config", READ)) {
     echo '<table class="tab_cadre" style="width:100%; padding: 10px">';
 
     echo '<tr class="tab_bg_1">';
-    echo '<th colspan="6" height="15px" width="50%" style="border-bottom: 1px solid">';
+    echo '<th colspan="6" height="30px" width="50%" style="border-bottom: 1px solid">';
     echo __('Monitoring items', 'monitoring');
     echo '</th>';
     echo '</tr>';
 
     echo '<tr class="tab_bg_1">';
-    echo '<th colspan="3" height="30px" width="50%" style="border-bottom: 1px solid">';
+    echo '<th colspan="1" height="20px" width="15%" style="border-bottom: 1px solid">';
+    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/componentscatalog.php">' . __("Components catalogs", "monitoring") . '</a>';
+    echo '</th>';
+    echo '<th colspan="2" height="20px" width="35%" style="border-bottom: 1px solid">';
     echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/component.php">' . __("Components", "monitoring") . '</a>';
     echo '</th>';
 
@@ -193,11 +206,14 @@ if (Session::haveRight("config", READ)) {
 
     echo '</table>';
 }
+echo "</td>";
+echo "</tr>";
+echo "</table>";
 
 if ($toDisplayArea <= 0) {
-    echo "<table class='tab_cadre' width='950'>";
-    echo "<tr class='tab_bg_1'>";
-    echo "<th height='80'>";
+    echo "<table class='tab_cadre'>";
+    echo "<tr class=''>";
+    echo "<th style='height:80px'>";
     echo __('Sorry, your profile does not allow any views in the Monitoring', 'monitoring');
     echo "</th>";
     echo "</tr>";

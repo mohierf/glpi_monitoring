@@ -68,17 +68,8 @@ class PluginMonitoringHostaddress extends CommonDBTM
     {
         global $DB, $CFG_GLPI;
 
-        $query = "SELECT * FROM `" . $this->getTable() . "`
-         WHERE `items_id`='" . $items_id . "'
-            AND `itemtype`='" . $itemtype . "'
-         LIMIT 1";
-
-        $result = $DB->query($query);
-        if ($DB->numrows($result) == '0') {
+        if (! $this->getFromDBByCrit(['itemtype' => $itemtype, 'items_id' => $items_id])) {
             $this->getEmpty();
-        } else {
-            $data = $DB->fetch_assoc($result);
-            $this->getFromDB($data['id']);
         }
 
         $this->showFormHeader($options);
@@ -180,23 +171,19 @@ class PluginMonitoringHostaddress extends CommonDBTM
         $networkPort = new NetworkPort();
         $networkName = new NetworkName();
         $iPAddress = new IPAddress();
-        $pmHostaddress = new PluginMonitoringHostaddress();
 
         $ip = '';
         $networkports_id = 0;
 
-        $query = "SELECT * FROM `" . $pmHostaddress->getTable() . "` 
-        WHERE `items_id`='" . $items_id . "' AND `itemtype`='" . $itemtype . "' LIMIT 1";
-        if ($result = $DB->query($query)) {
-            if ($DB->numrows($result) == '1') {
-                $data = $DB->fetch_assoc($result);
+        $pm_HostAddress = new self();
+        if ($pm_HostAddress->getFromDBByCrit(['itemtype' => $itemtype, 'items_id' => $items_id])) {
+            $data = $pm_HostAddress->fields;
 
-                if ($data['ipaddresses_id'] > 0
-                    and $iPAddress->getFromDB($data['ipaddresses_id'])) {
-                    return $iPAddress->fields['name'];
-                } else {
-                    $networkports_id = $data['networkports_id'];
-                }
+            if ($data['ipaddresses_id'] > 0
+                and $iPAddress->getFromDB($data['ipaddresses_id'])) {
+                return $iPAddress->fields['name'];
+            } else {
+                $networkports_id = $data['networkports_id'];
             }
         }
         if (empty($ip)) {

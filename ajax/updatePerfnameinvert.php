@@ -51,10 +51,10 @@ $pmComponent = new PluginMonitoringComponent();
 
 $sPerfname = explode(',', $_GET['perfname']);
 $dbPerfname = array();
-$_SESSION['glpi_plugin_monitoring']['perfnameinvert'][$_GET['components_id']] = array();
+$_SESSION['plugin_monitoring']['perfnameinvert'][$_GET['components_id']] = array();
 foreach ($sPerfname as $key=>$value) {
    $dbPerfname[$value] = 1;
-   $_SESSION['glpi_plugin_monitoring']['perfnameinvert'][$_GET['components_id']][$value] = "checked";
+   $_SESSION['plugin_monitoring']['perfnameinvert'][$_GET['components_id']][$value] = "checked";
 }
 if ($_GET['db']) {
    $input = array(

@@ -34,35 +34,23 @@
  * @param $version
  * @return string
  */
-function pluginMonitoringGetCurrentVersion($version)
+function pluginMonitoringGetCurrentVersion()
 {
     global $DB;
 
+    $version = '';
     if (!$DB->tableExists("glpi_plugin_monitoring_configs")) {
         // Not yet installed !
         $version = '0';
-    } else if (!$DB->fieldExists("glpi_plugin_monitoring_configs", "timezones")) {
-        // Old versions...
-        $version = "old";
-    } else if (!$DB->fieldExists("glpi_plugin_monitoring_configs", "version")) {
-        $version = "0.80+1.0";
     } else if ($DB->fieldExists("glpi_plugin_monitoring_configs", "version")) {
         $query = "SELECT `version` FROM `glpi_plugin_monitoring_configs` WHERE `id` = '1'";
         $result = $DB->query($query);
         if ($DB->numrows($result) > 0) {
             $data = $DB->fetch_assoc($result);
-            if (is_null($data['version'])
-                || $data['version'] == '') {
-                $data['version'] = '0.80+1.0';
+            if (!is_null($data['version']) and !empty($data['version'])) {
+                $version = $data['version'];
             }
-            if ($data['version'] != $version) {
-                return $data['version'];
-            }
-        } else {
-            return "0.80+1.0";
         }
-    } else {
-        return $version;
     }
     return $version;
 }

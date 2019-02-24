@@ -48,8 +48,8 @@ if (!defined('GLPI_ROOT')) {
 
 Session::checkLoginUser();
 
-if (! isset($_SESSION['plugin_monitoring_reduced_interface'])) {
-   $_SESSION['plugin_monitoring_reduced_interface'] = false;
+if (! isset($_SESSION['plugin_monitoring']['reduced_interface'])) {
+   $_SESSION['plugin_monitoring']['reduced_interface'] = false;
 }
 
 //      echo "
@@ -84,7 +84,7 @@ if (! isset($_SESSION['plugin_monitoring_reduced_interface'])) {
 $pmComponentscatalog = new PluginMonitoringComponentscatalog();
 $pmComponentscatalog->showWidgetFrame(
         $_GET['id'],
-        $_SESSION['plugin_monitoring_reduced_interface'],
+        $_SESSION['plugin_monitoring']['reduced_interface'],
         $_GET['is_minemap']);
 
 ?>
