@@ -6,7 +6,7 @@
  *    ------------------------------------------------------------------------
  *    Plugin Monitoring for GLPI
  *    Copyright (C) 2011-2016 by the Plugin Monitoring for GLPI Development Team.
- *    Copyright (C) 2019 by the Alignak Development Team.
+ *    Copyright (C) 2019 by Frédéric Mohier.
  *    ------------------------------------------------------------------------
  *
  *    LICENSE
