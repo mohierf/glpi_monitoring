@@ -52,13 +52,11 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
      */
     function showComponents($componentscatalogs_id)
     {
-        global $DB, $PM_CONFIG;
-
         $can_edit = $this->canUpdate();
 
         if ($can_edit) {
             // Display the component adding section
-            $this->addComponent($componentscatalogs_id);
+            $this->showAddComponent($componentscatalogs_id);
         }
 
         $pmComponent = new PluginMonitoringComponent();
@@ -145,10 +143,8 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
     }
 
 
-    function addComponent($componentscatalogs_id)
+    function showAddComponent($componentscatalogs_id)
     {
-        global $PM_CONFIG;
-
         if (!Session::haveRight("plugin_monitoring_componentscatalog", UPDATE)) {
             return;
         }
@@ -167,10 +163,11 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
         echo '<tr>';
         echo '<td colspan="2">';
         echo __('Add a new component', 'monitoring') . "&nbsp;:";
-        echo '<input type="hidden" name="plugin_monitoring_componentscatalogs_id" value="' . $componentscatalogs_id . "'/>";
+        echo '<input type="hidden" name="plugin_monitoring_componentscatalogs_id" value="' . $componentscatalogs_id . '"/>';
         echo '</td>';
         echo '<td colspan="2">';
-        Dropdown::show("PluginMonitoringComponent", ['name' => 'plugin_monitoring_components_id', 'used' => $used]);
+        Dropdown::show("PluginMonitoringComponent", [
+            'name' => 'plugin_monitoring_components_id', 'used' => $used]);
         echo '</td>';
         echo '</tr>';
 
@@ -180,99 +177,127 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
 
     function addComponentToItems($componentscatalogs_id, $components_id)
     {
-        global $DB;
+        PluginMonitoringToolbox::logIfDebug("addComponentToItems, CC: $componentscatalogs_id, component: $components_id");
 
-        $pmService = new PluginMonitoringService();
-        $pmComponentscatalog_rule = new PluginMonitoringComponentscatalog_rule();
-        $pmNetworkport = new PluginMonitoringNetworkport();
-
-        $pluginMonitoringNetworkport = 0;
-        $query = "SELECT * FROM `" . $pmComponentscatalog_rule->getTable() . "` 
-        WHERE `itemtype`='PluginMonitoringNetworkport' 
-        AND `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "' 
-        LIMIT 1";
-
-        $result = $DB->query($query);
-        if ($DB->numrows($result) > 0) {
-            $pluginMonitoringNetworkport = 1;
+        $pm_CC = new PluginMonitoringComponentscatalog();
+        if (!$pm_CC->getFromDB($componentscatalogs_id)) {
+            PluginMonitoringToolbox::log("addComponentToItems, not found CC: $componentscatalogs_id");
+            return;
         }
 
-        $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts` 
-        WHERE `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'";
+        $pmComponent = new PluginMonitoringComponent();
+        if (!$pmComponent->getFromDB($components_id)) {
+            PluginMonitoringToolbox::log("addComponentToItems, not found component: $components_id");
+            return;
+        }
 
-        $result = $DB->query($query);
-        while ($data = $DB->fetch_array($result)) {
+//        // Some network ports or not?
+//        $networkports = false;
+//        $pmComponentscatalog_rule = new PluginMonitoringComponentscatalog_rule();
+//        $rule = $pmComponentscatalog_rule->find(
+//            "`itemtype`='PluginMonitoringNetworkport' AND
+//            `plugin_monitoring_componentscatalogs_id`='$componentscatalogs_id'", "", 1);
+//        if (count($rule) > 0) {
+//            $networkports = true;
+//        }
+
+        $pmComponentscatalog_hosts = new PluginMonitoringComponentscatalog_Host();
+        $hosts = $pmComponentscatalog_hosts->find("`plugin_monitoring_componentscatalogs_id`='$componentscatalogs_id'");
+        foreach($hosts as $cc_host) {
             /* @var CommonDBTM $item */
-            $itemtype = $data['itemtype'];
+            $itemtype = $cc_host['itemtype'];
             $item = new $itemtype();
-            $item->getFromDB($data['items_id']);
-            if ($pluginMonitoringNetworkport == '0') {
+            $item->getFromDB($cc_host['items_id']);
+            $host_name = PluginMonitoringShinken::monitoringFilter($item->getName());
+            PluginMonitoringToolbox::logIfDebug("addComponentToItems, host: " . $host_name);
+
+            // Get all known services for this host
+            $existing = false;
+            $pmService = new PluginMonitoringService();
+            $services = $pmService->find(
+                "`plugin_monitoring_components_id`='$components_id' 
+                AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $cc_host['id'] . "'");
+            foreach($services as $service) {
+                if ($service['service_description'] == $pmComponent->fields['service_description']) {
+                    PluginMonitoringToolbox::log("- still known service: $host_name/" . $service['service_description']);
+                    $existing = true;
+                }
+            }
+            if (!$existing) {
                 $input = [];
                 $input['entities_id'] = $item->fields['entities_id'];
-                $input['plugin_monitoring_componentscatalogs_hosts_id'] = $data['id'];
+                $input['plugin_monitoring_componentscatalogs_hosts_id'] = $cc_host['id'];
                 $input['plugin_monitoring_components_id'] = $components_id;
-                $input['name'] = Dropdown::getDropdownName("glpi_plugin_monitoring_components", $components_id);
-                // TODO: initial states
-                $input['state'] = 'WARNING';
-                $input['state_type'] = 'HARD';
+                $input['name'] = $pmComponent->fields['name'];
+                $input['service_description'] = $pmComponent->fields['description'];
+                $input['host_name'] = $host_name;
+
+                $input['state'] = PluginMonitoringShinken::INITIAL_SERVICE_STATE;
+                $input['state_type'] = PluginMonitoringShinken::INITIAL_SERVICE_STATE_TYPE;
                 $pmService->add($input);
-            } else if ($pluginMonitoringNetworkport == '1') {
-                $a_services_created = [];
-                $querys = "SELECT * FROM `glpi_plugin_monitoring_services`
-                WHERE `plugin_monitoring_components_id`='" . $components_id . "'
-                AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $data['id'] . "'";
 
-                $results = $DB->query($querys);
-                while ($datas = $DB->fetch_array($results)) {
-                    $a_services_created[$datas['networkports_id']] = $datas['id'];
-                }
-
-                $a_ports = $pmNetworkport->find("`itemtype`='" . $data['itemtype'] . "' 
-                AND `items_id`='" . $data['items_id'] . "'");
-                foreach ($a_ports as $datap) {
-                    if (isset($a_services_created[$datap["id"]])) {
-                        unset($a_services_created[$datap["id"]]);
-                    } else {
-                        $input = [];
-                        $input['networkports_id'] = $datap['networkports_id'];
-                        $input['entities_id'] = $item->fields['entities_id'];
-                        $input['plugin_monitoring_componentscatalogs_hosts_id'] = $data['id'];
-                        $input['plugin_monitoring_components_id'] = $components_id;
-                        $input['name'] = Dropdown::getDropdownName("glpi_plugin_monitoring_components", $components_id);
-                        // TODO: initial states
-                        $input['state'] = 'WARNING';
-                        $input['state_type'] = 'HARD';
-                        $pmService->add($input);
-                    }
-                }
-                foreach ($a_services_created as $id) {
-                    $_SESSION['plugin_monitoring_cc_host'] = $data;
-                    $pmService->delete(['id' => $id]);
-                }
+                PluginMonitoringToolbox::log("- added a service: " . $input['host_name'] . "/" . $input['service_description']);
+            } else {
+                // Update anything?
+//                PluginMonitoringToolbox::log("- service is still declared: " . $service['service_description']);
             }
         }
     }
 
 
-    function removeComponentToItems($componentscatalogs_id, $components_id)
+    function removeComponentFromItems($componentscatalogs_id, $components_id)
     {
-        global $DB;
+        PluginMonitoringToolbox::log("removeComponentFromItems, CC: $componentscatalogs_id, component: $components_id");
 
-        $pmService = new PluginMonitoringService();
+        $pm_CC = new PluginMonitoringComponentscatalog();
+        if (!$pm_CC->getFromDB($componentscatalogs_id)) {
+            PluginMonitoringToolbox::log("addComponentToItems, not found CC: $componentscatalogs_id");
+            return;
+        }
 
-        $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-         WHERE `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'";
-        $result = $DB->query($query);
-        while ($data = $DB->fetch_array($result)) {
-            $querys = "SELECT * FROM `glpi_plugin_monitoring_services`
-            WHERE `plugin_monitoring_componentscatalogs_hosts_id`='" . $data['id'] . "'
-               AND `plugin_monitoring_components_id`='" . $components_id . "'";
-            $results = $DB->query($querys);
-            while ($datas = $DB->fetch_array($results)) {
-                $_SESSION['plugin_monitoring_cc_host'] = $data;
-                $pmService->delete(['id' => $datas['id']]);
+        $pmComponent = new PluginMonitoringComponent();
+        if (!$pmComponent->getFromDB($components_id)) {
+            PluginMonitoringToolbox::log("addComponentToItems, not found component: $components_id");
+            return;
+        }
+
+        $pmComponentscatalog_hosts = new PluginMonitoringComponentscatalog_Host();
+        $hosts = $pmComponentscatalog_hosts->find("`plugin_monitoring_componentscatalogs_id`='$componentscatalogs_id'");
+        foreach($hosts as $cc_host) {
+            /* @var CommonDBTM $item */
+            $itemtype = $cc_host['itemtype'];
+            $item = new $itemtype();
+            $item->getFromDB($cc_host['items_id']);
+            PluginMonitoringToolbox::log("addComponentToItems, host: " . $item->getName());
+
+            // Get all known services for this host
+            $pmService = new PluginMonitoringService();
+            $services = $pmService->find(
+                "`plugin_monitoring_components_id`='$components_id' 
+                AND `plugin_monitoring_componentscatalogs_hosts_id`='" . $cc_host['id'] . "'");
+            foreach($services as $service) {
+                PluginMonitoringToolbox::log("- deleting service: " . $service->fields['service_description']);
+                $_SESSION['plugin_monitoring']['cc_host'] = $cc_host;
+                $pmService->delete(['id' => $pmService->getID()]);
             }
         }
+//
+//        $pmService = new PluginMonitoringService();
+//
+//        $query = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
+//         WHERE `plugin_monitoring_componentscatalogs_id`='" . $componentscatalogs_id . "'";
+//
+//        $result = $DB->query($query);
+//        while ($data = $DB->fetch_array($result)) {
+//            $querys = "SELECT * FROM `glpi_plugin_monitoring_services`
+//            WHERE `plugin_monitoring_componentscatalogs_hosts_id`='" . $data['id'] . "'
+//               AND `plugin_monitoring_components_id`='" . $components_id . "'";
+//            $results = $DB->query($querys);
+//            while ($datas = $DB->fetch_array($results)) {
+//                $_SESSION['plugin_monitoring']['cc_host'] = $data;
+//                $pmService->delete(['id' => $datas['id']]);
+//            }
+//        }
     }
 
 

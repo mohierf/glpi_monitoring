@@ -79,11 +79,11 @@ class PluginMonitoringMessage extends CommonDBTM
         // Get change counters since the last restart
         $dbu = new DbUtils();
         $nb_deleted = $dbu->countElementsInTable(PluginMonitoringLog::getTable(),
-            ['WHERE' => "`id` > '" . $id_restart . "' AND `action`='delete'"]);
+            ['WHERE' => "`id` > '$id_restart' AND `action`='delete'"]);
         $nb_added = $dbu->countElementsInTable(PluginMonitoringLog::getTable(),
-            ['WHERE' => "`id` > '" . $id_restart . "' AND `action`='add'"]);
+            ['WHERE' => "`id` > '$id_restart' AND `action`='add'"]);
         $nb_updated = $dbu->countElementsInTable(PluginMonitoringLog::getTable(),
-            ['WHERE' => "`id` > '" . $id_restart . "' AND `action`='update'"]);
+            ['WHERE' => "`id` > '$id_restart' AND `action`='update'"]);
 
         if ($nb_deleted > 0 OR $nb_added > 0 OR $nb_updated > 0) {
             $input .= __('The configuration changed', 'monitoring') . "<br/>";

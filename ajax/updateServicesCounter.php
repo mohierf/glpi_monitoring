@@ -1,5 +1,4 @@
 <?php
-
 /**
  *    ------------------------------------------------------------------------
  *    Copyright notice:
@@ -30,31 +29,24 @@
  *
  */
 
-include("../../../inc/includes.php");
+// ----------------------------------------------------------------------
+// Original Author of file: David DURIEUX
+// Purpose of file:
+// ----------------------------------------------------------------------
 
-Session::checkRight("plugin_monitoring_componentscatalog", READ);
+// Direct access to file
+if (strpos($_SERVER['PHP_SELF'], "updateServicesCounter.php")) {
+    include("../../../inc/includes.php");
+    header("Content-Type: text/html; charset=UTF-8");
+    Html::header_nocache();
+}
+session_write_close();
 
-$pmComponentscatalog_Component = new PluginMonitoringComponentscatalog_Component();
-
-PluginMonitoringToolbox::log("CC_component_form, POST: " . print_r($_POST, true));
-
-if (isset ($_POST["add"])) {
-    $pmComponentscatalog_Component->add($_POST);
-    $pmComponentscatalog_Component->addComponentToItems(
-        $_POST['plugin_monitoring_componentscatalogs_id'],
-        $_POST['plugin_monitoring_components_id']);
-    Html::back();
-} else if (isset($_POST["purge"])) {
-    foreach ($_POST["item"] as $id => $num) {
-        $pmComponentscatalog_Component->getFromDB($id);
-
-        $pmComponentscatalog_Component->delete(['id' => $id]);
-        $pmComponentscatalog_Component->removeComponentFromItems(
-            $pmComponentscatalog_Component->fields['plugin_monitoring_componentscatalogs_id'],
-            $pmComponentscatalog_Component->fields['plugin_monitoring_components_id']);
-
-    }
-    Html::back();
+if (!defined('GLPI_ROOT')) {
+    die("Can not acces directly to this file");
 }
 
-Html::footer();
+Session::checkLoginUser();
+
+$pmDisplay = new PluginMonitoringDisplay();
+$pmDisplay->displayServicesCounters($_POST['type']);

@@ -65,13 +65,15 @@ class PluginMonitoringLog extends CommonDBTM
     }
 
 
-    static function logEvent($event, $value, $who='') {
+    static function logEvent($event, $value, $who='', $itemtype='', $items_id='') {
 
-        // Log Shinken restart event with Tag information ...
+        // Log an event with Tag information ...
         // Should be moved to the webservice caller function ???
         $pmLog = new self();
         $pmLog->add([
-            'user_name' => !empty($who) ? $who : (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'Framework'),
+            'itemtype' => $itemtype,
+            'items_id' => $items_id,
+            'user_name' => !empty($who) ? $who : $_SESSION["glpiname"],
             'date_mod' => date("Y-m-d H:i:s"),
             'action' => $event,
             'value' => $value

@@ -280,7 +280,7 @@ class PluginMonitoringUnavailability extends CommonDBTM
 //   $time = explode(' ', $time);
 //   $time = $time[1] + $time[0];
 //   $start = $time;
-                $query2 = "SELECT `id`,`state`,`date`,`event`
+                $query2 = "SELECT `id`,`state`,`date`,`output`
                FROM `glpi_plugin_monitoring_serviceevents`
                USE INDEX (unavailability)
                      WHERE `unavailability` IN (0, 1)
@@ -305,7 +305,7 @@ class PluginMonitoringUnavailability extends CommonDBTM
                     $pmUnavailability->checkState($data2['state'],
                         $data2['date'],
                         $data['id'],
-                        $DB->escape($data2['event']));
+                        $DB->escape($data2['output']));
 
                 }
                 $pmUnavailabilityState->setLastID($data['id'], $serviceevents_id);

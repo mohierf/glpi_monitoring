@@ -276,6 +276,7 @@ function plugin_monitoring_MassiveActionsProcess($data)
 }
 
 
+/*
 function plugin_monitoring_addSelect($type, $id, $num)
 {
     if (in_array($type, ['PluginMonitoringService', 'PluginMonitoringHost'])) {
@@ -298,6 +299,7 @@ function plugin_monitoring_addSelect($type, $id, $num)
 
     return "";
 }
+*/
 
 
 function plugin_monitoring_forceGroupBy($type)
@@ -518,7 +520,7 @@ function plugin_monitoring_addDefaultWhere($type)
     return "";
 }
 
-
+/*
 function plugin_monitoring_addWhere($link, $nott, $type, $id, $val)
 {
     PluginMonitoringToolbox::log("addWhere: $link, type: $type, id: $id, val: $val");
@@ -550,6 +552,7 @@ function plugin_monitoring_addWhere($link, $nott, $type, $id, $val)
 
     return "";
 }
+*/
 
 /*
  * Web services registering

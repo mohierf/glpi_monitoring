@@ -206,24 +206,30 @@ class PluginMonitoringTag extends CommonDropdown
     }
 
 
-    function getUrl($tag)
+    function getUrl($tag='')
     {
-        if ($this->getFromDBByCrit(['tag' => $tag])) {
+        if (!empty($tag)) {
+            if ($this->getFromDBByCrit(['tag' => $tag])) {
+                return $this->getUrl();
+            }
+        } else {
             if (empty($this->getField('url'))) {
                 return "http://" . $this->getField('tag') . ':7770';
             }
+            return $this->getField('url');
         }
         return '';
     }
 
 
-    function getAuth($tag)
+    function getAuth($tag='')
     {
-
-        $a_tags = $this->find("`tag`='" . $tag . "'", '', 1);
-        if (count($a_tags) == 1) {
-            $a_tag = current($a_tags);
-            return $a_tag['username'] . ":" . $a_tag['password'];
+        if (!empty($tag)) {
+            if ($this->getFromDBByCrit(['tag' => $tag])) {
+                return $this->getAuth();
+            }
+        } else {
+            return $this->fields['username'] . ":" . $this->fields['password'];
         }
         return '';
     }

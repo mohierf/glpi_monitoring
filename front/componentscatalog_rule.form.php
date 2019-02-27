@@ -37,6 +37,9 @@ Session::checkRight("plugin_monitoring_componentscatalog", READ);
 Html::header(__('Monitoring - components catalogs', 'monitoring'),
     "", "config", "pluginmonitoringmenu", "componentscatalog");
 
+PluginMonitoringToolbox::logIfDebug("CC_rule_form, POST: " . print_r($_POST, true));
+PluginMonitoringToolbox::logIfDebug("CC_rule_form, GET: " . print_r($_GET, true));
+
 if (isset($_POST['itemtypen'])) {
    $_POST['itemtype'] = $_POST['itemtypen'];
 }
@@ -136,6 +139,6 @@ if (isset($_POST['name'])) {
    Html::redirect($_SERVER['REQUEST_URI']);
 }
 
-$pmComponentscatalog_rule->addRule();
+$pmComponentscatalog_rule->showRuleSearch();
 
 Html::footer();

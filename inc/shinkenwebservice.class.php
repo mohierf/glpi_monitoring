@@ -51,7 +51,7 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
         $pmTag = new PluginMonitoringTag();
         $pmService = new PluginMonitoringService();
         $pmService->getFromDB($service_id);
-        $service_description = $pmService->getName(array('shinken' => '1'));
+        $service_description = $pmService->getName(['monitoring' => '1']);
         $pmHost = new PluginMonitoringHost();
         $pmHost->getFromDB(($host_id == -1) ? $pmService->getHostID() : $host_id);
 //        $hostname = $pmHost->getName(true);
@@ -70,13 +70,9 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
             // ... one service of the host.
             $tag = PluginMonitoringEntity::getTagByEntities($pmHost->getEntityID());
         }
-        $ip = $pmTag->getIP($tag);
-        $auth = $pmTag->getAuth($tag);
-        $port = $pmTag->getPort($tag);
 
-        $url = 'http://' . $ip . ':' . $port . '/';
         $action = 'acknowledge';
-        $a_fields = array(
+        $a_fields = [
             'action' => empty($operation) ? 'add' : $operation,
             'host_name' => $hostname,
             'author' => $author,
@@ -86,9 +82,9 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
             'sticky' => $sticky,
             'notify' => $notify,
             'persistent' => $persistent
-        );
+        ];
 
-        return $this->sendCommand($url, $action, $a_fields, '', $auth);
+        return $this->sendCommand($pmTag, $action, $a_fields, '');
     }
 
 
@@ -101,11 +97,11 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
         $pmTag = new PluginMonitoringTag();
         $pmService = new PluginMonitoringService();
         $pmService->getFromDB($service_id);
-        $service_description = $pmService->getName(array('shinken' => '1'));
-//        $pmHost = new PluginMonitoringHost();
-//        $pmHost->getFromDB(($host_id == -1) ? $pmService->getHostID() : $host_id);
-//        $hostname = $pmHost->getName(true);
-        $hostname = $pmService->getHostName();
+        $service_description = $pmService->getName(['monitoring' => '1']);
+        $pmHost = new PluginMonitoringHost();
+        $pmHost->getFromDB(($host_id == -1) ? $pmService->getHostID() : $host_id);
+        $hostname = $pmHost->getName(true);
+//        $hostname = $pmService->getHostName();
 
         // Downtime an host ...
 //      $acknowledgeServiceOnly = true;
@@ -117,13 +113,9 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
             // ... one service of the host.
             $tag = PluginMonitoringEntity::getTagByEntities($pmHost->getEntityID());
         }
-        $ip = $pmTag->getIP($tag);
-        $auth = $pmTag->getAuth($tag);
-        $port = $pmTag->getPort($tag);
 
-        $url = 'http://' . $ip . ':' . $port . '/';
         $action = 'downtime';
-        $a_fields = array(
+        $a_fields = [
             'action' => empty($operation) ? 'add' : $operation,
             'host_name' => $hostname,
             'service_description' => $service_description,
@@ -134,10 +126,10 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
             'end_time' => PluginMonitoringServiceevent::convert_datetime_timestamp($end_time),
             'trigger_id' => '0',
             'duration' => $duration
-        );
+        ];
 
         // Send downtime command ...
-        return $this->sendCommand($url, $action, $a_fields, '', $auth);
+        return $this->sendCommand($pmTag, $action, $a_fields, '');
     }
 
 
@@ -153,62 +145,45 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
             return;
         }
 
-        if (!empty($tag)) {
-            $pmTag->getFromDB($tag);
-
-            PluginMonitoringToolbox::log("sendRestartArbiter, tag specified: " . $pmTag->fields['tag'] . "\n");
-            $url = 'http://' . $pmTag->fields['ip'] . ':' . $pmTag->fields['port'] . '/';
-            PluginMonitoringToolbox::log("sendRestartArbiter, shinken url: $url\n");
-
-            $auth = $pmTag->getAuth($pmTag->fields['tag']);
-            if ($this->sendCommand($url, $command, array(), '', $auth)) {
-                PluginMonitoringToolbox::log("sendRestartArbiter, command sent to shinken\n");
-                $input = array();
-                $input['user_name'] = $_SESSION['glpifirstname'] . ' ' . $_SESSION['glpirealname'] .
-                    ' (' . $_SESSION['glpiname'] . ')';
-                $input['action'] = $command . "_planned";
-                $input['date_mod'] = date("Y-m-d H:i:s");
-                $input['value'] = $pmTag->fields['tag'];
-                $pmLog->add($input);
-            } else {
-                PluginMonitoringToolbox::log("sendRestartArbiter, failed sending command to shinken!\n");
-            }
-
-            return;
-        }
-
-        PluginMonitoringToolbox::log("sendRestartArbiter, no tag specified");
-        $a_raw_tags = $pmTag->find();
         $a_tags = [];
-        foreach ($a_raw_tags as $data) {
-            if (!isset($a_tags[$data['url']])) {
-                $a_tags[$data['url']] = $data;
-            }
+        if (!empty($tag)) {
+            $a_tags[] = $pmTag->getFromDB($tag);
+        } else {
+            $a_tags = $pmTag->find("`is_active` = '1'");
         }
-        foreach ($a_tags as $url => $data) {
-            if (empty($url)) continue;
 
-            PluginMonitoringToolbox::log("sendRestartArbiter, framework url: $url");
+        foreach ($a_tags as $index => $data) {
+            PluginMonitoringToolbox::log("sendRestartArbiter, " . print_r($data, true));
+            $pmTag->getFromDB($data['id']);
 
-            $auth = $pmTag->getAuth($data['tag']);
-            if ($this->sendCommand($url, $command, [], '', $auth)) {
-                PluginMonitoringToolbox::log("sendRestartArbiter, command sent to shinken");
+            if ($this->sendCommand($pmTag, $command, [], '')) {
+                PluginMonitoringToolbox::log("sendRestartArbiter, command sent to the monitoring framework");
                 $input = [];
-                $input['user_name'] = $_SESSION['glpifirstname'] . ' ' . $_SESSION['glpirealname'] .
-                    ' (' . $_SESSION['glpiname'] . ')';
+                $input['user_name'] = $_SESSION['glpifirstname'] . ' ' . $_SESSION['glpirealname'] . ' (' . $_SESSION['glpiname'] . ')';
                 $input['action'] = $command . "_planned";
                 $input['date_mod'] = date("Y-m-d H:i:s");
                 $input['value'] = $data['tag'];
                 $pmLog->add($input);
             } else {
-                PluginMonitoringToolbox::log("sendRestartArbiter, failed sending command to shinken!");
+                PluginMonitoringToolbox::log("sendRestartArbiter, failed sending command to the monitoring framework!");
             }
         }
     }
 
 
-    function sendCommand($url, $action, $a_fields, $fields_string = '', $auth = '')
+    /**
+     * @param PluginMonitoringTag $tag
+     * @param string $action
+     * @param array $a_fields
+     * @param string $fields_string
+     *
+     * @return bool
+     */
+    function sendCommand($tag, $action, $a_fields, $fields_string = '')
     {
+        $url = $tag->getUrl();
+        $url = $url . '/' . $action;
+        $auth = $tag->getAuth();
 
         if ($fields_string == '') {
             foreach ($a_fields as $key => $value) {
@@ -219,7 +194,7 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
 
         $ch = curl_init();
 
-        curl_setopt($ch, CURLOPT_URL, $url . $action);
+        curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, count($a_fields));
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -234,22 +209,32 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
         if ($ret === false) {
             $return = false;
             Session::addMessageAfterRedirect(
-                __('Shinken communication failed:', 'monitoring') . ' ' . curl_error($ch) . '<br/>' . $url . $action . ' ' . $fields_string,
+                __('Monitoring framework communication failed: ', 'monitoring') .
+                curl_error($ch) . '<br/>' . $url . ' ' . $fields_string,
                 false,
                 ERROR);
         } else if (strstr($ret, 'error')) {
             $return = false;
             Session::addMessageAfterRedirect(
-                __('Shinken communication failed:', 'monitoring') . ' ' . $ret . '<br/>' . $url . $action . ' ' . $fields_string,
+                __('Monitoring framework communication failed: ', 'monitoring') .
+                $ret . '<br/>' . $url . ' ' . $fields_string,
                 false,
                 ERROR);
         } else {
             Session::addMessageAfterRedirect(
-                __('Shinken communication succeeded:', 'monitoring') . ' ' . $ret . '<br/>' . $url . $action . ' ' . $fields_string,
+                __('Monitoring framework communication succeeded: ', 'monitoring') .
+                $ret . '<br/>' . $url . ' ' . $fields_string,
                 false);
         }
         curl_close($ch);
+
+        if (!$return) {
+            // Set the monitoring server tag as not active...
+            $input = [];
+            $input['id'] = $tag->getID();
+            $input['is_active'] = false;
+            $tag->update($input);
+        }
         return $return;
     }
 }
-

@@ -35,15 +35,15 @@
 // ----------------------------------------------------------------------
 
 // Direct access to file
-if (strpos($_SERVER['PHP_SELF'],"updateCounter.php")) {
-   include ("../../../inc/includes.php");
-   header("Content-Type: text/html; charset=UTF-8");
-   Html::header_nocache();
+if (strpos($_SERVER['PHP_SELF'], "updateCounter.php")) {
+    include("../../../inc/includes.php");
+    header("Content-Type: text/html; charset=UTF-8");
+    Html::header_nocache();
 }
 session_write_close();
 
 if (!defined('GLPI_ROOT')) {
-   die("Can not acces directly to this file");
+    die("Can not acces directly to this file");
 }
 
 Session::checkLoginUser();
@@ -52,5 +52,3 @@ $pmDisplay = new PluginMonitoringDisplay();
 $pmDisplay->displayCounters($_GET['type']);
 
 Html::ajaxFooter();
-
-?>

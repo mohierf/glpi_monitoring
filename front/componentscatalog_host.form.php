@@ -30,23 +30,31 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_componentscatalog", UPDATE);
 
-$pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
+$pmCC_Host = new PluginMonitoringComponentscatalog_Host();
+
+PluginMonitoringToolbox::logIfDebug("CC_host_form, POST: " . print_r($_POST, true));
 
 if (isset ($_POST["add"])) {
-   if (isset($_POST['items_id']) AND isset($_POST['itemtype'])
-       AND $_POST['items_id'] != '0') {
-      $pmComponentscatalog_Host->add($_POST);
-   }
-   Html::back();
-} else if (isset($_POST["deleteitem"])) {
-   foreach ($_POST["item"] as $id=>$num) {
-      $pmComponentscatalog_Host->delete(array('id'=>$id));
-   }
-   Html::back();
+    if (isset($_POST['items_id']) and isset($_POST['itemtype'])
+        and $_POST['items_id'] != '0') {
+        if (!$pmCC_Host->getFromDBByCrit([
+            'plugin_monitoring_componentscatalogs_id' => $_POST["plugin_monitoring_componentscatalogs_id"],
+            'itemtype' => $_POST['itemtype'], 'items_id' => $_POST['items_id']])) {
+            $pmCC_Host_id = $pmCC_Host->add($_POST);
+        } else {
+            Session::addMessageAfterRedirect(__('This host is still linked to the components catalog.', 'monitoring'), false, ERROR);
+        }
+    }
+    Html::back();
+} else if (isset($_POST["purge"])) {
+    foreach ($_POST["item"] as $id => $num) {
+        $pmCC_Host->delete(['id' => $id]);
+    }
+    Html::back();
 }
 
 Html::footer();

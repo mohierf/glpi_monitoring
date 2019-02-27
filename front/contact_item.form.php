@@ -39,7 +39,7 @@ $pmContact_Item = new PluginMonitoringContact_Item();
 if (isset ($_POST["add"])) {
    $pmContact_Item->add($_POST);
    Html::back();
-} else if (isset($_POST["deleteitem"])) {
+} else if (isset($_POST["plurge"])) {
    foreach ($_POST["item"] as $id=>$num) {
       $pmContact_Item->delete(array('id'=>$id));
    }

@@ -456,7 +456,7 @@ class PluginMonitoringDisplayview extends CommonDBTM
             $paramsma = [
                 'container' => 'mass' . __CLASS__ . $rand,
                 'num_displayed' => $nb,
-                'specific_actions' => 'deleteitem'
+                'specific_actions' => 'purge'
             ];
 
             if ($this->fields['users_id'] != Session::getLoginUserID()) {
@@ -777,7 +777,7 @@ class PluginMonitoringDisplayview extends CommonDBTM
             }
             $services[$i++] = $data['id'];
             $resources[$data['id']]['last_check'] = $data['last_check'];
-            $resources[$data['id']]['event'] = $data['event'];
+            $resources[$data['id']]['output'] = $data['output'];
             $resources[$data['id']]['name'] = $data['name'];
             $resources[$data['id']]['plugin_monitoring_components_id'] = $data['plugin_monitoring_components_id'];
 
@@ -863,7 +863,7 @@ class PluginMonitoringDisplayview extends CommonDBTM
             echo '<td>';
             echo '<a href="' . $link . '" title="' . $resources[$services_id]['state'] .
                 " - " . $resources[$services_id]['last_check'] . " - " .
-                $resources[$services_id]['event'] . '" target="_blank">'
+                $resources[$services_id]['output'] . '" target="_blank">'
                 . '<div class="service service' . $resources[$services_id]['state'] . '"></div></a>';
             echo '</td>';
             echo '</tr>';

@@ -145,7 +145,7 @@ class PluginMonitoringServiceevent extends CommonDBTM {
       $tab[3]['massiveaction']   = false;
 
       $tab[4]['table']           = $this->getTable();
-      $tab[4]['field']           = 'event';
+      $tab[4]['field']           = 'output';
       $tab[4]['name']            = __('Event output', 'monitoring');
       $tab[4]['massiveaction']   = false;
 
@@ -210,7 +210,7 @@ class PluginMonitoringServiceevent extends CommonDBTM {
          $state_before = 'OK';
       } else {
          $datat = current($a_list_before);
-         if (strstr($datat['event'], ' OK -')) {
+         if (strstr($datat['output'], ' OK -')) {
             $state_before = 'OK';
          } else {
             $state_before = 'CRITICAL';
@@ -223,7 +223,7 @@ class PluginMonitoringServiceevent extends CommonDBTM {
       $last_datetime= date("Y-m-d H:i:s", $startDate);
 
       foreach($a_list as $data) {
-         if (strstr($data['event'], ' OK -')) {
+         if (strstr($data['output'], ' OK -')) {
             if ($state_before == "OK") {
                $count['ok'] += $this->convert_datetime_timestamp($data['date']) -
                         $this->convert_datetime_timestamp($last_datetime);
@@ -245,7 +245,7 @@ class PluginMonitoringServiceevent extends CommonDBTM {
          $last_datetime = $data['date'];
 
       }
-      if (!isset($data['event']) OR strstr($data['event'], ' OK -')) {
+      if (!isset($data['output']) OR strstr($data['output'], ' OK -')) {
          $count['ok'] += date('U') - $this->convert_datetime_timestamp($last_datetime);
       } else {
          $count['critical'] += date('U') - $this->convert_datetime_timestamp($last_datetime);

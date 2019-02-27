@@ -299,7 +299,8 @@ class PluginMonitoringWebservice
             // Return counters
             return $pm->displayHostsCounters(false);
         } else {
-            return $pm->displayCounters($params['view'], 0);
+            return $pm->displayServicesCounters(false);
+//            return $pm->displayCounters($params['view'], 0);
         }
     }
 
@@ -509,7 +510,7 @@ class PluginMonitoringWebservice
             `glpi_computers`.`name`,
             `glpi_plugin_monitoring_hosts`.`state`,
             `glpi_plugin_monitoring_hosts`.`state_type`,
-            `glpi_plugin_monitoring_hosts`.`event`,
+            `glpi_plugin_monitoring_hosts`.`output`,
             `glpi_plugin_monitoring_hosts`.`last_check`,
             `glpi_plugin_monitoring_hosts`.`perf_data`,
             `glpi_plugin_monitoring_hosts`.`is_acknowledged`,
@@ -625,7 +626,7 @@ class PluginMonitoringWebservice
             `glpi_plugin_monitoring_hosts`.`id` as monitoring_id,
             `glpi_plugin_monitoring_hosts`.`state`,
             `glpi_plugin_monitoring_hosts`.`state_type`,
-            `glpi_plugin_monitoring_hosts`.`event`,
+            `glpi_plugin_monitoring_hosts`.`output`,
             `glpi_plugin_monitoring_hosts`.`last_check`,
             `glpi_plugin_monitoring_hosts`.`perf_data`,
             `glpi_plugin_monitoring_hosts`.`is_acknowledged`,
@@ -769,7 +770,7 @@ class PluginMonitoringWebservice
             `glpi_plugin_monitoring_components`.`description`,
             `glpi_plugin_monitoring_services`.`state`,
             `glpi_plugin_monitoring_services`.`state_type`,
-            `glpi_plugin_monitoring_services`.`event`,
+            `glpi_plugin_monitoring_services`.`output`,
             `glpi_plugin_monitoring_services`.`last_check`,
             `glpi_plugin_monitoring_services`.`is_acknowledged`,
             `glpi_plugin_monitoring_services`.`acknowledge_comment`

@@ -112,19 +112,17 @@ class PluginMonitoringInstall
         $version = str_replace('-', '_', $version);
 
         $this->migration->displayMessage("From: $version");
-        while ($fromSchemaVersion && isset($this->upgradeSteps[$version])) {
+        while ($version && isset($this->upgradeSteps[$version])) {
             $this->upgradeOneStep($this->upgradeSteps[$version]);
-            $fromSchemaVersion = $this->upgradeSteps[$fromSchemaVersion];
+            $version = $this->upgradeSteps[$version];
         }
-
         $this->migration->executeMigration();
 
-        // if the schema contains new tables
+        // If the schema contains new tables
         $this->installSchema();
         $this->createDefaultDisplayPreferences();
         $this->createCronTasks();
-        Config::setConfigurationValues('monitoring', [
-            'schema_version' => PLUGIN_MONITORING_VERSION]);
+        Config::setConfigurationValues('monitoring', ['schema_version' => PLUGIN_MONITORING_VERSION]);
 
         unset($_SESSION['plugin_monitoring']['installation']);
 

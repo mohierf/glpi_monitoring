@@ -30,22 +30,28 @@
  *
  */
 
-class PluginFormcreatorUpgradeTo9_3_0_1 {
-   /**
-    * @param Migration $migration
-    */
-   public function upgrade(Migration $migration) {
-      global $DB;
+class PluginFormcreatorUpgradeTo9_3_0_1
+{
+    /**
+     * @param Migration $migration
+     */
+    public function upgrade(Migration $migration)
+    {
+        // Drop the hosts and services tables to restart from scratch
+        // The tables will be re-created by the SQL script
+        $migration->dropTable('glpi_plugin_monitoring_hosts');
+        $migration->dropTable('glpi_plugin_monitoring_services');
+        $migration->dropTable('glpi_plugin_monitoring_serviceevents');
 
-//      $table = 'glpi_plugin_monitoring_display_views';
-//      $migration->renameTable('glpi_plugin_monitoring_displayviews', $table);
-//      $table = 'glpi_plugin_monitoring_display_views';
-//      $migration->changeField(
-//         $table,
-//         'is_frontview',
-//         'is_front_view',
-//         'integer'
-//      );
-//      $migration->migrationOneTable($table);
-   }
+        /*
+        $table = 'glpi_plugin_monitoring_services';
+        $migration->changeField($table, 'name', 'service_description', 'text');
+        $migration->addField($table, 'host_name', 'string', [
+            'value' => '',
+            'after' => 'service_description'
+        ]);
+        $migration->addKey($table, ['host_name', 'service_description'], 'host_name_service_description');
+        $migration->migrationOneTable($table);
+        */
+    }
 }

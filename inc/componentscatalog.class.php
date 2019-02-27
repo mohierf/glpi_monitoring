@@ -770,13 +770,13 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
                     echo '<a href="' . $link_service . '" target="_blank">' .
                         '<div title="' . $resources[$services[$i]]['state'] .
                         " - " . $resources[$services[$i]]['last_check'] . " - " .
-                        $resources[$services[$i]]['event'] .
+                        $resources[$services[$i]]['output'] .
                         '" class="service service' . $resources[$services[$i]]['state_type'] . ' service' . $resources[$services[$i]]['state'] . '"></div>' .
                         '</a>';
                 } else {
                     echo '<div title="' . $resources[$services[$i]]['state'] .
                         " - " . $resources[$services[$i]]['last_check'] . " - " .
-                        $resources[$services[$i]]['event'] .
+                        $resources[$services[$i]]['output'] .
                         '" class="service service' . $resources[$services[$i]]['state_type'] . ' service' . $resources[$services[$i]]['state'] . '"></div>';
                 }
                 echo '</td>';
@@ -862,7 +862,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             $fakeService['id'] = $dataComponentscatalog_Host['id'] + 1000000;
             $fakeService['is_acknowledged'] = $dataComponentscatalog_Host['is_acknowledged'];
             $fakeService['last_check'] = $dataComponentscatalog_Host['last_check'];
-            $fakeService['event'] = $dataComponentscatalog_Host['event'];
+            $fakeService['output'] = $dataComponentscatalog_Host['output'];
             $fakeService['perf_data'] = $dataComponentscatalog_Host['perf_data'];
             $fakeService['state_type'] = $dataComponentscatalog_Host['state_type'];
             $fakeService['state'] = ($dataComponentscatalog_Host['is_acknowledged'] == '1') ? 'ACKNOWLEDGE' : $dataComponentscatalog_Host['state'];
