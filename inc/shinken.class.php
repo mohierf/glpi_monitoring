@@ -257,6 +257,7 @@ class PluginMonitoringShinken extends CommonDBTM
             $str = strtolower($str);
         }
         $str = preg_replace("/\s/", "_", $str);
+        $str = preg_replace("/_-_/", ".", $str);
         return preg_replace("/[^A-Za-z0-9._-]/", "", $str);
     }
 
@@ -951,7 +952,7 @@ class PluginMonitoringShinken extends CommonDBTM
                             $user->getFromDB($data_contact['users_id']);
                             $this->set_value($user->fields['name'], 'contacts', $my_template);
                         } else if ($data_contact['groups_id'] > 0) {
-
+                            // todo: Get contacts from the contact group
                         }
                     }
                     if (count($my_host['contacts']) == 0) {
@@ -1018,7 +1019,6 @@ class PluginMonitoringShinken extends CommonDBTM
         $networkPort = new NetworkPort();
         $pmService = new PluginMonitoringService();
         $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
-        $pmHostconfig = new PluginMonitoringHostconfig();
         $calendar = new Calendar();
         $pmConfig = new PluginMonitoringConfig();
 
@@ -1768,8 +1768,8 @@ class PluginMonitoringShinken extends CommonDBTM
                 // Use the default contact template
                 PluginMonitoringToolbox::log("[ERROR] using the default contact template");
                 $fields = $_SESSION['plugin_monitoring']['default_contact_template'];
-            } else {
-                $fields = $pmContactTemplate->fields;
+//            } else {
+//                $fields = $pmContactTemplate->fields;
             }
         }
         if (!$fields) {
@@ -2389,12 +2389,12 @@ class PluginMonitoringShinken extends CommonDBTM
         PluginMonitoringToolbox::logIfDebug("Starting generateRealmsCfg ...");
 
         // Get entities concerned by the provided tag and get the definition order of the highest entty
-        $where = '';
-        if (!empty($_SESSION['plugin_monitoring']['allowed_entities'])) {
-            $where = getEntitiesRestrictRequest("WHERE",
-                "glpi_entities", '',
-                $_SESSION['plugin_monitoring']['allowed_entities']);
-        }
+//        $where = '';
+//        if (!empty($_SESSION['plugin_monitoring']['allowed_entities'])) {
+//            $where = getEntitiesRestrictRequest("WHERE",
+//                "glpi_entities", '',
+//                $_SESSION['plugin_monitoring']['allowed_entities']);
+//        }
 
         // Indeed, realms are compiled 'on the fly' during the other objects building process!
         $a_realms = [];
