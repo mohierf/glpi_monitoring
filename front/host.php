@@ -60,7 +60,7 @@ $pmMessage->getMessages();
 
 $pmDisplay = new PluginMonitoringDisplay();
 $pmDisplay->dashboard(true);
-$pmDisplay->showHostsCounters(true, false);
+$pmDisplay->showHostsCounters(true);
 
 // Manage search
 if (isset($_SESSION['plugin_monitoring']['host'])) {

@@ -31,25 +31,25 @@
  */
 
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "hostaddress");
+Html::header(__('Monitoring', 'monitoring'),
+    '', "plugins", "monitoring", "host_address");
 
 
 $pmHostaddress = new PluginMonitoringHostaddress();
 
 if (isset ($_POST["add"])) {
-   $pmHostaddress->add($_POST);
-   Html::back();
+    $pmHostaddress->add($_POST);
+    Html::back();
 } else if (isset ($_POST["update"])) {
-   $pmHostaddress->update($_POST);
-   Html::back();
+    $pmHostaddress->update($_POST);
+    Html::back();
 } else if (isset ($_POST["delete"])) {
-   $pmHostaddress->delete($_POST);
-   Html::back();
+    $pmHostaddress->delete($_POST);
+    Html::back();
 }
 
 Html::footer();

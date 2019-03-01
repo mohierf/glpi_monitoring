@@ -180,7 +180,7 @@ class PluginMonitoringHost extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => $index++,
+            'id' => $index,
             'table' => $this->getTable(),
             'field' => 'is_acknowledged',
             'datatype' => 'bool',
@@ -206,31 +206,37 @@ class PluginMonitoringHost extends CommonDBTM
 
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-        PluginMonitoringToolbox::loadLib();
+        PluginMonitoringToolbox::log("getTabNameForItem:". $item->getType());
 
         if (!$withtemplate) {
-            if ($item->getType() == 'Central') {
-                if (Session::haveRight("plugin_monitoring_homepage", READ)
-                    and Session::haveRight("plugin_monitoring_hoststatus", PluginMonitoringHost::HOMEPAGE)) {
-                    return [1 => __('Hosts status', 'monitoring')];
-                } else {
-                    return '';
-                }
+            switch ($item->getType()) {
+                case 'Central':
+                    if (Session::haveRight("plugin_monitoring_homepage", READ)
+                        and Session::haveRight("plugin_monitoring_host_status", self::HOMEPAGE)) {
+                        return [1 => __('Monitored hosts', 'monitoring')];
+                    }
+                    break;
+
+                case 'Computer':
+                    /* @var CommonDBTM $item */
+                    $array_ret = [];
+                    if ($item->getID() > 0 and self::canView()) {
+                        $array_ret[] = self::createTabEntry(
+                            __('Monitoring configuration', 'monitoring'));
+                        $array_ret[] = self::createTabEntry(
+                            __('Resources', 'monitoring'), self::countForItem($item));
+                    }
+                    return $array_ret;
+                    break;
             }
-            $array_ret = [];
-            if ($item->getID() > 0) {
-                if (self::canView()) {
-                    $array_ret[0] = self::createTabEntry(
-                        __('Resources', 'monitoring'), self::countForItem($item));
-                }
-            }
-            return $array_ret;
         }
         return '';
     }
 
 
     /**
+     * Get the services count for the provided computer
+     *
      * @param CommonDBTM $item
      *
      * @return integer
@@ -249,20 +255,20 @@ class PluginMonitoringHost extends CommonDBTM
         switch ($item->getType()) {
             case 'Central' :
                 $pmDisplay = new PluginMonitoringDisplay();
-                $pmDisplay->showHostsCounters(true, true);
-                $params = Search::manageParams("PluginMonitoringHost", []);
-                $pmDisplay->showHostsBoard($params);
+                $pmDisplay->displayHostsCounters();
+                $pmDisplay->showHostsBoard([]);
                 return true;
-
         }
         if ($item->getID() > 0) {
             if ($tabnum == 0) {
-                PluginMonitoringToolbox::loadLib();
-                $pmService = new PluginMonitoringService();
-                $pmService->manageServices(get_class($item), $item->getID());
-
+                // Host monitoring configuration
                 $pmHostconfig = new PluginMonitoringHostconfig();
                 $pmHostconfig->showForm($item->getID(), get_class($item));
+            }
+            if ($tabnum == 1) {
+                // Host services
+                $pmService = new PluginMonitoringService();
+                $pmService->listByHost($item->getType(), $item->getID());
             }
         }
         return true;
@@ -277,7 +283,6 @@ class PluginMonitoringHost extends CommonDBTM
      * @param string $interface
      *
      * @return array
-     */
     function getRights($interface = 'central')
     {
 
@@ -287,6 +292,7 @@ class PluginMonitoringHost extends CommonDBTM
 
         return $values;
     }
+    */
 
 
     /**
@@ -298,6 +304,7 @@ class PluginMonitoringHost extends CommonDBTM
     {
         PluginMonitoringToolbox::logIfDebug("PluginMonitoringHost::addHost, item: " . print_r($item, true));
 
+        /* @var CommonDBTM $item */
         $pmHost = new self();
         if (!$pmHost->getFromDBByCrit(['itemtype' => $item->fields['itemtype'], 'items_id' => $item->fields['items_id']])) {
             PluginMonitoringToolbox::log("Adding a new monitored host: {$item->fields['itemtype']} - {$item->fields['items_id']}");
@@ -361,7 +368,7 @@ class PluginMonitoringHost extends CommonDBTM
 
         $query = "SELECT
                   `glpi_plugin_monitoring_services`.`id` as service_id
-                  , `glpi_plugin_monitoring_services`.`name` as service_name
+                  , `glpi_plugin_monitoring_services`.`service_description` as service_name
                   , `glpi_plugin_monitoring_hosts`.`id` as host_id
                   , `glpi_computers`.`name` as host_name
                FROM
@@ -436,55 +443,6 @@ class PluginMonitoringHost extends CommonDBTM
         }
 
         return '';
-    }
-
-
-    /**
-     * Set host as acknowledged
-     *
-     * @param string $comment
-     *
-     * @return bool
-     */
-    function setAcknowledged($comment = '')
-    {
-        if ($this->getID() == -1) return false;
-
-        // Do not create a new acknoledge because this function is called from acknoledge creation function !
-        // $ackData = array();
-        // $ackData['itemtype']       = 'PluginMonitoringHost';
-        // $ackData['items_id']       = $this->getID();
-        // $ackData["start_time"]     = date('Y-m-d H:i:s', $start_time);
-        // $ackData["end_time"]       = date('Y-m-d H:i:s', $end_time);
-        // $ackData["comment"]        = $comment;
-        // $ackData["sticky"]         = 1;
-        // $ackData["persistent"]     = 1;
-        // $ackData["notify"]         = 1;
-        // $ackData["users_id"]       = $_SESSION['glpiID'];
-        // $ackData["notified"]       = 0;
-        // $ackData["expired"]        = 0;
-        // $pmAcknowledge = new PluginMonitoringAcknowledge();
-        // $pmAcknowledge->add($ackData);
-
-        $hostData = [];
-        $hostData['id'] = $this->getID();
-        $hostData['is_acknowledged'] = '1';
-        $this->update($hostData);
-
-        return true;
-    }
-
-
-    function setUnacknowledged($comment = '')
-    {
-        if ($this->getID() == -1) return false;
-
-        $hostData = [];
-        $hostData['id'] = $this->getID();
-        $hostData['is_acknowledged'] = '0';
-        $this->update($hostData);
-
-        return true;
     }
 
 
@@ -611,9 +569,7 @@ class PluginMonitoringHost extends CommonDBTM
      */
     static function getState($state, $state_type, $event, $acknowledge = 0)
     {
-        $shortstate = '';
         switch ($state) {
-
             case 'UP':
             case 'OK':
                 $shortstate = 'green';

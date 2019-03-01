@@ -36,8 +36,6 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringDisplay extends CommonDBTM
 {
-    static $ar_counterTypes;
-
     function dashboard($refresh = false)
     {
         global $CFG_GLPI;
@@ -66,7 +64,7 @@ class PluginMonitoringDisplay extends CommonDBTM
         echo "<tr class='tab_bg_3'>";
         echo "<td>";
 
-        if (Session::haveRight("plugin_monitoring_systemstatus", PluginMonitoringProfile::DASHBOARD)) {
+        if (Session::haveRight("plugin_monitoring_system_status", PluginMonitoringProfile::DASHBOARD)) {
             echo "<table class='tab_cadre_fixe'>";
             echo "<tr class='tab_bg_1'>";
 
@@ -174,213 +172,13 @@ class PluginMonitoringDisplay extends CommonDBTM
 
     function defineTabs($options = [])
     {
-        PluginMonitoringToolbox::logIfDebug("********** defineTabs ... no more used function ?");
-
-        if (isset($_GET['glpi_tab'])) {
-            Session::setActiveTab("PluginMonitoringDisplay", $_GET['glpi_tab']);
-        }
-
-        $pmDisplayview = new PluginMonitoringDisplayview();
-
-        $ong = [];
-        if (Session::haveRight("plugin_monitoring_systemstatus", PluginMonitoringSystem::DASHBOARD)) {
-            $ong[1] = __('System status', 'monitoring');
-        }
-        if (Session::haveRight("plugin_monitoring_hoststatus", PluginMonitoringHost::DASHBOARD)) {
-            $ong[2] = __('Hosts status', 'monitoring');
-        }
-//        if (Session::haveRight("plugin_monitoring_servicescatalog", PluginMonitoringServicescatalog::DASHBOARD)) {
-//            $ong[3] = __('Services catalog', 'monitoring');
-//        }
-        if (Session::haveRight("plugin_monitoring_componentscatalog", PluginMonitoringComponentscatalog::DASHBOARD)) {
-            $ong[4] = __('Components catalog', 'monitoring');
-        }
-        if (Session::haveRight("plugin_monitoring_service", READ)) {
-            $ong[5] = __('All resources', 'monitoring');
-        }
-        $ong[6] = __('Dependencies;', 'monitoring');
-        if (Session::haveRight("plugin_monitoring_displayview", PluginMonitoringDisplayview::DASHBOARD)) {
-            $i = 7;
-            $a_views = $pmDisplayview->getViews();
-            foreach ($a_views as $name) {
-                $ong[$i] = htmlentities($name);
-                $i++;
-            }
-        }
-        return $ong;
+        Toolbox::deprecated('PluginMonitoringDisplay::defineTabs() method is deprecated');
     }
 
 
-    function showTabs($options = [])
+    function showTabs()
     {
-        global $CFG_GLPI;
-
-        PluginMonitoringToolbox::log(
-            "********** showTabs ... no more used function ?\n"
-        );
-
-        // for objects not in table like central
-        $ID = 0;
-        if (isset($this->fields['id'])) {
-            $ID = $this->fields['id'];
-        }
-
-        $target = $_SERVER['PHP_SELF'];
-        $extraparamhtml = "";
-        $extraparam = "";
-        $withtemplate = "";
-
-        if (is_array($options) && count($options)) {
-            if (isset($options['withtemplate'])) {
-                $withtemplate = $options['withtemplate'];
-            }
-            foreach ($options as $key => $val) {
-                $extraparamhtml .= "&amp;$key=$val";
-                $extraparam .= "&$key=$val";
-            }
-        }
-
-        if (empty($withtemplate) && $ID && $this->getType() && $this->displaylist) {
-            $glpilistitems =& $_SESSION['glpilistitems'][$this->getType()];
-            $glpilisttitle =& $_SESSION['glpilisttitle'][$this->getType()];
-            $glpilisturl =& $_SESSION['glpilisturl'][$this->getType()];
-
-            if (empty($glpilisturl)) {
-                $glpilisturl = $this->getSearchURL();
-            }
-
-            echo "<div id='menu_navigate'>";
-
-            $next = $prev = $first = $last = -1;
-            $current = false;
-            if (is_array($glpilistitems)) {
-                $current = array_search($ID, $glpilistitems);
-                if ($current !== false) {
-
-                    if (isset($glpilistitems[$current + 1])) {
-                        $next = $glpilistitems[$current + 1];
-                    }
-
-                    if (isset($glpilistitems[$current - 1])) {
-                        $prev = $glpilistitems[$current - 1];
-                    }
-
-                    $first = $glpilistitems[0];
-                    if ($first == $ID) {
-                        $first = -1;
-                    }
-
-                    $last = $glpilistitems[count($glpilistitems) - 1];
-                    if ($last == $ID) {
-                        $last = -1;
-                    }
-
-                }
-            }
-            $cleantarget = Html::cleanParametersURL($target);
-            echo "<ul>";
-            echo "<li><a href=\"javascript:showHideDiv('tabsbody','tabsbodyimg','" . $CFG_GLPI["root_doc"] .
-                "/pics/deplier_down.png','" . $CFG_GLPI["root_doc"] . "/pics/deplier_up.png')\">";
-            echo "<img alt='' name='tabsbodyimg' src=\"" . $CFG_GLPI["root_doc"] . "/pics/deplier_up.png\">";
-            echo "</a></li>";
-
-            echo "<li><a href=\"" . $glpilisturl . "\">";
-
-            if ($glpilisttitle) {
-                if (Toolbox::strlen($glpilisttitle) > $_SESSION['glpidropdown_chars_limit']) {
-                    $glpilisttitle = Toolbox::substr($glpilisttitle, 0,
-                            $_SESSION['glpidropdown_chars_limit']) . "&hellip;";
-                }
-                echo $glpilisttitle;
-
-            } else {
-                echo __('List');
-            }
-            echo "</a>&nbsp;:&nbsp;</li>";
-
-            if ($first > 0) {
-                echo "<li><a href='$cleantarget?id=$first$extraparamhtml'><img src='" .
-                    $CFG_GLPI["root_doc"] . "/pics/first.png' alt=\"" . __('First') .
-                    "\" title=\"" . __('First') . "\"></a></li>";
-            } else {
-                echo "<li><img src='" . $CFG_GLPI["root_doc"] . "/pics/first_off.png' alt=\"" .
-                    __('First') . "\" title=\"" . __('First') . "\"></li>";
-            }
-
-            if ($prev > 0) {
-                echo "<li><a href='$cleantarget?id=$prev$extraparamhtml'><img src='" .
-                    $CFG_GLPI["root_doc"] . "/pics/left.png' alt=\"" . __('Previous') .
-                    "\" title=\"" . __('Previous') . "\"></a></li>";
-            } else {
-                echo "<li><img src='" . $CFG_GLPI["root_doc"] . "/pics/left_off.png' alt=\"" .
-                    __('Previous') . "\" title=\"" . __('Previous') . "\"></li>";
-            }
-
-            if ($current !== false) {
-                echo "<li>" . ($current + 1) . "/" . count($glpilistitems) . "</li>";
-            }
-
-            if ($next > 0) {
-                echo "<li><a href='$cleantarget?id=$next$extraparamhtml'><img src='" .
-                    $CFG_GLPI["root_doc"] . "/pics/right.png' alt=\"" . __('Next') .
-                    "\" title=\"" . __('Next') . "\"></a></li>";
-            } else {
-                echo "<li><img src='" . $CFG_GLPI["root_doc"] . "/pics/right_off.png' alt=\"" .
-                    __('Next') . "\" title=\"" . __('Next') . "\"></li>";
-            }
-
-            if ($last > 0) {
-                echo "<li><a href='$cleantarget?id=$last$extraparamhtml'><img alt=\"Last\" src=\"" .
-                    $CFG_GLPI["root_doc"] . "/pics/last.png\" alt=\"" . __('Last') .
-                    "\" title=\"" . __('Last') . "\"></a></li>";
-            } else {
-                echo "<li><img src='" . $CFG_GLPI["root_doc"] . "/pics/last_off.png' alt=\"" .
-                    __('Last') . "\" title=\"" . __('Last') . "\"></li>";
-            }
-            echo "</ul></div>";
-            echo "<div class='sep'></div>";
-        }
-
-        echo "<div id='tabspanel' class='center-h'></div>";
-
-        $onglets = $this->defineTabs($options);
-        $display_all = true;
-        if (isset($onglets['no_all_tab'])) {
-            $display_all = false;
-            unset($onglets['no_all_tab']);
-        }
-        $class = $this->getType();
-        if ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE
-            && ($ID > 0 || $this->showdebug)
-            && (method_exists($class, 'showDebug')
-                || in_array($class, $CFG_GLPI["infocom_types"])
-                || in_array($class, $CFG_GLPI["reservation_types"]))) {
-
-            $onglets[-2] = __('Debug');
-        }
-
-        if (count($onglets)) {
-            $tabpage = $this->getTabsURL();
-            $tabs = [];
-
-            foreach ($onglets as $key => $val) {
-                $tabs[$key] = ['title' => $val,
-                    'url' => $tabpage,
-                    'params' => "target=$target&itemtype=" . $this->getType() .
-                        "&glpi_tab=$key&id=$ID$extraparam"];
-            }
-
-            $plug_tabs = Plugin::getTabs($target, $this, $withtemplate);
-            $tabs += $plug_tabs;
-            // Not all tab for templates and if only 1 tab
-            if ($display_all && empty($withtemplate) && count($tabs) > 1) {
-                $tabs[-1] = ['title' => __('All'),
-                    'url' => $tabpage,
-                    'params' => "target=$target&itemtype=" . $this->getType() .
-                        "&glpi_tab=-1&id=$ID$extraparam"];
-            }
-            Ajax::createTabs('tabspanel', 'tabcontent', $tabs, $this->getType(), "'100%'");
-        }
+        Toolbox::deprecated('PluginMonitoringDisplay::showTabs() method is deprecated');
     }
 
 
@@ -416,11 +214,10 @@ class PluginMonitoringDisplay extends CommonDBTM
         // Will not be displayed
         $ignored_columns = [2, 3, 4];
 
-        $data = Search::prepareDatasForSearch($params['itemtype'], $params, $search_columns);
+        PluginMonitoringToolbox::log("Parameters: " . print_r($params, true));
+        $data = Search::prepareDatasForSearch('PluginMonitoringService', $params, $search_columns);
         $data['tocompute'] = $data['toview'];
         Search::constructSQL($data);
-        PluginMonitoringToolbox::log("-> " . print_r($data, true));
-//        die("test");
         Search::constructData($data);
         PluginMonitoringToolbox::logIfDebug("-> " . print_r($data, true));
         /*
@@ -484,7 +281,7 @@ class PluginMonitoringDisplay extends CommonDBTM
         }
         $num = 0;
 
-        PluginMonitoringToolbox::log("Columns: " . print_r($columns, true));
+        PluginMonitoringToolbox::logIfDebug("Columns: " . print_r($columns, true));
 
         echo "<tr class='tab_bg_1'>";
         foreach ($columns as $index => $column) {
@@ -499,9 +296,7 @@ class PluginMonitoringDisplay extends CommonDBTM
         }
         echo "</tr>";
 
-        PluginMonitoringDisplay::$ar_counterTypes = [];
-        PluginMonitoringToolbox::loadLib();
-        PluginMonitoringToolbox::log("Display {$data['data']['count']} service lines:");
+        PluginMonitoringToolbox::logIfDebug("Display {$data['data']['count']} service lines:");
 
         $start = 0;
         $total_count = 0;
@@ -514,7 +309,7 @@ class PluginMonitoringDisplay extends CommonDBTM
                     continue;
                 }
 
-                $this->displayLine($row, $columns, $ignored_columns, true, $perfdatas);
+                $this->displayLine($row, $columns, $ignored_columns);
             }
         }
         echo "</table>";
@@ -522,12 +317,6 @@ class PluginMonitoringDisplay extends CommonDBTM
 
         if (isset($data['data']['count']) and $data['data']['count'] > 0) {
             Html::printPager($start, $total_count, $target, $parameters);
-        }
-
-        if ($perfdatas) {
-            foreach (PluginMonitoringDisplay::$ar_counterTypes as $counter_id => $counter_name) {
-                PluginMonitoringToolbox::log("Counter type +++ : $counter_id => $counter_name");
-            }
         }
     }
 
@@ -757,7 +546,7 @@ class PluginMonitoringDisplay extends CommonDBTM
     }
 
 
-    static function displayLine($data, $columns, $ignored_columns, $displayhost = true, $displayCounters = true)
+    static function displayLine($data, $columns, $ignored_columns)
     {
         global $CFG_GLPI;
 
@@ -766,7 +555,7 @@ class PluginMonitoringDisplay extends CommonDBTM
         $pm_Component = new PluginMonitoringComponent();
         $pm_Component->getFromDB($data[2][0]['id']);
 
-        PluginMonitoringToolbox::log("- row: " . print_r($data, true));
+        PluginMonitoringToolbox::logIfDebug("- row: " . print_r($data, true));
 
         echo "<tr class='" . $pm_Service->getClass(true) . "'>";
         foreach ($columns as $index => $column) {
@@ -784,8 +573,6 @@ class PluginMonitoringDisplay extends CommonDBTM
             if ($index == PluginMonitoringService::COLUMN_HOST_NAME and !empty($data[$index][0]['name'])) {
                 $link = $CFG_GLPI['root_doc'] .
                     "/plugins/monitoring/front/host.php?"
-//                    . "hidesearch=1"
-//                    . "&reset=reset"
                     . "&criteria[0][field]=" . 5
                     . "&criteria[0][searchtype]=contains"
                     . "&criteria[0][value]=^" . $data[$index][0]['name'] . "$"
@@ -793,9 +580,6 @@ class PluginMonitoringDisplay extends CommonDBTM
                     . "&start=0'";
                 $data[$index]['displayname'] = Html::link($data[$index]['displayname'], $link);
             }
-            // http://127.0.0.1/glpi-9.3/plugins/monitoring/front/host.php?as_map=0&
-            //criteria%5B0%5D%5Bfield%5D=5&criteria%5B0%5D%5Bsearchtype%5D=contains&
-            //criteria%5B0%5D%5Bvalue%5D=%5Eek3k-cnam-0001%24&search=Search&itemtype=PluginMonitoringHost&start=0&_glpi_csrf_token=e0e51cbcc503f81afdafd71c03879516
             // State and state type
             if ($index == PluginMonitoringService::COLUMN_STATE and empty($data[$index][0]['name'])) {
                 $data[$index]['displayname'] = __('Not yet known', 'monitoring');
@@ -867,9 +651,9 @@ class PluginMonitoringDisplay extends CommonDBTM
             }
             // Host action
             if ($index == 13 and !empty($data[$index][0]['name'])) {
-                $scriptName = $CFG_GLPI['root_doc'] . "/plugins/monitoring/scripts/" . $data[$index][0]['name'];
-                // Host name and IP
-                $scriptArgs = $data[1][0]['name'] . " " . $data[12][0]['name'];
+//                $scriptName = $CFG_GLPI['root_doc'] . "/plugins/monitoring/scripts/" . $data[$index][0]['name'];
+//                // Host name and IP
+//                $scriptArgs = $data[1][0]['name'] . " " . $data[12][0]['name'];
 
                 echo "<td class='center'>";
                 echo "<form name='form' method='post'
@@ -901,649 +685,19 @@ class PluginMonitoringDisplay extends CommonDBTM
     }
 
 
-    function displayGraphs($itemtype, $items_id)
+    function displayGraphs()
     {
-        echo "<h1>NOT IMPLEMENTED !!!!</h1>";
+        Toolbox::deprecated('PluginMonitoringDisplay::displayGraphs() method is deprecated');
 
+        echo "<h1>NOT IMPLEMENTED !!!!</h1>";
     }
 
 
-    function displayCounters($type, $display = true)
+    function displayCounters()
     {
-        global $DB, $CFG_GLPI;
+        Toolbox::deprecated('PluginMonitoringDisplay::displayCounters() method is deprecated');
 
-        $ok = 0;
-        $warningdata = 0;
-        $warningconnection = 0;
-        $critical = 0;
-        $ok_soft = 0;
-        $warningdata_soft = 0;
-        $warningconnection_soft = 0;
-        $critical_soft = 0;
-        $acknowledge = 0;
-
-        $play_sound = 0;
-
-        if ($type == 'Ressources') {
-            $ok = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`state_type`='HARD'
-               AND `glpi_plugin_monitoring_services`.`state`='OK'
-               AND `glpi_plugin_monitoring_hosts`.`is_acknowledged`='0'
-               AND `glpi_plugin_monitoring_services`.`is_acknowledged`='0'");
-
-            $warningdata = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`state_type`='HARD'
-               AND (
-                     (`glpi_plugin_monitoring_services`.`state`='WARNING' AND `glpi_plugin_monitoring_services`.`output` IS NOT NULL AND `glpi_plugin_monitoring_services`.`output` <> '') OR
-                     (`glpi_plugin_monitoring_services`.`state`='RECOVERY') OR
-                     (`glpi_plugin_monitoring_services`.`state`='FLAPPING')
-               )
-               AND `glpi_plugin_monitoring_hosts`.`is_acknowledged`='0'
-               AND `glpi_plugin_monitoring_services`.`is_acknowledged`='0'");
-
-            $warningconnection = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`state_type`='HARD'
-               AND (
-                     (`glpi_plugin_monitoring_services`.`state`='WARNING' AND `glpi_plugin_monitoring_services`.`output` IS NULL) OR
-                     (`glpi_plugin_monitoring_services`.`state`='UNKNOWN') OR
-                     (`glpi_plugin_monitoring_services`.`state` IS NULL)
-               )
-               AND `glpi_plugin_monitoring_hosts`.`is_acknowledged`='0'
-               AND `glpi_plugin_monitoring_services`.`is_acknowledged`='0'");
-
-            $critical = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`state_type`='HARD'
-               AND `glpi_plugin_monitoring_services`.`state`='CRITICAL'
-               AND `glpi_plugin_monitoring_hosts`.`is_acknowledged`='0'
-               AND `glpi_plugin_monitoring_services`.`is_acknowledged`='0'");
-
-
-            $ok_soft = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`state_type`!='HARD'
-               AND `glpi_plugin_monitoring_services`.`state`='OK'
-               AND `glpi_plugin_monitoring_hosts`.`is_acknowledged`='0'
-               AND `glpi_plugin_monitoring_services`.`is_acknowledged`='0'");
-
-            $warningdata_soft = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`state_type`!='HARD'
-               AND (
-                     (`glpi_plugin_monitoring_services`.`state`='WARNING' AND `glpi_plugin_monitoring_services`.`output` IS NOT NULL) OR
-                     (`glpi_plugin_monitoring_services`.`state`='RECOVERY') OR
-                     (`glpi_plugin_monitoring_services`.`state`='FLAPPING')
-               )
-               AND `glpi_plugin_monitoring_hosts`.`is_acknowledged`='0'
-               AND `glpi_plugin_monitoring_services`.`is_acknowledged`='0'");
-
-            $warningconnection_soft = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`state_type`!='HARD'
-               AND (
-                     (`glpi_plugin_monitoring_services`.`state`='WARNING' AND `glpi_plugin_monitoring_services`.`output` IS NULL) OR
-                     (`glpi_plugin_monitoring_services`.`state`='UNKNOWN') OR
-                     (`glpi_plugin_monitoring_services`.`state` IS NULL)
-               )
-               AND `glpi_plugin_monitoring_hosts`.`is_acknowledged`='0'
-               AND `glpi_plugin_monitoring_services`.`is_acknowledged`='0'");
-
-            $critical_soft = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`state_type`!='HARD'
-               AND `glpi_plugin_monitoring_services`.`state`='CRITICAL'
-               AND `glpi_plugin_monitoring_hosts`.`is_acknowledged`='0'
-               AND `glpi_plugin_monitoring_services`.`is_acknowledged`='0'");
-
-
-            $acknowledge = $this->countServicesQuery("
-               `glpi_plugin_monitoring_services`.`is_acknowledged`='1'");
-            // `glpi_plugin_monitoring_hosts`.`is_acknowledged`='1'
-            // OR `glpi_plugin_monitoring_services`.`is_acknowledged`='1'");
-
-            // ** Manage play sound if critical increase since last refresh
-            if (isset($_SESSION['plugin_monitoring_dashboard_Ressources'])) {
-                if ($critical > $_SESSION['plugin_monitoring_dashboard_Ressources']) {
-                    $play_sound = 1;
-                }
-            }
-            $_SESSION['plugin_monitoring_dashboard_Ressources'] = $critical;
-
-        } else if ($type == 'Componentscatalog') {
-            $pmComponentscatalog_Host = new PluginMonitoringComponentscatalog_Host();
-            $queryCat = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs`";
-            $resultCat = $DB->query($queryCat);
-            while ($data = $DB->fetch_array($resultCat)) {
-
-                $query = "SELECT COUNT(*) AS cpt FROM `" . $pmComponentscatalog_Host->getTable() . "`
-               LEFT JOIN `glpi_plugin_monitoring_services`
-                  ON `plugin_monitoring_componentscatalogs_hosts_id`=`" . $pmComponentscatalog_Host->getTable() . "`.`id`
-               WHERE `plugin_monitoring_componentscatalogs_id`='" . $data['id'] . "'
-                  AND (`state`='DOWN' OR `state`='UNREACHABLE' OR `state`='CRITICAL' OR `state`='DOWNTIME')
-                  AND `state_type`='HARD'
-                  AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                  AND `is_acknowledged`='0'";
-//            PluginMonitoringToolbox::log("Query critical - $query\n");
-                $result = $DB->query($query);
-                $data2 = $DB->fetch_assoc($result);
-                if ($data2['cpt'] > 0) {
-                    $critical++;
-                } else {
-                    $query = "SELECT COUNT(*) AS cpt, `glpi_plugin_monitoring_services`.`state`
-                     FROM `" . $pmComponentscatalog_Host->getTable() . "`
-                  LEFT JOIN `glpi_plugin_monitoring_services`
-                     ON `plugin_monitoring_componentscatalogs_hosts_id`=`" . $pmComponentscatalog_Host->getTable() . "`.`id`
-                  WHERE `plugin_monitoring_componentscatalogs_id`='" . $data['id'] . "'
-                     AND (`state`='WARNING' OR `state`='UNKNOWN' OR `state`='RECOVERY' OR `state`='FLAPPING' OR `state` IS NULL)
-                     AND `state_type`='HARD'
-                     AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                     AND `is_acknowledged`='0'";
-                    $result = $DB->query($query);
-                    $data2 = $DB->fetch_assoc($result);
-                    if ($data2['cpt'] > 0) {
-                        $warningdata++;
-                    } else {
-                        $query = "SELECT COUNT(*) AS cpt FROM `" . $pmComponentscatalog_Host->getTable() . "`
-                     LEFT JOIN `glpi_plugin_monitoring_services`
-                        ON `plugin_monitoring_componentscatalogs_hosts_id`=`" . $pmComponentscatalog_Host->getTable() . "`.`id`
-                     WHERE `plugin_monitoring_componentscatalogs_id`='" . $data['id'] . "'
-                     AND (`state`='OK' OR `state`='UP') AND `state_type`='HARD'
-                     AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                     AND `is_acknowledged`='0'";
-                        $result = $DB->query($query);
-                        $data2 = $DB->fetch_assoc($result);
-                        if ($data2['cpt'] > 0) {
-                            $ok++;
-                        }
-                    }
-                }
-
-                $query = "SELECT COUNT(*) AS cpt FROM `" . $pmComponentscatalog_Host->getTable() . "`
-               LEFT JOIN `glpi_plugin_monitoring_services`
-                  ON `plugin_monitoring_componentscatalogs_hosts_id`=`" . $pmComponentscatalog_Host->getTable() . "`.`id`
-               WHERE `plugin_monitoring_componentscatalogs_id`='" . $data['id'] . "'
-                  AND (`state`='DOWN' OR `state`='UNREACHABLE' OR `state`='CRITICAL' OR `state`='DOWNTIME')
-                  AND `state_type`='SOFT'
-                  AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                  AND `is_acknowledged`='0'";
-                $result = $DB->query($query);
-                $data2 = $DB->fetch_assoc($result);
-                if ($data2['cpt'] > 0) {
-                    $critical_soft++;
-                } else {
-                    $query = "SELECT COUNT(*) AS cpt FROM `" . $pmComponentscatalog_Host->getTable() . "`
-                  LEFT JOIN `glpi_plugin_monitoring_services`
-                     ON `plugin_monitoring_componentscatalogs_hosts_id`=`" . $pmComponentscatalog_Host->getTable() . "`.`id`
-                  WHERE `plugin_monitoring_componentscatalogs_id`='" . $data['id'] . "'
-                     AND (`state`='WARNING' OR `state`='UNKNOWN' OR `state`='RECOVERY' OR `state`='FLAPPING' OR `state` IS NULL)
-                     AND `state_type`='SOFT'
-                     AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                     AND `is_acknowledged`='0'";
-                    $result = $DB->query($query);
-                    $data2 = $DB->fetch_assoc($result);
-                    if ($data2['cpt'] > 0) {
-                        $warningdata_soft++;
-                    } else {
-                        $query = "SELECT COUNT(*) AS cpt FROM `" . $pmComponentscatalog_Host->getTable() . "`
-                     LEFT JOIN `glpi_plugin_monitoring_services`
-                        ON `plugin_monitoring_componentscatalogs_hosts_id`=`" . $pmComponentscatalog_Host->getTable() . "`.`id`
-                     WHERE `plugin_monitoring_componentscatalogs_id`='" . $data['id'] . "'
-                        AND (`state`='OK' OR `state`='UP') AND `state_type`='SOFT'
-                        AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                        AND `is_acknowledged`='0'";
-                        $result = $DB->query($query);
-                        $data2 = $DB->fetch_assoc($result);
-                        if ($data2['cpt'] > 0) {
-                            $ok_soft++;
-                        }
-                    }
-                }
-            }
-
-            // ** Manage play sound if critical increase since last refresh
-            if (isset($_SESSION['plugin_monitoring_dashboard_Componentscatalog'])) {
-                if ($critical > $_SESSION['plugin_monitoring_dashboard_Componentscatalog']) {
-                    $play_sound = 1;
-                }
-            }
-            $_SESSION['plugin_monitoring_dashboard_Componentscatalog'] = $critical;
-
-        } else if ($type == 'Businessrules') {
-            $ok = countElementsInTable("glpi_plugin_monitoring_servicescatalogs",
-                "(`state`='OK' OR `state`='UP') AND `state_type`='HARD'
-                 AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                 AND `is_acknowledged`='0'");
-
-            $warningdata = countElementsInTable("glpi_plugin_monitoring_servicescatalogs",
-                "(`state`='WARNING' OR `state`='UNKNOWN'
-                        OR `state`='RECOVERY' OR `state`='FLAPPING')
-                    AND `state_type`='HARD'
-                    AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                    AND `is_acknowledged`='0'");
-
-            $critical = countElementsInTable("glpi_plugin_monitoring_servicescatalogs",
-                "(`state`='DOWN' OR `state`='UNREACHABLE' OR `state`='CRITICAL' OR `state`='DOWNTIME')
-                    AND `state_type`='HARD'
-                    AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                    AND `is_acknowledged`='0'");
-
-            $warningdata_soft = countElementsInTable("glpi_plugin_monitoring_servicescatalogs",
-                "(`state`='WARNING' OR `state`='UNKNOWN'
-                        OR `state`='RECOVERY' OR `state`='FLAPPING')
-                    AND `state_type`='SOFT'
-                    AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                    AND `is_acknowledged`='0'");
-
-            $critical_soft = countElementsInTable("glpi_plugin_monitoring_servicescatalogs",
-                "(`state`='DOWN' OR `state`='UNREACHABLE' OR `state`='CRITICAL' OR `state`='DOWNTIME')
-                    AND `state_type`='SOFT'
-                    AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                    AND `is_acknowledged`='0'");
-
-            $ok_soft = countElementsInTable("glpi_plugin_monitoring_servicescatalogs",
-                "(`state`='OK' OR `state`='UP') AND `state_type`='SOFT'
-                  AND `entities_id` IN (" . $_SESSION['glpiactiveentities_string'] . ")
-                    AND `is_acknowledged`='0'");
-
-            // ** Manage play sound if critical increase since last refresh
-            if (isset($_SESSION['plugin_monitoring_dashboard_Businessrules'])) {
-                if ($critical > $_SESSION['plugin_monitoring_dashboard_Businessrules']) {
-                    $play_sound = 1;
-                }
-            }
-            $_SESSION['plugin_monitoring_dashboard_Businessrules'] = $critical;
-
-        }
-        if (!$display) {
-            $a_return = [];
-            $a_return['ok'] = strval($ok);
-            $a_return['ok_soft'] = strval($ok_soft);
-            $a_return['warningdata'] = strval($warningdata);
-            $a_return['warningconnection'] = strval($warningconnection);
-            $a_return['warningdata_soft'] = strval($warningdata_soft);
-            $a_return['warningconnection_soft'] = strval($warningconnection_soft);
-            $a_return['critical'] = strval($critical);
-            $a_return['critical_soft'] = strval($critical_soft);
-            $a_return['acknowledge'] = strval($acknowledge);
-            return $a_return;
-        }
-
-        $critical_link = $CFG_GLPI['root_doc'] .
-            "/plugins/monitoring/front/service.php?hidesearch=1"
-//              . "&reset=reset"
-            . "&criteria[0][field]=3"
-            . "&criteria[0][searchtype]=contains"
-            . "&criteria[0][value]=CRITICAL"
-
-            . "&criteria[1][link]=AND"
-            . "&criteria[1][field]=7"
-            . "&criteria[1][searchtype]=equals"
-            . "&criteria[1][value]=0"
-
-            . "&criteria[2][link]=AND"
-            . "&criteria[2][field]=8"
-            . "&criteria[2][searchtype]=equals"
-            . "&criteria[2][value]=0"
-            . "&search=Search"
-            . "&itemtype=PluginMonitoringService"
-            . "&start=0"
-            . "&glpi_tab=3'";
-        //_glpi_csrf_token=
-        $warning_link = $CFG_GLPI['root_doc'] .
-            "/plugins/monitoring/front/service.php?hidesearch=1"
-//              . "&reset=reset"
-            . "&criteria[0][field]=3"
-            . "&criteria[0][searchtype]=contains"
-            . "&criteria[0][value]=FLAPPING"
-
-            . "&criteria[1][link]=AND"
-            . "&criteria[1][field]=7"
-            . "&criteria[1][searchtype]=equals"
-            . "&criteria[1][value]=0"
-
-            . "&criteria[2][link]=AND"
-            . "&criteria[2][field]=8"
-            . "&criteria[2][searchtype]=equals"
-            . "&criteria[2][value]=0"
-
-            . "&criteria[3][link]=OR"
-            . "&criteria[3][field]=3"
-            . "&criteria[3][searchtype]=contains"
-            . "&criteria[3][value]=RECOVERY"
-
-            . "&criteria[4][link]=AND"
-            . "&criteria[4][field]=7"
-            . "&criteria[4][searchtype]=equals"
-            . "&criteria[4][value]=0"
-
-            . "&criteria[5][link]=AND"
-            . "&criteria[5][field]=8"
-            . "&criteria[5][searchtype]=equals"
-            . "&criteria[5][value]=0"
-
-            . "&criteria[6][link]=OR"
-            . "&criteria[6][field]=3"
-            . "&criteria[6][searchtype]=contains"
-            . "&criteria[6][value]=UNKNOWN"
-
-            . "&criteria[7][link]=AND"
-            . "&criteria[7][field]=7"
-            . "&criteria[7][searchtype]=equals"
-            . "&criteria[7][value]=0"
-
-            . "&criteria[8][link]=AND"
-            . "&criteria[8][field]=8"
-            . "&criteria[8][searchtype]=equals"
-            . "&criteria[8][value]=0"
-
-            . "&criteria[9][link]=AND"
-            . "&criteria[9][field]=3"
-            . "&criteria[9][searchtype]=contains"
-            . "&criteria[9][value]=WARNING"
-
-            . "&criteria[10][link]=AND"
-            . "&criteria[10][field]=7"
-            . "&criteria[10][searchtype]=equals"
-            . "&criteria[10][value]=0"
-
-            . "&criteria[11][link]=AND"
-            . "&criteria[11][field]=8"
-            . "&criteria[11][searchtype]=equals"
-            . "&criteria[11][value]=0"
-
-            . "&search=Search"
-            . "&itemtype=PluginMonitoringService"
-            . "&start=0"
-            . "&glpi_tab=3'";
-        $warningdata_link = $CFG_GLPI['root_doc'] .
-            "/plugins/monitoring/front/service.php?hidesearch=1"
-//              . "&reset=reset"
-            . "&criteria[0][field]=3"
-            . "&criteria[0][searchtype]=contains"
-            . "&criteria[0][value]=FLAPPING"
-
-            . "&criteria[1][link]=AND"
-            . "&criteria[1][field]=7"
-            . "&criteria[1][searchtype]=equals"
-            . "&criteria[1][value]=0"
-
-            . "&criteria[2][link]=AND"
-            . "&criteria[2][field]=8"
-            . "&criteria[2][searchtype]=equals"
-            . "&criteria[2][value]=0"
-
-            . "&criteria[2][link]=OR"
-            . "&criteria[3][field]=3"
-            . "&criteria[3][searchtype]=contains"
-            . "&criteria[3][value]=RECOVERY"
-
-            . "&criteria[4][link]=AND"
-            . "&criteria[4][field]=7"
-            . "&criteria[4][searchtype]=equals"
-            . "&criteria[4][value]=0"
-
-            . "&criteria[5][link]=AND"
-            . "&criteria[5][field]=8"
-            . "&criteria[5][searchtype]=equals"
-            . "&criteria[5][value]=0"
-
-            . "&criteria[6][link]=OR"
-            . "&criteria[6][field]=3"
-            . "&criteria[6][searchtype]=contains"
-            . "&criteria[6][value]=WARNING"
-
-            . "&criteria[7][link]=AND"
-            . "&criteria[7][field]=7"
-            . "&criteria[7][searchtype]=equals"
-            . "&criteria[7][value]=0"
-
-            . "&criteria[8][link]=AND"
-            . "&criteria[8][field]=8"
-            . "&criteria[8][searchtype]=equals"
-            . "&criteria[8][value]=0"
-
-            . "&itemtype=PluginMonitoringService"
-            . "&start=0"
-            . "&glpi_tab=3'";
-        $warningconnection_link = $CFG_GLPI['root_doc'] .
-            "/plugins/monitoring/front/service.php?hidesearch=1"
-//              . "&reset=reset"
-            . "&criteria[0][field]=3"
-            . "&criteria[0][searchtype]=contains"
-            . "&criteria[0][value]=UNKNOWN"
-
-            . "&criteria[1][link]=AND"
-            . "&criteria[1][field]=7"
-            . "&criteria[1][searchtype]=equals"
-            . "&criteria[1][value]=0"
-
-            . "&criteria[2][link]=AND"
-            . "&criteria[2][field]=8"
-            . "&criteria[2][searchtype]=equals"
-            . "&criteria[2][value]=0"
-
-            . "&criteria[3][link]=OR"
-            . "&criteria[3][field]=3"
-            . "&criteria[3][searchtype]=contains"
-            . "&criteria[3][value]=NULL"
-
-            . "&criteria[4][link]=AND"
-            . "&criteria[4][field]=7"
-            . "&criteria[4][searchtype]=equals"
-            . "&criteria[4][value]=0"
-
-            . "&criteria[5][link]=AND"
-            . "&criteria[5][field]=8"
-            . "&criteria[5][searchtype]=equals"
-            . "&criteria[5][value]=0"
-
-            . "&itemtype=PluginMonitoringService"
-            . "&start=0"
-            . "&glpi_tab=3'";
-        $ok_link = $CFG_GLPI['root_doc'] .
-            "/plugins/monitoring/front/service.php?hidesearch=1"
-//              . "&reset=reset"
-            . "&criteria[0][field]=3"
-            . "&criteria[0][searchtype]=contains"
-            . "&criteria[0][value]=OK"
-
-            . "&itemtype=PluginMonitoringService"
-            . "&start=0"
-            . "&glpi_tab=3'";
-        $acknowledge_link = $CFG_GLPI['root_doc'] .
-            "/plugins/monitoring/front/service.php?hidesearch=1"
-//              . "&reset=reset"
-            . "&criteria[0][field]=7"
-            . "&criteria[0][searchtype]=equals"
-            . "&criteria[0][value]=1"
-
-            . "&itemtype=PluginMonitoringService"
-            . "&start=0"
-            . "&glpi_tab=3'";
-
-        echo "<table align='center'>";
-        echo "<tr>";
-        echo "<td width='414'>";
-        $background = '';
-        if ($critical > 0) {
-            $background = 'background="' . $CFG_GLPI['root_doc'] . '/plugins/monitoring/pics/bg_critical.png"';
-        }
-        echo "<table class='tab_cadre' width='100%' height='130' " . $background . " >";
-        echo "<tr>";
-        echo "<th style='background-color:transparent;'>";
-        if ($type == 'Ressources' OR $type == 'Componentscatalog') {
-            echo "<a href='" . $critical_link . ">" .
-                "<font color='black' style='font-size: 12px;font-weight: bold;'>" . __('Critical', 'monitoring') . "</font></a>";
-        } else {
-            echo __('Critical', 'monitoring');
-        }
-        echo "</td>";
-        echo "</tr>";
-        echo "<tr>";
-        echo "<th style='background-color:transparent;'>";
-        if ($type == 'Ressources' OR $type == 'Componentscatalog') {
-            echo "<a href='" . $critical_link . ">" .
-                "<font color='black' style='font-size: 52px;font-weight: bold;'>" . $critical . "</font></a>";
-        } else {
-            echo "<font style='font-size: 52px;'>" . $critical . "</font>";
-        }
-        echo "</th>";
-        echo "</tr>";
-        echo "<tr><td>";
-        echo "<p style='font-size: 11px; text-align: center;'> Soft : " . $critical_soft . "</p>";
-        echo "</td></tr>";
-        echo "</table>";
-        echo "</td>";
-
-        echo "<td width='188'>";
-        $background = '';
-        if ($warningdata > 0) {
-            $background = 'background="' . $CFG_GLPI['root_doc'] . '/plugins/monitoring/pics/bg_warning.png"';
-        }
-        if ($type == 'Ressources') {
-            echo "<table class='tab_cadre' width='100%' height='130' " . $background . " >";
-        } else {
-            echo "<table class='tab_cadre' width='100%' height='130' " . $background . " >";
-        }
-        echo "<tr>";
-        echo "<th style='background-color:transparent;'>";
-        if ($type == 'Ressources') {
-            echo "<a href='" . $warningdata_link . ">" .
-                "<font color='black' style='font-size: 12px;font-weight: bold;'>" . __('Warning', 'monitoring') . "</font></a>";
-        } else {
-            if ($type == 'Componentscatalog') {
-                echo "<a href='" . $warning_link . ">" .
-                    "<font color='black' style='font-size: 12px;font-weight: bold;'>" . __('Warning', 'monitoring') . "</font></a>";
-            } else {
-                echo __('Warning', 'monitoring');
-            }
-        }
-        echo "</td>";
-        echo "</tr>";
-        echo "<tr>";
-        echo "<th style='background-color:transparent;'>";
-        if ($type == 'Ressources') {
-            echo "<a href='" . $warningdata_link . ">" .
-                "<font color='black' style='font-size: 52px;'>" . $warningdata . "</font></a>";
-        } else if ($type == 'Componentscatalog') {
-            echo "<a href='" . $warning_link . ">" .
-                "<font color='black' style='font-size: 52px;'>" . $warningdata . "</font></a>";
-        } else {
-            echo "<font style='font-size: 52px;'>" . $warningdata . "</font>";
-        }
-        echo "</th>";
-        echo "</tr>";
-        echo "<tr><td>";
-        echo "<p style='font-size: 11px; text-align: center;'> Soft : " . $warningdata_soft . "</p>";
-        echo "</td></tr>";
-        echo "</table>";
-        echo "</td>";
-
-        if ($type == 'Ressources') {
-            echo "<td width='188'>";
-            $background = '';
-            if ($warningconnection > 0) {
-                $background = 'background="' . $CFG_GLPI['root_doc'] . '/plugins/monitoring/pics/bg_warning_yellow.png"';
-            }
-            echo "<table class='tab_cadre' width='100%' height='130' " . $background . " >";
-            echo "<tr>";
-            echo "<th style='background-color:transparent;'>";
-            if ($type == 'Ressources' OR $type == 'Componentscatalog') {
-                echo "<a href='" . $warningconnection_link . ">" .
-                    "<font color='black' style='font-size: 12px;font-weight: bold;'>" . __('Warning (connection)', 'monitoring') . "</font></a>";
-            } else {
-                echo __('Warning (connection)', 'monitoring');
-            }
-            echo "</td>";
-            echo "</tr>";
-            echo "<tr>";
-            echo "<th style='background-color:transparent;'>";
-            if ($type == 'Ressources' OR $type == 'Componentscatalog') {
-                echo "<a href='" . $warningconnection_link . ">" .
-                    "<font color='black' style='font-size: 52px;'>" . $warningconnection . "</font></a>";
-            } else {
-                echo "<font style='font-size: 52px;'>" . $warningconnection . "</font>";
-            }
-            echo "</th>";
-            echo "</tr>";
-            echo "<tr><td>";
-            echo "<p style='font-size: 11px; text-align: center;'> Soft : " . $warningconnection_soft . "</p>";
-            echo "</td></tr>";
-            echo "</table>";
-            echo "</td>";
-        }
-
-        echo "<td width='148'>";
-        $background = '';
-        if ($ok > 0) {
-            $background = 'background="' . $CFG_GLPI['root_doc'] . '/plugins/monitoring/pics/bg_ok.png"';
-        }
-        echo "<table class='tab_cadre' width='100%' height='130' " . $background . " >";
-        echo "<tr>";
-        echo "<th style='background-color:transparent;'>";
-        if ($type == 'Ressources' OR $type == 'Componentscatalog') {
-            echo "<a href='" . $ok_link . ">" .
-                "<font color='black' style='font-size: 12px;font-weight: bold;'>" . __('OK', 'monitoring') . "</font></a>";
-        } else {
-            echo __('OK', 'monitoring');
-        }
-        echo "</td>";
-        echo "</tr>";
-        echo "<tr>";
-        echo "<th style='background-color:transparent;'>";
-        if ($type == 'Ressources' OR $type == 'Componentscatalog') {
-            echo "<a href='" . $ok_link . ">" .
-                "<font color='black' style='font-size: 52px;font-weight: bold;'>" . $ok . "</font></a>";
-        } else {
-            echo "<font style='font-size: 52px;'>" . $ok . "</font>";
-        }
-        echo "</th>";
-        echo "</tr>";
-        echo "<tr><td>";
-        echo "<p style='font-size: 11px; text-align: center;'> Soft : " . $ok_soft . "</p>";
-        echo "</td></tr>";
-        echo "</table>";
-        echo "</td>";
-
-        echo "<td width='120'>";
-        $background = '';
-        if ($acknowledge > 0) {
-            $background = 'background="' . $CFG_GLPI['root_doc'] . '/plugins/monitoring/pics/bg_acknowledge.png"';
-        }
-        echo "<table class='tab_cadre' width='100%' height='130' " . $background . " >";
-        echo "<tr>";
-        echo "<th style='background-color:transparent;'>";
-        if ($type == 'Ressources' OR $type == 'Componentscatalog') {
-            echo "<a href='" . $acknowledge_link . "'>" .
-                "<font color='black' style='font-size: 12px;font-weight: bold;'>" . __('Acknowledge', 'monitoring') . "</font></a>";
-        } else {
-            echo __('Acknowledge', 'monitoring');
-        }
-        echo "</td>";
-        echo "</tr>";
-        echo "<tr>";
-        echo "<th style='background-color:transparent;'>";
-        if ($type == 'Ressources' OR $type == 'Componentscatalog') {
-            echo "<a href='" . $acknowledge_link . "'>" .
-                "<font color='black' style='font-size: 52px;font-weight: bold;'>" . $acknowledge . "</font></a>";
-        } else {
-            echo "<font style='font-size: 52px;'>" . $acknowledge . "</font>";
-        }
-        echo "</th>";
-        echo "</tr>";
-        echo "<tr><td>";
-        echo "<p style='font-size: 11px; text-align: center;'>&nbsp;</p>";
-        echo "</td></tr>";
-        echo "</table>";
-        echo "</td>";
-
-        echo "</tr>";
-        echo "</table><br/>";
-
-        // ** play sound
-        if ($play_sound == '1') {
-            echo '<audio autoplay="autoplay">
-                 <source src="../audio/star-trek.ogg" type="audio/ogg" />
-                 Your browser does not support the audio element.
-               </audio>';
-        }
-
-        return [];
+        echo "<h1>NOT IMPLEMENTED !!!!</h1>";
     }
 
 
@@ -1680,64 +834,66 @@ class PluginMonitoringDisplay extends CommonDBTM
     }
 
 
-    function displayServicesCounters($display = true)
+    function displayServicesCounters($display = true, $a_query=[])
     {
         global $CFG_GLPI;
+
+        PluginMonitoringToolbox::log("Extra query: " . print_r($a_query, true));
 
         $play_sound = false;
 
         // Get counters
-        $ok = $this->countServicesQuery([
+        $ok = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'OK',
             'state_type' => 'HARD'
-        ]);
-        $ok_soft = $this->countServicesQuery([
+        ]));
+        $ok_soft = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'OK',
             'state_type' => 'SOFT'
-        ]);
-        $unreachable = $this->countServicesQuery([
+        ]));
+        $unreachable = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'UNREACHABLE',
             'state_type' => 'HARD',
             'is_acknowledged' => '0'
-        ]);
-        $unreachable_soft = $this->countServicesQuery([
+        ]));
+        $unreachable_soft = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'UNREACHABLE',
             'state_type' => 'SOFT',
             'is_acknowledged' => '0'
-        ]);
-        $unknown = $this->countServicesQuery([
+        ]));
+        $unknown = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'UNKNOWN',
             'state_type' => 'HARD',
             'is_acknowledged' => '0'
-        ]);
-        $unknown_soft = $this->countServicesQuery([
+        ]));
+        $unknown_soft = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'UNKNOWN',
             'state_type' => 'SOFT',
             'is_acknowledged' => '0'
-        ]);
-        $critical = $this->countServicesQuery([
+        ]));
+        $critical = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'CRITICAL',
             'state_type' => 'HARD',
             'is_acknowledged' => '0'
-        ]);
-        $critical_soft = $this->countServicesQuery([
+        ]));
+        $critical_soft = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'CRITICAL',
             'state_type' => 'SOFT',
             'is_acknowledged' => '0'
-        ]);
-        $warning = $this->countServicesQuery([
+        ]));
+        $warning = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'WARNING',
             'state_type' => 'HARD',
             'is_acknowledged' => '0'
-        ]);
-        $warning_soft = $this->countServicesQuery([
+        ]));
+        $warning_soft = $this->countServicesQuery(array_merge($a_query, [
             'state' => 'WARNING',
             'state_type' => 'SOFT',
             'is_acknowledged' => '0'
-        ]);
-        $acknowledge = $this->countServicesQuery([
+        ]));
+        $acknowledge = $this->countServicesQuery(array_merge($a_query, [
             'is_acknowledged' => '1'
-        ]);
+        ]));
 
         // Manage play sound if critical increased since last refresh
         if (isset($_SESSION['plugin_monitoring']['dashboard_services_critical'])) {
@@ -1866,23 +1022,15 @@ class PluginMonitoringDisplay extends CommonDBTM
     }
 
 
-    function showHostsCounters($display = true, $ajax = true)
+    function showHostsCounters($display = true)
     {
-        if ($ajax) {
-            PluginMonitoringToolbox::log("showHostsCounters called with ajax!");
-        } else {
-            $this->displayHostsCounters($display);
-        }
+        $this->displayHostsCounters($display);
     }
 
 
-    function showServicesCounters($display = true, $ajax = true)
+    function showServicesCounters($display = true, $a_query=[])
     {
-        if ($ajax) {
-            PluginMonitoringToolbox::log("showServicesCounters called with ajax!");
-        } else {
-            $this->displayServicesCounters($display);
-        }
+        $this->displayServicesCounters($display, $a_query);
     }
 
 
@@ -1964,8 +1112,8 @@ class PluginMonitoringDisplay extends CommonDBTM
     /**
      * Restart Monitoring framework buttons :
      * - on main Monitoring plugin page
-     * - one button per each declared Shinken tag
-     * - one button to restart all Shinken instances
+     * - one button per each declared Monitoring framework tag
+     * - one button to restart all Monitoring framework instances
      *
      * @global $CFG_GLPI
      */

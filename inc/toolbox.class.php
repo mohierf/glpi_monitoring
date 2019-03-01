@@ -45,7 +45,7 @@ class PluginMonitoringToolbox
     {
         global $CFG_GLPI;
 
-        // Use tools/minify.sh t ocreate a minified JS
+        // Use tools/minify.sh to create a minified JS
         echo '<script src="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/lib/scripts-1.js"></script>';
 
         /*
@@ -64,6 +64,43 @@ class PluginMonitoringToolbox
         <script src="'.$CFG_GLPI["root_doc"].'/plugins/monitoring/lib/jqueryplugins/tooltipsy/jquery.tipsy.min.js"></script>
         <script src="'.$CFG_GLPI["root_doc"].'/plugins/monitoring/lib/jqueryplugins/jquery-ui/jquery-ui.min.js"></script>';
         */
+    }
+
+
+    /**
+     * Get the business imact information for an item
+     *
+     * @param integer $business_impact
+     * @param bool $text
+     *
+     * @return string
+     */
+    static function getBI($business_impact=3, $text=false)
+    {
+        if ($business_impact < 0 or $business_impact > 5) {
+            return __("Unknown", 'monitoring');
+        }
+
+        $a_texts = [
+            0 => 'None',
+            1 => 'Low',
+            2 => 'Normal',
+            3 => 'Important',
+            4 => 'Very important',
+            5 => 'Business critical'
+        ];
+
+        $nb_stars = max(0, $business_impact - 2);
+        $stars = '';
+        for ($i=0; $i < $nb_stars; $i++) {
+            $stars .= '<small style="vertical-align: middle;"><i class="fas fa-star"></i></small>';
+        }
+
+        if ($text) {
+            $stars = sprintf(__('%1$s %2$s'), $a_texts[$business_impact], $stars);
+        }
+
+        return $stars;
     }
 
 

@@ -39,7 +39,7 @@ class PluginMonitoringSystem extends CommonDBTM
     const HOMEPAGE = 1024;
     const DASHBOARD = 2048;
 
-    static $rightname = 'plugin_monitoring_systemstatus';
+    static $rightname = 'plugin_monitoring_system_status';
 
 
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
@@ -49,8 +49,8 @@ class PluginMonitoringSystem extends CommonDBTM
             switch ($item->getType()) {
                 case 'Central' :
                     if (Session::haveRight("plugin_monitoring_homepage", READ)
-                        && Session::haveRight("plugin_monitoring_systemstatus", PluginMonitoringSystem::HOMEPAGE)) {
-                        return [1 => "[" . __('System status', 'monitoring')];
+                        and Session::haveRight("plugin_monitoring_system_status", PluginMonitoringSystem::HOMEPAGE)) {
+                        return [1 => __('System status', 'monitoring')];
                     } else {
                         return '';
                     }

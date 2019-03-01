@@ -131,7 +131,6 @@ class PluginMonitoringProfile extends Profile
                 'field' => 'plugin_monitoring_central'],
         ];
         if (!$self_service) {
-            // Add a menu in the Administration menu
             $rights[] = [
                 'rights' => [READ => __('Read')],
                 'label' => __('Menu', 'monitoring'),
@@ -166,12 +165,13 @@ class PluginMonitoringProfile extends Profile
     function getRightsMonitoring($self_service = false)
     {
         $rights = [
+
             ['rights' => [READ => __('Read')],
                 'label' => __('Dashboard', 'monitoring'),
                 'field' => 'plugin_monitoring_dashboard'
             ],
             ['rights' => [READ => __('Read')],
-                'label' => __('Homepage', 'monitoring'),
+                'label' => __('Home page', 'monitoring'),
                 'field' => 'plugin_monitoring_homepage'
             ],
 
@@ -183,10 +183,10 @@ class PluginMonitoringProfile extends Profile
                 'label' => __('Downtime', 'monitoring'),
                 'field' => 'plugin_monitoring_downtime'
             ],
-            ['itemtype' => 'PluginMonitoringDisplayview',
-                'label' => __('Views', 'monitoring'),
-                'field' => 'plugin_monitoring_displayview'
-            ],
+//            ['itemtype' => 'PluginMonitoringDisplayview',
+//                'label' => __('Views', 'monitoring'),
+//                'field' => 'plugin_monitoring_displayview'
+//            ],
 //            ['itemtype' => 'PluginMonitoringSlider',
 //                'label' => __('Slider', 'monitoring'),
 //                'field' => 'plugin_monitoring_slider'
@@ -211,10 +211,10 @@ class PluginMonitoringProfile extends Profile
                 'label' => __('Notifications', 'monitoring'),
                 'field' => 'plugin_monitoring_notification'
             ],
-            ['itemtype' => 'PluginMonitoringServicenotificationtemplate',
-                'label' => __('Notifications', 'monitoring'),
-                'field' => 'plugin_monitoring_notification'
-            ],
+//            ['itemtype' => 'PluginMonitoringServicenotificationtemplate',
+//                'label' => __('Notifications', 'monitoring'),
+//                'field' => 'plugin_monitoring_notification'
+//            ],
             ['itemtype' => 'PluginMonitoringCommand',
                 'label' => __('Command', 'monitoring'),
                 'field' => 'plugin_monitoring_command'
@@ -236,26 +236,27 @@ class PluginMonitoringProfile extends Profile
                 'field' => 'plugin_monitoring_tag'
             ],
             ['rights' => [UPDATE => __('Update'), CREATE => __('Create')],
-                'label' => __('Host configuration', 'monitoring'),
+                'label' => __('Hosts', 'monitoring'),
                 'field' => 'plugin_monitoring_hostconfig'
             ],
             ['rights' => [CREATE => __('Create')],
                 'label' => __('Restart monitoring framework', 'monitoring'),
                 'field' => 'plugin_monitoring_command_fmwk'
             ],
-            ['itemtype' => 'PluginMonitoringService',
-                'label' => __('Services (ressources)', 'monitoring'),
+            ['rights' => [self::HOMEPAGE => __('Home page'), UPDATE => __('Update'), CREATE => __('Create')],
+                'itemtype' => 'PluginMonitoringService',
+                'label' => __('Services', 'monitoring'),
                 'field' => 'plugin_monitoring_service'
             ],
-            ['rights' => [self::DASHBOARD => __('Dashboard')],
+            ['rights' => [self::HOMEPAGE => __('Home page'), self::DASHBOARD => __('Dashboard')],
                 'itemtype' => 'PluginMonitoringSystem',
                 'label' => __('System status', 'monitoring'),
-                'field' => 'plugin_monitoring_systemstatus'
+                'field' => 'plugin_monitoring_system_status'
             ],
-            ['rights' => [self::DASHBOARD => __('Dashboard')],
+            ['rights' => [self::HOMEPAGE => __('Home page'), self::DASHBOARD => __('Dashboard')],
                 'itemtype' => 'PluginMonitoringHost',
                 'label' => __('Host status', 'monitoring'),
-                'field' => 'plugin_monitoring_hoststatus'
+                'field' => 'plugin_monitoring_host_status'
             ],
             ['rights' => [CREATE => __('Create')],
                 'label' => __('Host actions', 'monitoring'),

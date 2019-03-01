@@ -38,7 +38,7 @@ class PluginMonitoringHostaddress extends CommonDBTM
 {
     public $table = "glpi_plugin_monitoring_hostaddresses";
 
-    static $rightname = 'plugin_monitoring_hostconfig';
+    static $rightname = 'plugin_monitoring_componentscatalog';
 
     /**
      * Get name of this type
@@ -50,7 +50,38 @@ class PluginMonitoringHostaddress extends CommonDBTM
      */
     static function getTypeName($nb = 0)
     {
-        return "Host address";
+        return __('Host address', 'monitoring');
+    }
+
+
+    function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+    {
+        if (!$withtemplate) {
+            switch ($item->getType()) {
+                case 'Computer':
+                    /* @var CommonDBTM $item */
+                    $array_ret = [];
+                    if ($item->getID() > 0 and self::canView()) {
+                        $array_ret[] = self::createTabEntry(
+                            __('Monitoring host address', 'monitoring'));
+                    }
+                    return $array_ret;
+                    break;
+            }
+        }
+        return '';
+    }
+
+
+    static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    {
+        /* @var CommonDBTM $item */
+        switch ($item->getType()) {
+            case 'Computer':
+                $pmHostaddress = new PluginMonitoringHostaddress();
+                $pmHostaddress->showForm($item->getID(), 'Computer');
+                break;
+        }
     }
 
 
@@ -166,8 +197,6 @@ class PluginMonitoringHostaddress extends CommonDBTM
      */
     static function getIp($items_id, $itemtype, $hostname)
     {
-        global $DB;
-
         $networkPort = new NetworkPort();
         $networkName = new NetworkName();
         $iPAddress = new IPAddress();
@@ -223,10 +252,8 @@ class PluginMonitoringHostaddress extends CommonDBTM
         $iPAddress = new IPAddress();
         $pmHostaddress = new PluginMonitoringHostaddress();
 
-        $query = "SELECT * FROM `" . $pmHostaddress->getTable() . "`
-      WHERE `items_id`='" . $items_id . "'
-         AND `itemtype`='" . $itemtype . "'
-      LIMIT 1";
+        $query = "SELECT * FROM `glpi_plugin_monitoring_hostaddresses` 
+        WHERE `items_id`='" . $items_id . "' AND `itemtype`='" . $itemtype . "' LIMIT 1";
         $result = $DB->query($query);
         if ($DB->numrows($result) == '1') {
             $data = $DB->fetch_assoc($result);

@@ -102,16 +102,6 @@ function plugin_monitoring_getAddSearchOptions($itemtype)
                 'table' => 'glpi_plugin_monitoring_contacts',
                 'joinparams' => ['jointype' => 'child']]];
         $sopt[$index]['massiveaction'] = false;
-
-        // user in alignak backend
-        $index++;
-        $sopt[$index]['table'] = 'glpi_plugin_monitoring_users';
-        $sopt[$index]['field'] = 'backend_login';
-        $sopt[$index]['datatype'] = 'string';
-        $sopt[$index]['name'] = __('alignak account name', 'monitoring');
-        $sopt[$index]['joinparams'] = ['jointype' => 'child'];
-        $sopt[$index]['massiveaction'] = false;
-
     }
 
     return $sopt;
@@ -188,9 +178,8 @@ function plugin_monitoring_uninstall()
 //}
 
 
-function plugin_monitoring_MassiveActionsFieldsDisplay($options = [])
+function plugin_monitoring_MassiveActionsFieldsDisplay()
 {
-
     return false;
 }
 
@@ -302,7 +291,7 @@ function plugin_monitoring_addSelect($type, $id, $num)
 */
 
 
-function plugin_monitoring_forceGroupBy($type)
+function plugin_monitoring_forceGroupBy()
 {
     return false;
 }
@@ -502,7 +491,7 @@ function plugin_monitoring_addLeftJoin($itemtype, $ref_table, $new_table, $linkf
 }
 
 
-function plugin_monitoring_addOrderBy($type, $id, $order, $key = 0)
+function plugin_monitoring_addOrderBy()
 {
     return "";
 }
@@ -637,92 +626,7 @@ function plugin_monitoring_getDropdown()
 
 function plugin_monitoring_searchOptionsValues($item)
 {
-    global $CFG_GLPI;
-
-    // Fred : Add a log to check whether this function is still called ...
-    PluginMonitoringToolbox::log("********** plugin_monitoring_searchOptionsValues is called ... still used?");
-    // Search options for services
-    if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_services'
-        AND $item['searchoption']['field'] == 'state') {
-        $input = [];
-        $input['CRITICAL'] = 'CRITICAL';
-        $input['DOWNTIME'] = 'DOWNTIME';
-        $input['FLAPPING'] = 'FLAPPING';
-        $input['OK'] = 'OK';
-        $input['RECOVERY'] = 'RECOVERY';
-        $input['UNKNOWN'] = 'UNKNOWN';
-        $input['WARNING'] = 'WARNING';
-
-        Dropdown::showFromArray($item['name'], $input, ['value' => $item['value']]);
-        return true;
-    } else if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_services'
-        AND $item['searchoption']['field'] == 'state_type') {
-        $input = [];
-        $input['HARD'] = 'HARD';
-        $input['SOFT'] = 'SOFT';
-
-        Dropdown::showFromArray($item['name'], $input, ['value' => $item['value']]);
-        return true;
-    } else if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_services'
-        AND ($item['searchoption']['field'] == 'Computer'
-            OR $item['searchoption']['field'] == 'Printer'
-            OR $item['searchoption']['field'] == 'NetworkEquipment')) {
-
-        $itemtype = $item['searchoption']['field'];
-
-        $use_ajax = false;
-
-        if ($CFG_GLPI["use_ajax"]) {
-            $nb = countElementsInTable("glpi_plugin_monitoring_componentscatalogs_hosts", "`itemtype`='Computer'");
-            if ($nb > $CFG_GLPI["ajax_limit_count"]) {
-                $use_ajax = true;
-            }
-        }
-
-        $params = [];
-        $params['itemtype'] = $itemtype;
-        $params['searchText'] = '';
-        $params['myname'] = $item['name'];
-        $params['rand'] = '';
-        $params['value'] = $item['value'];
-
-        $default = "<select name='" . $item['name'] . "' id='dropdown_" . $item['name'] . "0'>";
-        if (isset($item['value'])
-            AND !empty($item['value'])) {
-            /* @var  CommonDBTM $itemm */
-            $itemm = new $itemtype();
-            $itemm->getFromDB($item['value']);
-            $default .= "<option value='" . $item['value'] . "'>" . $itemm->getName() . "</option></select>";
-        }
-
-        Ajax::dropdown($use_ajax, "/plugins/monitoring/ajax/dropdownDevices.php", $params, $default);
-
-        return true;
-    }
-
-    // Search options for hosts
-    if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_hosts'
-        AND $item['searchoption']['field'] == 'state') {
-        $input = [];
-        $input['DOWN'] = 'DOWN';
-        $input['DOWNTIME'] = 'DOWNTIME';
-        $input['FLAPPING'] = 'FLAPPING';
-        $input['RECOVERY'] = 'RECOVERY';
-        $input['UNKNOWN'] = 'UNKNOWN';
-        $input['UNREACHABLE'] = 'UNREACHABLE';
-        $input['UP'] = 'UP';
-
-        Dropdown::showFromArray($item['name'], $input, ['value' => $item['value']]);
-        return true;
-    } else if ($item['searchoption']['table'] == 'glpi_plugin_monitoring_hosts'
-        AND $item['searchoption']['field'] == 'state_type') {
-        $input = [];
-        $input['HARD'] = 'HARD';
-        $input['SOFT'] = 'SOFT';
-
-        Dropdown::showFromArray($item['name'], $input, ['value' => $item['value']]);
-        return true;
-    }
+    Toolbox::deprecated('plugin_monitoring_searchOptionsValues() method is deprecated');
 }
 
 

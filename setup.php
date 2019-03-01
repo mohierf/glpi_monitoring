@@ -135,13 +135,15 @@ function plugin_init_monitoring()
 
         Plugin::registerClass('PluginMonitoringEntity',
             ['addtabon' => ['Entity']]);
-        Plugin::registerClass('PluginMonitoringComponentscatalog',
-            ['addtabon' => ['Central']]);
-        Plugin::registerClass('PluginMonitoringDisplayview',
-            ['addtabon' => ['Central']]);
+//        Plugin::registerClass('PluginMonitoringComponentscatalog',
+//            ['addtabon' => ['Central']]);
+//        Plugin::registerClass('PluginMonitoringDisplayview',
+//            ['addtabon' => ['Central']]);
 
         Plugin::registerClass('PluginMonitoringHost',
             ['addtabon' => ['Central', 'Computer']]);
+        Plugin::registerClass('PluginMonitoringHostaddress',
+            ['addtabon' => ['Computer']]);
         Plugin::registerClass('PluginMonitoringService',
             ['addtabon' => ['Central']]);
         Plugin::registerClass('PluginMonitoringServiceevent',
@@ -149,8 +151,8 @@ function plugin_init_monitoring()
 
         Plugin::registerClass('PluginMonitoringProfile',
             ['addtabon' => ['Profile']]);
-        Plugin::registerClass('PluginMonitoringUnavailability',
-            ['addtabon' => ['Computer', 'NetworkEquipment']]);
+//        Plugin::registerClass('PluginMonitoringUnavailability',
+//            ['addtabon' => ['Computer', 'NetworkEquipment']]);
         Plugin::registerClass('PluginMonitoringSystem',
             ['addtabon' => ['Central']]);
 

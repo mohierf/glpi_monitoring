@@ -36,7 +36,6 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringHostconfig extends CommonDBTM
 {
-
     static $rightname = 'plugin_monitoring_componentscatalog';
 
     /**

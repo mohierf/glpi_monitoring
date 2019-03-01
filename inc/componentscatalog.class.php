@@ -62,7 +62,6 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
      * @param string $interface
      *
      * @return array
-     */
     function getRights($interface = 'central')
     {
         $values = parent::getRights();
@@ -71,6 +70,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
 
         return $values;
     }
+     */
 
 
     function defineTabs($options = [])
@@ -454,6 +454,9 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
     }
 
 
+    /**
+     * @param CommonDBTM $item
+     */
     static function replayRulesCatalog($item)
     {
 

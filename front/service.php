@@ -60,7 +60,7 @@ $pmMessage->getMessages();
 
 $pmDisplay = new PluginMonitoringDisplay();
 $pmDisplay->dashboard(true);
-$pmDisplay->showServicesCounters(true, false);
+$pmDisplay->showServicesCounters(true);
 
 // Manage search
 if (isset($_SESSION['plugin_monitoring']['service'])) {

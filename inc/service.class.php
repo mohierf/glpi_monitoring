@@ -200,7 +200,7 @@ class PluginMonitoringService extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => $index++,
+            'id' => $index,
             'table' => $this->getTable(),
             'field' => 'is_acknowledged',
             'datatype' => 'bool',
@@ -242,24 +242,33 @@ class PluginMonitoringService extends CommonDBTM
 
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-
+        PluginMonitoringToolbox::log("getTabNameForItem:" . $item->getType());
         if (!$withtemplate) {
             switch ($item->getType()) {
                 case 'Central' :
                     if (Session::haveRight("plugin_monitoring_homepage", READ)
-                        && Session::haveRight("plugin_monitoring_service", READ)) {
-                        return [1 => __('All resources', 'monitoring')];
-                    } else {
-                        if (Session::haveRight("plugin_monitoring_homepage", READ)
-                            && Session::haveRight("plugin_monitoring_perfdata", READ)) {
-                            return [1 => __('Performance data', 'monitoring')];
-                        } else {
-                            return '';
-                        }
+                        and Session::haveRight("plugin_monitoring_service", self::HOMEPAGE)) {
+                        return [1 => __('Monitored services', 'monitoring')];
                     }
+                    break;
             }
         }
         return '';
+    }
+
+
+    static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    {
+
+        switch ($item->getType()) {
+            case 'Central' :
+                $pmDisplay = new PluginMonitoringDisplay();
+                $pmDisplay->showServicesCounters(true);
+                $params = Search::manageParams("PluginMonitoringService", []);
+                $pmDisplay->showResourcesBoard('', true, $params);
+                break;
+        }
+        return true;
     }
 
 
@@ -271,16 +280,16 @@ class PluginMonitoringService extends CommonDBTM
      * @param string $interface
      *
      * @return array
+     * function getRights($interface = 'central')
+     * {
+     *
+     * $values = [];
+     * $values[self::HOMEPAGE] = __('See in homepage', 'monitoring');
+     * $values[self::DASHBOARD] = __('See in dashboard', 'monitoring');
+     *
+     * return $values;
+     * }
      */
-    function getRights($interface = 'central')
-    {
-
-        $values = [];
-        $values[self::HOMEPAGE] = __('See in homepage', 'monitoring');
-        $values[self::DASHBOARD] = __('See in dashboard', 'monitoring');
-
-        return $values;
-    }
 
 
     /**
@@ -490,59 +499,6 @@ class PluginMonitoringService extends CommonDBTM
 
 
     /**
-     * Set service as acknowledged
-     *
-     * @param string $comment
-     * @param bool $creation
-     *
-     * @return bool
-     */
-    function setAcknowledged($comment = '', $creation = true)
-    {
-        if ($this->getID() == -1) return false;
-
-        $start_time = strtotime(date('Y-m-d H:i:s'));
-        $end_time = $start_time;
-
-        if ($creation) {
-            $ackData = [];
-            $ackData['itemtype'] = 'PluginMonitoringService';
-            $ackData['items_id'] = $this->getID();
-            $ackData["start_time"] = date('Y-m-d H:i:s', $start_time);
-            $ackData["end_time"] = date('Y-m-d H:i:s', $end_time);
-            $ackData["comment"] = $comment;
-            $ackData["sticky"] = 1;
-            $ackData["persistent"] = 1;
-            $ackData["notify"] = 1;
-            $ackData["users_id"] = $_SESSION['glpiID'];
-            $ackData["notified"] = 0;
-            $ackData["expired"] = 0;
-            $pmAcknowledge = new PluginMonitoringAcknowledge();
-            $pmAcknowledge->add($ackData);
-        }
-
-        $serviceData = [];
-        $serviceData['id'] = $this->getID();
-        $serviceData['is_acknowledged'] = '1';
-        $this->update($serviceData);
-
-        return true;
-    }
-
-    function setUnacknowledged($comment = '')
-    {
-        if ($this->getID() == -1) return false;
-
-        $serviceData = [];
-        $serviceData['id'] = $this->getID();
-        $serviceData['is_acknowledged'] = '0';
-        $this->update($serviceData);
-
-        return true;
-    }
-
-
-    /**
      * Is currently acknowledged ?
      */
     function isCurrentlyAcknowledged()
@@ -586,12 +542,8 @@ class PluginMonitoringService extends CommonDBTM
         // PluginMonitoringToolbox::log("getShortState - ".$this->getID()."\n");
         if ($this->getID() == -1) return '';
 
-        $acknowledge = $this->getField('is_acknowledged');
-        $state_type = $this->getField('state_type');
         $state = $this->getField('state');
-        $event = $this->getField('output');
 
-        $returned_state = '';
         switch ($state) {
             case 'OK':
                 $returned_state = 'OK';
@@ -702,181 +654,37 @@ class PluginMonitoringService extends CommonDBTM
     }
 
 
-    static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
-    {
-
-        switch ($item->getType()) {
-            case 'Central' :
-                $pmDisplay = new PluginMonitoringDisplay();
-                // $pmDisplay->showCounters('Ressources');
-                $params = Search::manageParams("PluginMonitoringService", []);
-                $params['itemtype'] = 'PluginMonitoringService';
-                $pmDisplay->showResourcesBoard('', true, $params);
-                //$pmDisplay->showResourcesBoard('', $perfdatas);
-                return true;
-
-        }
-        return true;
-    }
-
-
-    function manageServices($itemtype, $items_id)
-    {
-
-        if ($itemtype == 'Computer') {
-            $pmHostaddress = new PluginMonitoringHostaddress();
-            $item = new $itemtype();
-            if ($item->can($items_id, UPDATE)) {
-                $pmHostaddress->showForm($items_id, $itemtype);
-            }
-        }
-//      $pmServices = new PluginMonitoringService();
-//      $pmServices->listByHost($itemtype, $items_id);
-    }
-
-
     /**
      * Display services associated with host
      *
-     * @param $itemtype string value type of item
-     * @param $items_id integer id of the object
+     * @param string $itemtype  type of item (eg. Computer)
+     * @param integer $items_id id of the object
      *
-     *
-     * @throws Exception
      */
     function listByHost($itemtype, $items_id)
     {
-
-        $params = Search::manageParams("PluginMonitoringService", [], false);
-        $num = 20; // Computer
-        if ($itemtype == 'Printer') {
-            $num = 21;
-        } else if ($itemtype == 'NetworkEquipment') {
-            $num = 22;
-        }
-        $params['criteria'][0] = [
-            'field' => $num,
-            'searchtype' => 'equals',
-            'value' => $items_id
-        ];
-        $col_to_display = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-
-        $data = Search::prepareDatasForSearch('PluginMonitoringService', $params, $col_to_display);
-        $data['tocompute'] = $data['toview'];
-        $data['search']['export_all'] = true;
-        Search::constructSQL($data);
-        Search::constructDatas($data);
-
-        $pmComponentscatalog = new PluginMonitoringComponentscatalog();
-
-        $services_id = [];
-        foreach ($data['data']['rows'] as $row) {
-            $services_id[] = $row['id'];
-        }
-        // for performances, not use IN() in the bug table
-        $datedb = '';
-        foreach ($services_id as $service_id) {
-            $oldvalue = current(getAllDatasFromTable(
-                'glpi_plugin_monitoring_serviceevents',
-                "`plugin_monitoring_services_id` = '" . $service_id . "'",
-                false,
-                'id ASC LIMIT 1'));
-            if ($datedb == '') {
-                $datedb = $oldvalue['date'];
-            } else {
-                if (strtotime($datedb) > $oldvalue['date']) {
-                    $datedb = $oldvalue['date'];
-                }
-            }
-        }
-
-        $date = new DateTime($datedb);
-        $start = time();
-        if ($date->getTimestamp() < $start) {
-            $start = $date->getTimestamp();
-        }
-
-        $nbdays = round((date('U') - $start) / 86400);
-//        echo <<<EOF
-        echo '<script type="text/javascript">';
-        echo '$(function() {';
-        echo '$("#custom_date" ).datepicker({ minDate: -' . $nbdays . ', maxDate: "+0D", dateFormat:"mm/dd/yy" });';
-        echo '$("#custom_time" ).timepicker();';
-        echo '});';
-        echo '</script>;';
-
-        echo '<input type="text" id="custom_date" value="' . date('m/d/Y') . '"> '
-            . ' <input type="text" id="custom_time" value="' . date('H:i') . '">';
-
-        echo '<div id="custom_date" style="display:none"></div>';
-        echo '<div id="custom_time" style="display:none"></div>';
-
-        echo '<table class="tab_cadre_fixe">';
-
-        echo '<tr class="tab_bg_1">';
-        echo '<th colspan="5">';
-        echo __('Resources', 'monitoring');
-        /* @var $item CommonDBTM */
+        /* @var CommonDBTM $item */
         $item = new $itemtype();
         $item->getFromDB($items_id);
-        echo ' - ' . $item->getTypeName();
-        echo ' - ' . $item->getName();
-        echo '</th>';
-        echo '</tr>';
 
-        echo '<table class="tab_cadre_fixe">';
-        $previous_componentscatalog = 0;
-        foreach ($data['data']['rows'] as $row) {
-            $pmComponentscatalog->getFromDB($row[8][0]['id']);
+        $params = [
+            "criteria" => [
+                [
+                    "field" => 2,
+                    "searchtype" => "contains",
+                    "value" => $item->getName()
+                ]
+            ],
+            "itemtype" => "PluginMonitoringService"
+        ];
 
-            if ($row[8][0]['id'] != $previous_componentscatalog) {
-                if ($previous_componentscatalog != 0) {
-                    echo "<tr style='border:1px solid #ccc;background-color:#ffffff'>";
-                    echo "<td colspan='14' height='5'></td>";
-                    echo "</tr>";
-                }
-                echo "<tr class='tab_bg_1'>";
-                echo "<th colspan='14'>" . $pmComponentscatalog->getTypeName() . "&nbsp;:&nbsp;" . $pmComponentscatalog->getLink() . "</th>";
-                echo "</tr>";
+        $extra_query = ["host_name" => $item->getName()];
+        $pmDisplay = new PluginMonitoringDisplay();
+        PluginMonitoringToolbox::log("Extra query: " . print_r($extra_query, true));
 
-                echo "<tr class='tab_bg_1'>";
-                echo "<th>";
-                echo __('Show graphics', 'monitoring');
-                echo "</th>";
-                echo "<th>";
-                echo __('Component', 'monitoring');
-                echo "</th>";
-                echo "<th>";
-                echo __('Resource state', 'monitoring');
-                echo "</th>";
-                echo "<th>";
-                echo __('Last check', 'monitoring');
-                echo "</th>";
-                echo "<th>";
-                echo __('Result details', 'monitoring');
-                echo "</th>";
-                echo "<th>";
-                echo __('Check period', 'monitoring');
-                echo "</th>";
-                echo "<th>" . __('Current month', 'monitoring') . " " . Html::showToolTip(__('Availability', 'monitoring'), ['display' => false]) . "</th>";
-                echo "<th>" . __('Last month', 'monitoring') . " " . Html::showToolTip(__('Availability', 'monitoring'), ['display' => false]) . "</th>";
-                echo "<th>" . __('Current year', 'monitoring') . " " . Html::showToolTip(__('Availability', 'monitoring'), ['display' => false]) . "</th>";
-                echo "<th>" . __('Detail', 'monitoring') . "</th>";
-                echo '<th>' . __('Acknowledge', 'monitoring') . '</th>';
-                echo "<th>" . __('Arguments', 'monitoring') . "</th>";
-                echo "</tr>";
-            }
-            echo "<tr class='tab_bg_1'>";
-            PluginMonitoringDisplay::displayLine($row, 0);
-            echo "</tr>";
-
-            $previous_componentscatalog = $row[8][0]['id'];
-
-        }
-
-        echo "</table>";
-
-        Html::closeForm();
+        $pmDisplay->displayServicesCounters(true, $extra_query);
+//        $params = Search::manageParams("PluginMonitoringService", []);
+        $pmDisplay->showResourcesBoard('', true, $params);
     }
 
 

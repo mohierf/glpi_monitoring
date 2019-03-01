@@ -127,7 +127,6 @@ class PluginMonitoringComponent extends CommonDBTM
             return [
                 __('Copy'),
                 __('Components catalog', 'monitoring'),
-                __('Graph configuration', 'monitoring')
             ];
         } else if ($item->getID() > 0) {
             return [
@@ -455,7 +454,7 @@ class PluginMonitoringComponent extends CommonDBTM
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Business priority level', 'monitoring') . "&nbsp;:</td>";
+        echo "<td>" . __('Business impact', 'monitoring') . "&nbsp;:</td>";
         echo "<td>";
         Dropdown::showNumber('business_impact', [
                 'value' => $this->fields['business_impact'],
@@ -635,7 +634,7 @@ class PluginMonitoringComponent extends CommonDBTM
     }
 
 
-    function hasPerfdata($incremental = false)
+    function hasPerfdata()
     {
         // For former source code compatibility!
         return false;

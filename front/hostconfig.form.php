@@ -35,8 +35,8 @@ include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-    "monitoring", "hostconfig");
+Html::header(__('Monitoring', 'monitoring'),
+    '', "plugins", "monitoring", "host_config");
 
 
 $pmHostconfig = new PluginMonitoringHostconfig();

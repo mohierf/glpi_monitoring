@@ -187,9 +187,9 @@ if (Session::haveRight("config", READ)) {
     echo '<th width="15%">';
     echo '</th>';
 
-    echo '<th width="15%">';
-    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/perfdata.php">' . __("Graph templates", "monitoring") . '</a>';
-    echo '</th>';
+//    echo '<th width="15%">';
+//    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/perfdata.php">' . __("Graph templates", "monitoring") . '</a>';
+//    echo '</th>';
 
     echo '<th>';
     echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/notificationcommand.php">' . __("Notification commands", "monitoring") . '</a>';
