@@ -387,7 +387,7 @@ class PluginMonitoringProfile extends Profile
 
         foreach ($rights as $right => $value) {
             // If it does not yet exists...
-            if ($profileRight->getFromDBByCrit(["WHERE" => "`profiles_id`='$profiles_id' AND `name`='$right'"])) {
+            if ($profileRight->getFromDBByCrit(["profiles_id" => $profiles_id, "name" =>$right])) {
                 // Update the profile right
                 $myright['rights'] = $value;
                 $profileRight->update($myright);
