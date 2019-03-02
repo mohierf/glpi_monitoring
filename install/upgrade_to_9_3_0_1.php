@@ -30,7 +30,7 @@
  *
  */
 
-class PluginFormcreatorUpgradeTo9_3_0_1
+class PluginMonitoringUpgradeTo9_3_0_1
 {
     /**
      * @param Migration $migration

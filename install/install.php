@@ -146,66 +146,13 @@ class PluginMonitoringInstall
         $this->migration->displayMessage("Include file: ". $includeFile);
         if (is_readable($includeFile) && is_file($includeFile)) {
             include_once $includeFile;
-            $updateClass = "PluginFormcreatorUpgradeTo$toVersion";
+            $updateClass = "PluginMonitoringUpgradeTo$toVersion";
             $this->migration->addNewMessageArea("Upgrade to $toVersion");
             $upgradeStep = new $updateClass();
             $upgradeStep->upgrade($this->migration);
             $this->migration->executeMigration();
             $this->migration->displayMessage('Done');
         }
-    }
-
-    /**
-     * Upgrade the plugin
-     *
-     * @param Migration $migration
-     *
-     * @return boolean
-     */
-    public function upgrade_old(Migration $migration)
-    {
-        $this->migration = $migration;
-        $fromSchemaVersion = $this->getSchemaVersion();
-
-        $_SESSION['plugin_monitoring']['installation'] = true;
-
-        $this->installSchema();
-
-        // All cases are run starting from the one matching the current schema version
-        switch ($fromSchemaVersion) {
-            case '0.0':
-            case '1.0':
-                // Any schema version below or equal 1.0
-//                require_once(__DIR__ . '/update_0.0_1.0.php');
-//                plugin_alignak_update_1_0($this->migration);
-                break;
-
-            case '9.3+0.1-dev':
-                // From the very first installed version
-//                require_once(__DIR__ . '/update_0.0_1.0.php');
-//                plugin_alignak_update_1_0($this->migration);
-                break;
-
-            default:
-                // Must be the last case
-                if ($this->endsWith(PLUGIN_MONITORING_VERSION, "-dev")) {
-                    if (is_readable(__DIR__ . "/update_dev.php") && is_file(__DIR__ . "/update_dev.php")) {
-                        include_once __DIR__ . "/update_dev.php";
-                        $updateDevFunction = 'plugin_alignak_update_dev';
-                        if (function_exists($updateDevFunction)) {
-                            $updateDevFunction($this->migration);
-                        }
-                    }
-                }
-        }
-        $this->migration->executeMigration();
-
-        $this->createCronTasks();
-        Config::setConfigurationValues('monitoring', ['schema_version' => PLUGIN_MONITORING_VERSION]);
-
-        unset($_SESSION['plugin_monitoring']['installation']);
-
-        return true;
     }
 
     /**
@@ -291,11 +238,11 @@ class PluginMonitoringInstall
     public function uninstall($drop_tables = false)
     {
         $config = new Config();
-        $config->deleteByCriteria(['context' => 'alignak']);
+        $config->deleteByCriteria(['context' => 'monitoring']);
 
         // Clean display preferences
         $pref = new DisplayPreference;
-        $pref->deleteByCriteria(['itemtype' => ['LIKE', 'PluginAlignak%']]);
+        $pref->deleteByCriteria(['itemtype' => ['LIKE', 'PluginMonitoring%']]);
 
         $this->cleanProfile();
 
@@ -542,27 +489,6 @@ class PluginMonitoringInstall
                 'logs_lifetime' => 30
             ]
         );
-
-//        CronTask::Register('PluginMonitoringAlignak', 'AlignakBuild',
-//            DAY_TIMESTAMP,
-//            [
-//                'comment' => __('Alignak - to be developed...', 'monitoring'),
-//                'mode' => CronTask::MODE_EXTERNAL,
-//                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
-//                'hourmin' => 0, 'hourmax' => 24,
-//                'param' => 50
-//            ]
-//        );
-//        CronTask::Register('PluginMonitoringComputerTemplate', 'AlignakComputerTemplate',
-//            DAY_TIMESTAMP,
-//            [
-//                'comment' => __('Alignak Send Counters-...', 'monitoring'),
-//                'mode' => CronTask::MODE_EXTERNAL,
-//                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
-//                'hourmin' => 0, 'hourmax' => 24,
-//                'param' => 50
-//            ]
-//        );
     }
 
     /**
@@ -616,30 +542,6 @@ class PluginMonitoringInstall
      */
     protected function createDefaultDisplayPreferences()
     {
-//        global $DB;
         $this->migration->displayMessage("create default display preferences");
-
-        /*
-        // Create standard display preferences
-        $displayprefs = new DisplayPreference();
-        $found_dprefs = $displayprefs->find("`itemtype` = 'PluginMonitoringAlignak'");
-        if (count($found_dprefs) == 0) {
-            $query = "INSERT IGNORE INTO `glpi_displaypreferences`
-                   (`id`, `itemtype`, `num`, `rank`, `users_id`) VALUES
-                   (NULL, 'PluginMonitoringAlignak', 3, 1, 0),
-                   (NULL, 'PluginMonitoringAlignak', 4, 2, 0),
-                   (NULL, 'PluginMonitoringAlignak', 5, 3, 0)";
-            $DB->query($query) or die ($DB->error());
-        }
-
-        $displayprefs = new DisplayPreference;
-        $found_dprefs = $displayprefs->find("`itemtype` = 'PluginMonitoringMonitoringTemplate'");
-        if (count($found_dprefs) == 0) {
-            $query = "INSERT IGNORE INTO `glpi_displaypreferences`
-                   (`id`, `itemtype`, `num`, `rank`, `users_id`) VALUES
-                   (NULL, 'PluginMonitoringMonitoringTemplate', 2, 1, 0);";
-            $DB->query($query) or die ($DB->error());
-        }
-        */
     }
 }
