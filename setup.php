@@ -340,15 +340,25 @@ function plugin_version_monitoring()
  */
 function plugin_monitoring_check_prerequisites()
 {
+    $return = true;
+
+    $plugin = new Plugin();
+    if (!$plugin->isInstalled('webservices')) {
+        echo __("This plugin requires the 'Web services' plugin to be installed and activated", "kiosks");
+        $return = false;
+    } elseif (!$plugin->isActivated('webservices')) {
+        echo __("This plugin requires the 'Web services' plugin to be activated", "kiosks");
+        $return = false;
+    }
 
     $version = rtrim(GLPI_VERSION, '-dev');
     if (version_compare($version, PLUGIN_MONITORING_GLPI_MIN_VERSION, 'lt')) {
         echo __('This plugin requires GLPI ' . PLUGIN_MONITORING_GLPI_MIN_VERSION, 'monitoring');
 
-        return false;
+        $return = false;
     }
 
-    return true;
+    return $return;
 }
 
 
