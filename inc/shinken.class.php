@@ -46,6 +46,7 @@ class PluginMonitoringShinken extends CommonDBTM
     public static $default = [
         // GLPI root entity name
         'glpi' => [
+            // Root entity name
             'rootEntity' => '',
             // Host id
             'hostId' => '_HOSTSID',
@@ -259,6 +260,42 @@ class PluginMonitoringShinken extends CommonDBTM
         $str = preg_replace("/\s/", "_", $str);
         $str = preg_replace("/_-_/", ".", $str);
         return preg_replace("/[^A-Za-z0-9._-]/", "", $str);
+    }
+
+
+    static function graphiteEntity($entityFullName, $entity_prefix)
+    {
+        // Dynamic setup of a default parameter ...
+        if (empty(self::$default['glpi']['rootEntity'])) {
+            $entity = new Entity();
+            $entity->getFromDB('0');
+            self::$default['glpi']['rootEntity'] = $entity->getName();
+        }
+
+        $entityFullName = preg_replace("/" . self::$default['glpi']['rootEntity'] . " > /", "", $entityFullName);
+        $entityFullName = preg_replace("/ > /", " - ", $entityFullName);
+//        $entityFullName = preg_replace("/#/", "_", $entityFullName);
+        $entityFullName = preg_replace("/_-_/", ".", $entityFullName);
+
+        // Graphite prefix
+        if (isset(self::$default['graphite']['prefix']['name'])) {
+            // Get the Graphite prefix defined for the current entity
+            $default_prefix = self::$default['graphite']['prefix']['value'];
+
+            if (self::$default['graphite']['prefix']['entity']) {
+                if (!empty($default_prefix)) {
+                    $entity_prefix = $default_prefix . '.' . $entity_prefix;
+                }
+                if (!empty($entity_prefix)) {
+                    $entity_prefix = $entity_prefix . '.' . $entityFullName;
+                } else {
+                    $entity_prefix = $entityFullName;
+                }
+            }
+            $entityFullName = $entity_prefix;
+        }
+
+        return self::graphiteFilter($entityFullName, false);
     }
 
 
@@ -543,38 +580,18 @@ class PluginMonitoringShinken extends CommonDBTM
                 $this->set_value($data['modelName'], '_glpi_model_name', $my_host);
                 $this->set_value($data['modelComment'], '_glpi_model_comment', $my_host);
 
-                // Dynamic setup of a default parameter ...
-                self::$default['glpi']['rootEntity'] = __('Root entity');
-                $data['entityFullName'] = preg_replace("/" . self::$default['glpi']['rootEntity'] . " > /", "", $data['entityFullName']);
-                $data['entityFullName'] = preg_replace("/ > /", " - ", $data['entityFullName']);
-//                $data['entityFullName'] = preg_replace("/#/", "_", $data['entityFullName']);
-                if (isset(self::$default['glpi']['entityComplete'])) {
-                    $this->set_value(self::monitoringFilter($data['entityFullName']), self::$default['glpi']['entityComplete'], $my_host);
-                }
-                $data['entityFullName'] = preg_replace("/_-_/", ".", $data['entityFullName']);
-
                 if ($new_template) {
+
+                    $this->set_value(self::monitoringFilter($data['entityFullName']), self::$default['glpi']['entityComplete'], $my_template);
+
                     // Graphite prefix
                     if (isset(self::$default['graphite']['prefix']['name'])) {
-                        // Get the Graphite prefix defined for the current entity
-                        $default_prefix = self::$default['graphite']['prefix']['value'];
-                        $entity_prefix = $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['graphite_prefix'];
+                        $data['entityFullName'] = self::graphiteEntity(
+                            $data['entityFullName'],
+                            $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['graphite_prefix']);
 
-                        if (self::$default['graphite']['prefix']['entity']) {
-                            if (!empty($default_prefix)) {
-                                $entity_prefix = $default_prefix . '.' . $entity_prefix;
-                            }
-                            if (!empty($entity_prefix)) {
-                                $entity_prefix = $entity_prefix . '.' . $data['entityFullName'];
-                            } else {
-                                $entity_prefix = $data['entityFullName'];
-                            }
-                            $this->set_value(self::graphiteFilter($entity_prefix, false),
-                                self::$default['graphite']['prefix']['name'], $my_template);
-                        } else {
-                            $this->set_value(self::graphiteFilter($entity_prefix, false),
-                                self::$default['graphite']['prefix']['name'], $my_template);
-                        }
+                        $this->set_value($data['entityFullName'],
+                            self::$default['graphite']['prefix']['name'], $my_template);
                     }
 
                     if (isset(self::$default['webui']['hostView']['name'])) {
