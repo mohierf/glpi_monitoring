@@ -460,18 +460,18 @@ class PluginMonitoringEntity extends CommonDBTM
      */
     function getMonitoredEntities($tag = '')
     {
-        PluginMonitoringToolbox::log("getMonitoredEntities, for tag='$tag'");
+        PluginMonitoringToolbox::logIfDebug("getMonitoredEntities, for tag='$tag'");
 
         // Get entities matching the provided tag
         $result = [];
         $entities = empty($tag) ? $this->find("`tag`!=''") : $this->find("`tag`='$tag'");
         foreach ($entities as $pm_entity) {
-            PluginMonitoringToolbox::log("- " . print_r($pm_entity, true));
+            PluginMonitoringToolbox::logIfDebug("- " . print_r($pm_entity, true));
             $result[] = $pm_entity['tag'];
         }
         $result = array_unique($result);
 
-        PluginMonitoringToolbox::log("getMonitoredEntities, for tag='$tag', entities: " . print_r($result, true));
+        PluginMonitoringToolbox::logIfDebug("getMonitoredEntities, for tag='$tag', entities: " . print_r($result, true));
         return $result;
     }
 

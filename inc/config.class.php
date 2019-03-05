@@ -55,13 +55,6 @@ class PluginMonitoringConfig extends CommonDBTM
 
     static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
-
-        //      if (($item->getType() == 'Config')
-        //         && ($item->getID() > 0)
-        //         && Session::haveRight('plugin_alignak_configuration', READ)) {
-        //         $config = new self();
-        //         $config->showForm();
-        //      }
         $config = new self();
         $config->showForm();
     }

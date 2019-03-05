@@ -242,7 +242,6 @@ class PluginMonitoringService extends CommonDBTM
 
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-        PluginMonitoringToolbox::log("getTabNameForItem:" . $item->getType());
         if (!$withtemplate) {
             switch ($item->getType()) {
                 case 'Central' :

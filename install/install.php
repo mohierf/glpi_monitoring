@@ -469,6 +469,7 @@ class PluginMonitoringInstall
                 'logs_lifetime' => 30
             ]
         );
+
         // Fred: do not manage unavailability
 //        CronTask::Register('PluginMonitoringUnavailability', 'unavailability',
 //            MINUTE_TIMESTAMP * 5,
