@@ -40,6 +40,7 @@ class PluginMonitoringEntity extends CommonDBTM
 
     /**
      * Initialization called on plugin installation
+     *
      * @param Migration $migration
      */
     function initialize($migration)
@@ -74,7 +75,7 @@ class PluginMonitoringEntity extends CommonDBTM
 
     function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-        $array_ret = array();
+        $array_ret = [];
         if ($item->getID() > -1) {
             if (Session::haveRight("entity", READ)) {
                 $array_ret[0] = self::createTabEntry(__('Monitoring', 'monitoring'));
@@ -217,7 +218,7 @@ class PluginMonitoringEntity extends CommonDBTM
     }
 
 
-    function showForm($items_id, $options = array())
+    function showForm($items_id, $options = [])
     {
         global $CFG_GLPI;
 
@@ -344,7 +345,6 @@ class PluginMonitoringEntity extends CommonDBTM
         echo "</tr>";
 
 
-
         echo "<tr class='tab_bg_1'>";
         echo "<td>";
         echo __('Jet lag', 'monitoring') . "&nbsp;:";
@@ -419,14 +419,16 @@ class PluginMonitoringEntity extends CommonDBTM
     /**
      * Get the Alignak entity configuration for the provided entity.
      * If not found in the provided entity, have a look in this entity ancestors
+     *
      * @param $entities_id
      *
      * @return PluginMonitoringEntity
      */
-    static function getForEntity($entities_id) {
+    static function getForEntity($entities_id)
+    {
         $dbu = new DbUtils();
 
-        PluginMonitoringToolbox::logIfDebug("Get Alignak entity configuration for : ". $entities_id);
+        PluginMonitoringToolbox::logIfDebug("Get Alignak entity configuration for : " . $entities_id);
         $pmEntity = new self();
         if ($pmEntity->getFromDBByCrit(['entities_id' => $entities_id])) {
             // Found!
@@ -436,7 +438,7 @@ class PluginMonitoringEntity extends CommonDBTM
             PluginMonitoringToolbox::logIfDebug("Entity ancestors: " . serialize($ancestors));
             foreach ($ancestors as $index => $id) {
                 if ($pmEntity->getFromDBByCrit(['entities_id' => $id])) {
-                    PluginMonitoringToolbox::logIfDebug("Found for ancestor: ". $id);
+                    PluginMonitoringToolbox::logIfDebug("Found for ancestor: " . $id);
                     break;
                 }
             }
@@ -448,13 +450,15 @@ class PluginMonitoringEntity extends CommonDBTM
         return $pmEntity;
     }
 
-    
+
     /**
      * If the provided tag is not empty and not found then an empty array is returned.
      * If the provided tag is empty, then we consider the root entity.
+     *
      * @param string $tag
      *
-     * If tag is not provided, this function will return all the available monitoring tags of the declared entities
+     * If tag is not provided, this function will return all the available monitoring tags of the
+     * declared entities
      *
      * @return array
      */
@@ -479,19 +483,27 @@ class PluginMonitoringEntity extends CommonDBTM
     /**
      * If the provided tag is not empty and not found then an empty array is returned.
      * If the provided tag is empty, then we consider the root entity.
-     * @param string $tag
-     * @param bool $sons, to get sons of the required entity
-     * @param bool $names, true to return the entity name else it will return the entity identifier
      *
-     * If tag is not provided, this function will return all the available monitoring tags of the declared entities
+     * If tag is not provided, this function will return all the available monitoring tags of the
+     * declared entities
+     *
+     * If a $level is specified, only the entities having this level are returned in the response.
+     * Requiring $level=4 will return only the entities of the fourth level
+     *
+     * @param string $tag
+     * @param bool $sons  , to get sons of the required entity
+     * @param bool $names , true to return the entity name else it will return the entity
+     *                    identifier
+     *
+     * @param int $level
      *
      * @return array
      */
-    function getEntitiesByTag($tag = '', $sons=false, $names=false)
+    function getEntitiesByTag($tag = '', $sons = false, $names = false, $level = -1)
     {
         $entity = new Entity();
 
-        PluginMonitoringToolbox::logIfDebug("getEntitiesByTag, for tag='$tag' (sons=$sons) (names=$names)");
+        PluginMonitoringToolbox::logIfDebug("getEntitiesByTag, for tag='$tag' (sons=$sons) (names=$names) (level=$level)");
 
         // Get entities matching the provided tag
         $result = [];
@@ -499,16 +511,22 @@ class PluginMonitoringEntity extends CommonDBTM
         foreach ($entities as $pm_entity) {
             if ($sons) {
                 foreach (getSonsOf("glpi_entities", $pm_entity['entities_id']) as $entity_id) {
+                    $entity->getFromDB($entity_id);
+                    if ($level != -1 and $entity->fields['level'] != $level) {
+                        continue;
+                    }
                     if ($names) {
-                        $entity->getFromDB($entity_id);
                         $result[] = $entity->getName();
                     } else {
                         $result[] = $entity_id;
                     }
                 }
             } else {
+                $entity->getFromDB($pm_entity['entities_id']);
+                if ($level != -1 and $entity->fields['level'] != $level) {
+                    continue;
+                }
                 if ($names) {
-                    $entity->getFromDB($pm_entity['entities_id']);
                     $result[] = $entity->getName();
                 } else {
                     $result[] = $pm_entity['entities_id'];
