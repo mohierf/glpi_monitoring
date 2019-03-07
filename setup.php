@@ -203,17 +203,14 @@ function plugin_init_monitoring()
             }
         }
 
-//        $PLUGIN_HOOKS['menu_toadd']['monitoring'] = array('plugins' => 'PluginMonitoringDashboard');
         if (Session::haveRight("plugin_monitoring_dashboard", READ)) {
             $PLUGIN_HOOKS["helpdesk_menu_entry"]['monitoring'] = '/front/dashboard.php';
         }
 
-//        $PLUGIN_HOOKS['config_page']['monitoring'] = 'front/config.form.php';
-//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['config'] = 'front/config.form.php';
         // Display a menu entry ?
         if (Session::haveRight('config', UPDATE)) {
             // Configuration page
-            $PLUGIN_HOOKS['config_page']['monitoring'] = 'config.php';
+            $PLUGIN_HOOKS['config_page']['monitoring'] = 'front/config.form.php';
 
             // Add an entry to the Administration menu
             if (Session::haveRight('plugin_monitoring_menu', READ)) {

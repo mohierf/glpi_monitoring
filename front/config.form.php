@@ -30,45 +30,45 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
-Session::checkRight("config", UPDATE);
+Session::checkRight("plugin_monitoring_command", READ);
 
-Html::header(__('Monitoring', 'monitoring'), $_SERVER["PHP_SELF"], "plugins",
-             "PluginMonitoringDashboard", "config");
+Html::header(__('Monitoring - configuration', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "");
 
 
 $pmConfig = new PluginMonitoringConfig();
 if (isset ($_POST["update"])) {
-   $pmConfig->update($_POST);
-   $pmConfig->load_alignak_url();
-   Html::back();
+    $pmConfig->update($_POST);
+    $pmConfig->load_alignak_url();
+    Html::back();
 } else if (isset($_POST['timezones_add'])) {
-   $input = array();
-   $pmConfig->getFromDB($_POST['id']);
-   $input['id'] = $_POST['id'];
-   $a_timezones = importArrayFromDB($pmConfig->fields['timezones']);
-   foreach ($_POST['timezones_to_add'] as $timezone) {
-      $a_timezones[] = $timezone;
-   }
-   $input['timezones'] = exportArrayToDB($a_timezones);
-   $pmConfig->update($input);
-   Html::back();
+    $input = [];
+    $pmConfig->getFromDB($_POST['id']);
+    $input['id'] = $_POST['id'];
+    $a_timezones = importArrayFromDB($pmConfig->fields['timezones']);
+    foreach ($_POST['timezones_to_add'] as $timezone) {
+        $a_timezones[] = $timezone;
+    }
+    $input['timezones'] = exportArrayToDB($a_timezones);
+    $pmConfig->update($input);
+    Html::back();
 } else if (isset($_POST['timezones_delete'])) {
-   $input = array();
-   $pmConfig->getFromDB($_POST['id']);
-   $input['id'] = $_POST['id'];
-   $a_timezones = importArrayFromDB($pmConfig->fields['timezones']);
+    $input = [];
+    $pmConfig->getFromDB($_POST['id']);
+    $input['id'] = $_POST['id'];
+    $a_timezones = importArrayFromDB($pmConfig->fields['timezones']);
     foreach ($_POST['timezones_to_delete'] as $timezone) {
-      $key = array_search($timezone, $a_timezones);
-      unset($a_timezones[$key]);
-   }
-   $input['timezones'] = exportArrayToDB($a_timezones);
-   $pmConfig->update($input);
-   Html::back();
+        $key = array_search($timezone, $a_timezones);
+        unset($a_timezones[$key]);
+    }
+    $input['timezones'] = exportArrayToDB($a_timezones);
+    $pmConfig->update($input);
+    Html::back();
 }
 
 
-$pmConfig->showForm(0, array('canedit' => Session::haveRight("config", UPDATE)));
+$pmConfig->showForm(0, ['canedit' => Session::haveRight("config", UPDATE)]);
 
 Html::footer();

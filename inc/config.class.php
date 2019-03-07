@@ -186,34 +186,36 @@ class PluginMonitoringConfig extends CommonDBTM
         $this->showFormHeader($options);
 
         echo "<tr><th colspan='2'>" . __('Monitoring plugin setup') . "</th></tr>";
+
+        echo "<tr class='tab_bg_1'>";
         echo "<td >" . __('Log extra debug:') . "</td>";
         echo "<td colspan='3'>";
         Dropdown::showYesNo("extra_debug", $this->fields['extra_debug']);
         echo "</td></tr>";
 
-        echo '<tr class="tab_bg_1">';
-        echo "<td >" . __('Build configuration files:') . "</td>";
-        echo "<td colspan='3'>";
-        Dropdown::showYesNo("build_files", $this->fields['build_files']);
-        echo "</td></tr>";
-
-        echo '<tr class="tab_bg_1">';
-        echo '<td>';
-        echo __('Alignak backend URL', 'alignak');
-        echo '</td>';
-        echo '<td>';
-        Html::autocompletionTextField($this, 'alignak_backend_url', ['value' => $this->fields['alignak_backend_url']]);
-        echo '</td>';
-        echo '</tr>';
-
-        echo '<tr class="tab_bg_1">';
-        echo '<td>';
-        echo __('Alignak Web UI URL', 'alignak');
-        echo '</td>';
-        echo '<td>';
-        Html::autocompletionTextField($this, 'alignak_webui_url', ['value' => $this->fields['alignak_webui_url']]);
-        echo '</td>';
-        echo '</tr>';
+//        echo '<tr class="tab_bg_1">';
+//        echo "<td >" . __('Build configuration files:') . "</td>";
+//        echo "<td colspan='3'>";
+//        Dropdown::showYesNo("build_files", $this->fields['build_files']);
+//        echo "</td></tr>";
+//
+//        echo '<tr class="tab_bg_1">';
+//        echo '<td>';
+//        echo __('Alignak backend URL', 'alignak');
+//        echo '</td>';
+//        echo '<td>';
+//        Html::autocompletionTextField($this, 'alignak_backend_url', ['value' => $this->fields['alignak_backend_url']]);
+//        echo '</td>';
+//        echo '</tr>';
+//
+//        echo '<tr class="tab_bg_1">';
+//        echo '<td>';
+//        echo __('Alignak Web UI URL', 'alignak');
+//        echo '</td>';
+//        echo '<td>';
+//        Html::autocompletionTextField($this, 'alignak_webui_url', ['value' => $this->fields['alignak_webui_url']]);
+//        echo '</td>';
+//        echo '</tr>';
 
         echo "<tr class='tab_bg_2'>";
         echo "<td colspan='4' class='center'>";
