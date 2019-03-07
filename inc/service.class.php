@@ -682,7 +682,6 @@ class PluginMonitoringService extends CommonDBTM
         PluginMonitoringToolbox::log("Extra query: " . print_r($extra_query, true));
 
         $pmDisplay->displayServicesCounters(true, $extra_query);
-//        $params = Search::manageParams("PluginMonitoringService", []);
         $pmDisplay->showResourcesBoard('', true, $params);
     }
 

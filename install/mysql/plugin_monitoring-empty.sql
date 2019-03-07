@@ -673,3 +673,19 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_acknowledges` (
   PRIMARY KEY (`id`),
   KEY `itemtype` (`itemtype`,`items_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_records`
+(
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `host_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'not_set',
+  `service_description` varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'not_set',
+  `source` varchar(255) COLLATE utf8_unicode_ci DEFAULT 'glpi_plugin_monitoring',
+  `last_check` datetime DEFAULT NULL,
+  `output` text COLLATE utf8_unicode_ci DEFAULT NULL,
+  `perf_data` text DEFAULT NULL COLLATE utf8_unicode_ci,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `host_name` (`host_name`, `last_check`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 0;
+
+

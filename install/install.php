@@ -50,7 +50,8 @@ class PluginMonitoringInstall
      * @var array
      */
     private $upgradeSteps = [
-        '9_3_0_1_dev'    => '9.3+0.1'
+        '9_3_0_1_dev'    => '9.3+0.1',
+        '9_3_0_1'    => '9.3+0.2'
     ];
 
     /**
@@ -152,6 +153,8 @@ class PluginMonitoringInstall
             $upgradeStep->upgrade($this->migration);
             $this->migration->executeMigration();
             $this->migration->displayMessage('Done');
+        } else {
+            $this->migration->addNewMessageArea("No specific code for upgrade to $toVersion");
         }
     }
 
