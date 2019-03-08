@@ -33,6 +33,8 @@ include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
+Session::checkRight("plugin_monitoring_central", READ);
+
 Html::header(
     __('Monitoring - dashboard', 'monitoring'),
     '', 'config', 'pluginmonitoringmenu', 'dashboard');

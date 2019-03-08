@@ -30,10 +30,10 @@
  *
  */
 
-include ("../../inc/includes.php");
+include("../../inc/includes.php");
 
-Html::header(__('Monitoring', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring");
+Html::header(__('Monitoring', 'monitoring'),
+    "", "plugins", "monitoring");
 
-Html::redirect($CFG_GLPI["root_doc"]."/plugins/monitoring/front/menu.php");
+Html::redirect($CFG_GLPI["root_doc"] . "/plugins/monitoring/front/menu.php");
 Html::footer();
