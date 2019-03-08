@@ -191,6 +191,10 @@ class PluginMonitoringDisplay extends CommonDBTM
      */
     function showResourcesBoard($width = '', $perfdatas = false, $params = [])
     {
+        if (!isset($_SESSION['plugin_monitoring']['reduced_interface'])) {
+            $_SESSION['plugin_monitoring']['reduced_interface'] = false;
+        }
+
         /*
          * Fields index is defined in hot.class.php (rawSearchOptions function). As of now:
          * entity, name, host_name,
