@@ -642,64 +642,54 @@ class PluginMonitoringHost extends CommonDBTM
      *
      * @return array
      */
-    static function getServicesState($id = -1, $where = "`glpi_plugin_monitoring_services`.`state` != 'OK' AND `glpi_plugin_monitoring_services`.`is_acknowledged` = '0'")
+    static function getServicesState($host_name, $where = "`state` != 'OK' AND `is_acknowledged` = '0'")
     {
-        global $DB;
-
-//      if ($id == 0) {
-//         $id = $this->getID();
-//      }
-
-        if ($id == -1) {
-            return [];
-        }
-
-        // Get all host services except if state is ok or is already acknowledged ...
         $host_services_ids = [];
         $host_services_state_list = '';
         $host_services_state = 'OK';
-        $query = "SELECT `glpi_plugin_monitoring_services`.*
-               FROM `glpi_plugin_monitoring_hosts`
-                  INNER JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
-                     ON (`glpi_plugin_monitoring_hosts`.`itemtype` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`) AND (`glpi_plugin_monitoring_hosts`.`items_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id`)
-                  INNER JOIN `glpi_plugin_monitoring_services`
-                     ON (`glpi_plugin_monitoring_services`.`plugin_monitoring_componentscatalogs_hosts_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`)
-               WHERE ($where )
-                  AND (`glpi_plugin_monitoring_hosts`.`id` = '$id')
-               ORDER BY `glpi_plugin_monitoring_services`.`service_description` ASC;";
-        // PluginMonitoringToolbox::log("Query services for host : $id : $query\n");
-        $result = $DB->query($query);
-        if ($DB->numrows($result) > 0) {
-            $host_services_state_list = '';
-            while ($data = $DB->fetch_array($result)) {
-                // PluginMonitoringToolbox::log("Service ".$data['name']." is ".$data['state'].", state : ".$data['output']."\n");
-                if (!empty($host_services_state_list)) $host_services_state_list .= "\n";
-                $host_services_state_list .= $data['last_check'] . " - " . $data['name'] . " : " . $data['state'] . ", event : " . $data['output'];
-                $host_services_ids[] = $data['id'];
 
-                switch ($data['state']) {
-                    case 'CRITICAL':
-                        if ($host_services_state != 'CRITICAL') $host_services_state = $data['state'];
-                        break;
+        PluginMonitoringToolbox::logIfDebug("Search services: $host_name, $where");
 
-                    case 'DOWNTIME':
-                        if ($host_services_state != 'DOWNTIME') $host_services_state = $data['state'];
-                        break;
+        $pmServices = new PluginMonitoringService();
+        $a_services = $pmServices->find("`host_name`='$host_name' AND (" . $where . ")");
+        foreach ($a_services as $index => $data) {
+            PluginMonitoringToolbox::logIfDebug("service, " . print_r($data, true));
 
-                    case 'WARNING':
-                    case 'RECOVERY':
-                    case 'UNKNOWN':
-                        if ($host_services_state == 'OK') $host_services_state = $data['state'];
-                        break;
+            if (!empty($host_services_state_list)) {
+                $host_services_state_list .= "\n";
+            }
 
-                    case 'FLAPPING':
-                        break;
-                }
+            $host_services_state_list .=
+                $data['last_check'] . " - " .
+                $data['service_description'] . " : " .
+                $data['state'] .
+                ", event : " . $data['output'];
+            $host_services_ids[] = $data['id'];
+
+            switch ($data['state']) {
+                case 'CRITICAL':
+                    if ($host_services_state != 'CRITICAL') $host_services_state = $data['state'];
+                    break;
+
+                case 'DOWNTIME':
+                    if ($host_services_state != 'DOWNTIME') $host_services_state = $data['state'];
+                    break;
+
+                case 'WARNING':
+                case 'RECOVERY':
+                case 'UNKNOWN':
+                    if ($host_services_state == 'OK') $host_services_state = $data['state'];
+                    break;
+
+                case 'FLAPPING':
+                    break;
             }
         }
 
         return ([$host_services_state, $host_services_state_list, $host_services_ids]);
     }
+
+
 
 
     /**

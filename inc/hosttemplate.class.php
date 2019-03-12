@@ -142,7 +142,6 @@ class PluginMonitoringHosttemplate extends CommonDropdown
             case 'template_file' :
                 $rand = mt_rand();
                 $full_picture = "<div class='user_picture_border'>";
-                $full_picture .= "<p>Coucou test de fred</p>";
                 $full_picture .= "</div>";
 
                 Html::showTooltip($full_picture, ['applyto' => "picture$rand"]);

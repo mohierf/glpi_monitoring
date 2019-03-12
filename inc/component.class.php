@@ -101,6 +101,17 @@ class PluginMonitoringComponent extends CommonDBTM
     }
 
 
+    /**
+     * Get the component daily counters values table name
+     *
+     * @return string|null
+     */
+    function getDailyCountersTableName()
+    {
+        return "glpi_plugin_kiosks_hdc_" . $this->fields['description'];
+    }
+
+
     function defineTabs($options = [])
     {
         $ong = [];

@@ -436,7 +436,7 @@ class PluginMonitoringDisplay extends CommonDBTM
             }
         }
 
-        PluginMonitoringToolbox::logIfDebug("Columns: " . print_r($columns, true));
+        PluginMonitoringToolbox::log("Columns: " . print_r($columns, true));
 
         echo "<tr class='tab_bg_1'>";
         foreach ($columns as $index => $column) {
@@ -463,17 +463,15 @@ class PluginMonitoringDisplay extends CommonDBTM
                 }
 
                 // Get all host services except if state is ok or is already acknowledged ...
-                // todo: check for improvements!
                 $a_ret = PluginMonitoringHost::getServicesState(
-                    $row['id'],
-                    "`glpi_plugin_monitoring_services`.`state` != 'OK' 
-                    AND `glpi_plugin_monitoring_services`.`is_acknowledged` = '0'");
+                    $row[4]['displayname'],
+                    "`state` != 'OK' AND `is_acknowledged` = '0'");
                 $row[] = [
                     'count' => 1,
                     [
-                        'name' => "test" . $a_ret[1]
+                        'name' => $a_ret[1]
                     ],
-                    'displayname' => "test" . $a_ret[0]
+                    'displayname' => $a_ret[0]
                 ];
 
                 // Get host first IP address
