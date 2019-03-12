@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_components` (
    `id` int(11) NOT NULL AUTO_INCREMENT,
    `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
    `description` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+   `build_service` tinyint(1) NOT NULL DEFAULT '0',
    `plugin_monitoring_commands_id` int(11) NOT NULL DEFAULT '0',
    `arguments` text DEFAULT NULL COLLATE utf8_unicode_ci,
    `plugin_monitoring_checks_id` int(11) NOT NULL DEFAULT '0',

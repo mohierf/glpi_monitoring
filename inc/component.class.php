@@ -263,11 +263,19 @@ class PluginMonitoringComponent extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => $index,
+            'id' => $index++,
             'table' => $this->getTable(),
             'field' => 'freshness_count',
             'datatype' => 'integer',
             'name' => __('Freshness count', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => $index,
+            'table' => $this->getTable(),
+            'field' => 'build_service',
+            'datatype' => 'bool',
+            'name' => __('Build service', 'monitoring'),
         ];
 
         /*
@@ -348,8 +356,7 @@ class PluginMonitoringComponent extends CommonDBTM
         echo "</td>";
         echo "<td>";
         echo "<input type='hidden' name='is_template' value='1' />";
-        $objectName = autoName($this->fields["name"], "name", 1,
-            $this->getType());
+        $objectName = autoName($this->fields["name"], "name", 1, $this->getType());
         Html::autocompletionTextField($this, 'name', ['value' => $objectName]);
         echo "</td>";
         // * checks
@@ -358,6 +365,18 @@ class PluginMonitoringComponent extends CommonDBTM
         Dropdown::show("PluginMonitoringCheck",
             ['name' => 'plugin_monitoring_checks_id',
                 'value' => $this->fields['plugin_monitoring_checks_id']]);
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr>";
+        echo "<td>";
+        echo __('Build the service') . "<span class='red'>*</span>&nbsp;:";
+        echo "</td>";
+        echo "<td>";
+        Dropdown::showYesNo("build_service", $this->fields['build_service']);
+        echo "</td>";
+        echo "<td colspan='2'>";
+        echo "<em>". __('Set will send information to the monitoring framework for this service. Else, it will consider the service is still defined locally.', 'monitoring') ."</em>";
         echo "</td>";
         echo "</tr>";
 
@@ -645,5 +664,22 @@ class PluginMonitoringComponent extends CommonDBTM
     {
         // For former source code compatibility!
         return false;
+    }
+
+
+    function post_addItem()
+    {
+        PluginMonitoringToolbox::log("post_addItem, component: " . print_r($this->fields, true));
+    }
+
+
+    function post_updateItem($history=1) {
+        PluginMonitoringToolbox::log("post_updateItem, component: " . print_r($this->fields, true));
+    }
+
+
+    function post_purgeItem()
+    {
+        PluginMonitoringToolbox::log("post_purgeItem, component: " . print_r($this->fields, true));
     }
 }

@@ -1150,6 +1150,8 @@ class PluginMonitoringService extends CommonDBTM
 
     function post_addItem()
     {
+        global $DB;
+
         PluginMonitoringToolbox::logIfDebug("post_addItem: " . print_r($this->fields, true));
 
         $my_host = $this->getHost();
@@ -1161,13 +1163,15 @@ class PluginMonitoringService extends CommonDBTM
             'itemtype' => "PluginMonitoringService",
             'items_id' => $this->getID(),
             'action' => 'add',
-            'value' => "Added the service '{$this->fields['service_description']}'' for {$my_host->getTypeName()} {$my_host->getName()}"
+            'value' => $DB->escape("Added the service '{$this->fields['service_description']}'' for {$my_host->getTypeName()} '{$my_host->getName()}''")
         ]);
     }
 
 
     function post_purgeItem()
     {
+        global $DB;
+
         PluginMonitoringToolbox::log("post_purgeItem: " . print_r($this->fields, true));
 
         // Find the service related host in the session (see PluginMonitoringComponentscatalog_Host::unlinkComponents)
@@ -1185,7 +1189,7 @@ class PluginMonitoringService extends CommonDBTM
                 'itemtype' => "PluginMonitoringService",
                 'items_id' => $this->getID(),
                 'action' => 'add',
-                'value' => "Deleted the service '{$this->fields['service_description']}'' for {$item->getTypeName()} {$item->getName()}"
+                'value' => $DB->escape("Deleted the service '{$this->fields['service_description']}'' for {$item->getTypeName()} '{$item->getName()}''")
             ]);
             unset($_SESSION['plugin_monitoring']['cc_host']);
         }

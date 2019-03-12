@@ -300,12 +300,15 @@ class PluginMonitoringHost extends CommonDBTM
      */
     static function addHost($item)
     {
-        PluginMonitoringToolbox::logIfDebug("PluginMonitoringHost::addHost, item: " . print_r($item, true));
+        PluginMonitoringToolbox::log("PluginMonitoringHost::addHost, item: " .
+            print_r($item, true));
 
         /* @var CommonDBTM $item */
         $pmHost = new self();
-        if (!$pmHost->getFromDBByCrit(['itemtype' => $item->fields['itemtype'], 'items_id' => $item->fields['items_id']])) {
-            PluginMonitoringToolbox::log("Adding a new monitored host: {$item->fields['itemtype']} - {$item->fields['items_id']}");
+        if (!$pmHost->getFromDBByCrit([
+            'itemtype' => $item->fields['itemtype'], 'items_id' => $item->fields['items_id']])) {
+            PluginMonitoringToolbox::log(
+                "Adding a new monitored host: {$item->fields['itemtype']} - {$item->fields['items_id']}");
 
             /* @var CommonDBTM $item2 */
             $input = [];
@@ -327,13 +330,13 @@ class PluginMonitoringHost extends CommonDBTM
             PluginMonitoringToolbox::log("Added a new monitored host: " . print_r($input, true));
         } else {
             PluginMonitoringToolbox::log("A PM host is still existing: " . $pmHost->getID());
-        }
 
-        // The plugin_monitoring_hosts_id field is not present in the posted data
-        $result = $item->update([
-            'id' => $item->getID(),
-            'plugin_monitoring_hosts_id' => $pmHost->getID()]);
-        PluginMonitoringToolbox::logIfDebug("updated CC host with monitoring host id: !" . $result);
+            // The plugin_monitoring_hosts_id field is not present in the posted data
+            $result = $item->update([
+                'id' => $item->getID(),
+                'plugin_monitoring_hosts_id' => $pmHost->getID()]);
+            PluginMonitoringToolbox::logIfDebug("updated CC host with monitoring host id: !" . $result);
+        }
     }
 
 

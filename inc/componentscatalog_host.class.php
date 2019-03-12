@@ -221,9 +221,9 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
                     $pmService->add($input);
                 } else {
                     $a_service = current($a_services);
-                    $queryu = "UPDATE `glpi_plugin_monitoring_services`
-                  SET `entities_id`='" . $item->fields['entities_id'] . "'
-                     WHERE `id`='" . $a_service['id'] . "'";
+                    $queryu = "UPDATE `glpi_plugin_monitoring_services` 
+                      SET `entities_id`='" . $item->fields['entities_id'] . "'
+                      WHERE `id`='" . $a_service['id'] . "'";
                     $DB->query($queryu);
                 }
             } else {
@@ -297,6 +297,22 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
                     $this->fields['plugin_monitoring_componentscatalogs_id'],
                     $this->fields['id']);
             }
+        }
+    }
+
+
+    function post_updateItem($history=1) {
+        PluginMonitoringToolbox::logIfDebug("post_updateItem, CC_host: " . print_r($this->fields, true));
+
+        $pmHost = new PluginMonitoringHost();
+        if ($pmHost->getFromDBByCrit([
+            'itemtype' => $this->fields['itemtype'],
+            'items_id' => $this->fields['items_id']])) {
+            // Do not delete ... may be re-used!
+            PluginMonitoringToolbox::logIfDebug("post_purgeItem, found pmHost: " . print_r($pmHost->fields, true));
+//            $pmHost->delete(['id' => $pmHost->getID()]);
+        } else {
+            PluginMonitoringToolbox::logIfDebug("post_updateItem, did not found pmHost!");
         }
     }
 

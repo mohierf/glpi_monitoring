@@ -131,13 +131,10 @@ class PluginMonitoringComponentscatalog_rule extends CommonDBTM
 
     function showAddRule($componentscatalogs_id)
     {
-        global $CFG_GLPI, $DB;
-
         $used = [];
         $networkport_types = ['Computer'];
 //        $networkport_types[] = "PluginMonitoringNetworkport";
 
-        PluginMonitoringToolbox::log("Types: " . print_r($networkport_types, true));
         $rules = $this->find("`plugin_monitoring_componentscatalogs_id`='$componentscatalogs_id'");
         foreach ($rules as $data) {
             $key = array_search($data['itemtype'], $networkport_types);
@@ -145,7 +142,6 @@ class PluginMonitoringComponentscatalog_rule extends CommonDBTM
                 unset($networkport_types[$key]);
             }
         }
-        PluginMonitoringToolbox::log("Types: " . print_r($networkport_types, true));
 
 //        $query = "SELECT * FROM `{$this->getTable()}` WHERE `plugin_monitoring_componentscatalogs_id`='$componentscatalogs_id'";
 //        $result = $DB->query($query);
@@ -283,7 +279,8 @@ class PluginMonitoringComponentscatalog_rule extends CommonDBTM
 
         $pmCc_Rule = new PluginMonitoringComponentscatalog_rule();
         if ($pmCc_Rule->getFromDB($parm->fields['id'])) {
-            PluginMonitoringToolbox::log("addRule, getItemsDynamically: " . print_r($pmCc_Rule->fields, true));
+            PluginMonitoringToolbox::log(
+                "addRule, getItemsDynamically: " . print_r($pmCc_Rule->fields, true));
 
             $pmCc->getFromDB($pmCc_Rule->fields['plugin_monitoring_componentscatalogs_id']);
 
@@ -358,6 +355,12 @@ class PluginMonitoringComponentscatalog_rule extends CommonDBTM
                 $networkports_id = 0;
                 $itemtype_device = $pmCc_Rule->fields['itemtype'];
                 $items_id_device = $data['id'];
+                $cc_id = $pmCc_Rule->fields["plugin_monitoring_componentscatalogs_id"];
+                PluginMonitoringToolbox::log("getItemsDynamically, CC Host: $itemtype_device, $items_id_device");
+
+
+
+
                 if ($itemtype_device == 'PluginMonitoringNetworkport') {
                     $pmNetworkport = new PluginMonitoringNetworkport();
                     $pmNetworkport->getFromDB($data['id']);
@@ -410,35 +413,69 @@ class PluginMonitoringComponentscatalog_rule extends CommonDBTM
 
                 } else {
                     if (!$pmCc_Host->getFromDBByCrit([
-                        'plugin_monitoring_componentscatalogs_id' => $pmCc_Rule->fields["plugin_monitoring_componentscatalogs_id"],
-                        'itemtype' => $pmCc_Rule->fields['itemtype'],
-                        'items_id' => $items_id_device])) {
+                        'plugin_monitoring_componentscatalogs_id' => $cc_id,
+                        'itemtype' => $itemtype_device, 'items_id' => $items_id_device])) {
 
                         // Host does not yet exist
                         $input = [];
-                        $input['plugin_monitoring_componentscatalogs_id'] = $pmCc_Rule->fields["plugin_monitoring_componentscatalogs_id"];
                         $input['is_static'] = '0';
                         $input['items_id'] = $items_id_device;
                         $input['itemtype'] = $itemtype_device;
+                        $input['plugin_monitoring_componentscatalogs_id'] = $cc_id;
                         $pmCc_Host->add($input);
                         PluginMonitoringToolbox::log("getItemsDynamically, added a new CC Host");
                     } else {
-                        // modify entity of services (if entity of device is changed)
+                        // Get the related computer (or else)
                         $itemtype = $pmCc_Host->fields['itemtype'];
                         $item = new $itemtype();
                         /* @var CommonDBTM $item */
                         if ($item->getFromDB($pmCc_Host->fields['items_id'])) {
+                            // Search add/update the PM host
+                            $pmHost = new PluginMonitoringHost();
+                            if ($pmHost->getFromDBByCrit([
+                                'itemtype' => $itemtype, 'items_id' => $pmCc_Host->fields['items_id']])) {
+                                // Found with itemtype / items_id
+                                $input = [];
+                                $input['id'] = $pmHost->getID();
+                                $input['entities_id'] = $item->fields['entities_id'];
+                                $input['name'] = $item->getName();
+                                $input['host_name'] = $item->getName();
+                                $pmHost->update($input);
+                                PluginMonitoringToolbox::log("-> updated PM Host with name");
+                            } else {
+                                if ($pmHost->getFromDBByCrit(['host_name' => $item->getName()])) {
+                                    // Found with name
+                                    $input = [];
+                                    $input['id'] = $pmHost->getID();
+                                    $input['entities_id'] = $item->fields['entities_id'];
+                                    $input['itemtype'] = "Computer";
+                                    $input['items_id'] = $item->getID();
+                                    $pmHost->update($input);
+                                    PluginMonitoringToolbox::log("-> updated PM Host with ids");
+                                } else {
+                                    PluginMonitoringToolbox::log("-> no PM Host");
+                                    PluginMonitoringHost::addHost($pmCc_Host);
+                                }
+                            }
+
                             // Update services entities id
+//                            $query = "UPDATE `glpi_plugin_monitoring_services`
+//                            SET `entities_id`='{$item->fields['entities_id']}'
+//                            WHERE `plugin_monitoring_componentscatalogs_hosts_id`='{$pmCc_Host->getID()}'";
                             $query = "UPDATE `glpi_plugin_monitoring_services` 
                             SET `entities_id`='{$item->fields['entities_id']}'
-                            WHERE `plugin_monitoring_componentscatalogs_hosts_id`='{$pmCc_Host->getID()}'";
+                            WHERE `host_name`='{$pmHost->fields['host_name']}'";
                             $DB->query($query);
+
+                            PluginMonitoringToolbox::log(
+                                "getItemsDynamically, updated an existing CC Host");
+                        } else {
+                            PluginMonitoringToolbox::log(
+                                "The CC host is not existing: {$pmCc_Host->fields['itemtype']} - {$pmCc_Host->fields['items_id']}!");
                         }
 
                         // Remove from found devices list
                         unset($found_devices[$pmCc_Host->getID()]);
-
-                        PluginMonitoringToolbox::log("getItemsDynamically, updated an existing CC Host");
                     }
                 }
             }
@@ -462,14 +499,6 @@ class PluginMonitoringComponentscatalog_rule extends CommonDBTM
             foreach($hosts as $cc_host) {
                 $found_devices[$cc_host['id']] = true;
             }
-//            $queryd = "SELECT * FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
-//            WHERE `plugin_monitoring_componentscatalogs_id`='" . $parm->fields["plugin_monitoring_componentscatalogs_id"] . "'
-//               AND `itemtype`='" . $parm->fields['itemtype'] . "'
-//               AND `is_static`='0'";
-//            $result = $DB->query($queryd);
-//            while ($data = $DB->fetch_array($result)) {
-//                $founrd_devices[$data['id']] = 1;
-//            }
         }
 
         foreach ($found_devices as $id => $num) {

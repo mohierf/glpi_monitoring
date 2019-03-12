@@ -438,7 +438,9 @@ class PluginMonitoringShinken extends CommonDBTM
          `glpi_computermodels`.`comment` AS modelComment,
          `glpi_locations`.`id`, `glpi_locations`.`completename` AS locationName,
          `glpi_locations`.`comment` AS locationComment, 
-         `glpi_locations`.`latitude` AS lat, `glpi_locations`.`longitude` AS lng, `glpi_locations`.`altitude` AS alt,
+         `glpi_locations`.`latitude` AS lat, 
+         `glpi_locations`.`longitude` AS lng, 
+         `glpi_locations`.`altitude` AS alt,
          `glpi_plugin_monitoring_services`.`networkports_id`
          FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
          LEFT JOIN `glpi_computers`
@@ -480,11 +482,15 @@ class PluginMonitoringShinken extends CommonDBTM
                     PluginMonitoringToolbox::log('[ERROR] Host item not found: ' . print_r($data, true));
                     continue;
                 }
-                PluginMonitoringToolbox::log('[computer] : ' . print_r($my_host_item, true));
+                PluginMonitoringToolbox::log('[computer]: ' . $my_host_item->getName());
+                PluginMonitoringToolbox::logIfDebug('[computer] : ' . print_r($my_host_item, true));
 
-                if (!$pmHost->getFromDBByCrit(['itemtype' => $data['itemtype'], 'items_id' => $data["items_id"]])) {
-                    PluginMonitoringToolbox::log('[ERROR] Host monitoring item not found: ' . print_r($data, true));
-                    continue;
+                if (!$pmHost->getFromDBByCrit([
+                    'itemtype' => $data['itemtype'], 'items_id' => $data["items_id"]])) {
+                    if (!$pmHost->getFromDBByCrit(['host_name' => $my_host_item->getName()])) {
+                        PluginMonitoringToolbox::log('[ERROR] Host monitoring item not found: ' . print_r($data, true));
+                        continue;
+                    }
                 }
 
                 // Host component catalog
@@ -1099,10 +1105,11 @@ class PluginMonitoringShinken extends CommonDBTM
         // "Normal" services ....
         $query = "SELECT * FROM `glpi_plugin_monitoring_services` $where";
         PluginMonitoringToolbox::logIfDebug("generateServicesCfg, query: " . $query);
+        PluginMonitoringToolbox::log("generateServicesCfg, query: " . $query);
         if ($result = $DB->query($query)) {
             PluginMonitoringToolbox::log("generateServicesCfg, huge query execution, got " . $DB->numrows($result) . " rows, duration: " . $TIMER_DEBUG->getTime());
             while ($data = $DB->fetch_array($result)) {
-                PluginMonitoringToolbox::logIfDebug(" - service: {$data['id']} - {$data['name']}");
+                PluginMonitoringToolbox::logIfDebug(" - service: {$data['id']} - {$data['service_description']}");
 
                 // Service component
                 $a_component = $a_components[$data['plugin_monitoring_components_id']];
@@ -1112,7 +1119,7 @@ class PluginMonitoringShinken extends CommonDBTM
                 }
 
                 // Service component catalog host
-                if (!isset($componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']]) or empty($cc_host)) {
+                if (!isset($componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']])) {
                     PluginMonitoringToolbox::log("[ERROR] service: {$data['id']} - no associated CC host !");
                     continue;
                 }
@@ -1400,7 +1407,7 @@ class PluginMonitoringShinken extends CommonDBTM
 
         // Build a Shinken service template for each declared component ...
         // Fix service template association bug: #191
-        $query = "SELECT * FROM `glpi_plugin_monitoring_components` ORDER BY `id`";
+        $query = "SELECT * FROM `glpi_plugin_monitoring_components` WHERE `build_service`='1' ORDER BY `id`";
         // Select components with some grouping ...
         // $query = "SELECT * FROM `glpi_plugin_monitoring_components`
         // GROUP BY `plugin_monitoring_checks_id`, `active_checks_enabled`,
