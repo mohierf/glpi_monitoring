@@ -101,17 +101,6 @@ class PluginMonitoringComponent extends CommonDBTM
     }
 
 
-    /**
-     * Get the component daily counters values table name
-     *
-     * @return string|null
-     */
-    function getDailyCountersTableName()
-    {
-        return "glpi_plugin_kiosks_hdc_" . $this->fields['description'];
-    }
-
-
     function defineTabs($options = [])
     {
         $ong = [];
@@ -387,7 +376,7 @@ class PluginMonitoringComponent extends CommonDBTM
         Dropdown::showYesNo("build_service", $this->fields['build_service']);
         echo "</td>";
         echo "<td colspan='2'>";
-        echo "<em>". __('Set will send information to the monitoring framework for this service. Else, it will consider the service is still defined locally.', 'monitoring') ."</em>";
+        echo "<em>" . __('Set will send information to the monitoring framework for this service. Else, it will consider the service is still defined locally.', 'monitoring') . "</em>";
         echo "</td>";
         echo "</tr>";
 
@@ -678,13 +667,37 @@ class PluginMonitoringComponent extends CommonDBTM
     }
 
 
+    /**
+     * Check and update dara fields:
+     * - description must comply to monitoring framework rules
+     */
+    private function _check_and_update_fields()
+    {
+        $description = $this->fields['description'];
+        if ($description !== PluginMonitoringShinken::monitoringFilter($description)) {
+            $this->update([
+                'id' => $this->getID(),
+                'description' => PluginMonitoringShinken::monitoringFilter($description)]);
+            PluginMonitoringToolbox::log("updated description field for {$this->getName()}");
+            Session::addMessageAfterRedirect(
+                __('Description field was updated to comply the monitoring framework naming rules.'),
+                true);
+        }
+    }
+
+
     function post_addItem()
     {
+        $this->_check_and_update_fields();
+
         PluginMonitoringToolbox::log("post_addItem, component: " . print_r($this->fields, true));
     }
 
 
-    function post_updateItem($history=1) {
+    function post_updateItem($history = 1)
+    {
+        $this->_check_and_update_fields();
+
         PluginMonitoringToolbox::log("post_updateItem, component: " . print_r($this->fields, true));
     }
 
