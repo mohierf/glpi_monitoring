@@ -43,9 +43,6 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
 
 Session::checkRight("plugin_monitoring_dashboard", READ);
 
-$pmMessage = new PluginMonitoringMessage();
-$pmMessage->getMessages();
-
 $pmDisplay = new PluginMonitoringDisplay();
 $pmDisplay->dashboard();
 

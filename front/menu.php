@@ -39,9 +39,6 @@ Html::header(
     __('Monitoring - dashboard', 'monitoring'),
     '', 'config', 'pluginmonitoringmenu', 'dashboard');
 
-$pmMessage = new PluginMonitoringMessage();
-$pmMessage->getMessages();
-
 $toDisplayArea = 0;
 
 /*
@@ -60,6 +57,10 @@ echo "<tr>";
  */
 if (Session::haveRight("plugin_monitoring_command_fmwk", CREATE)) {
     echo "<td style='width: 17%; padding: 1%;'>";
+
+    PluginMonitoringLog::hasConfigurationChanged(true);
+
+    PluginMonitoringLog::isFrameworkRunning(true);
 
     PluginMonitoringDisplay::restartFramework();
 

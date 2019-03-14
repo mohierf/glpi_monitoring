@@ -34,9 +34,9 @@ include("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_command_fmwk", CREATE);
 
-PluginMonitoringToolbox::logIfDebug("call sendRestartArbiter, tag: ". $_GET["tag"] .", action: ". $_GET["action"]);
-$pmShinkenwebservice = new PluginMonitoringShinkenwebservice();
-$pmShinkenwebservice->sendRestartArbiter(true,
+PluginMonitoringToolbox::logIfDebug("call ReloadRequest, tag: " . $_GET["tag"] . ", action: " . $_GET["action"]);
+$pmAlignakWS = new PluginMonitoringAlignakWS();
+$pmAlignakWS->ReloadRequest(true,
     isset($_GET["tag"]) ? $_GET["tag"] : null,
     isset($_GET["action"]) ? $_GET["action"] : 'restart');
 

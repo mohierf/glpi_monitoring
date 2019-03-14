@@ -1156,15 +1156,12 @@ class PluginMonitoringService extends CommonDBTM
 
         $my_host = $this->getHost();
 
-        $pmLog = new PluginMonitoringLog();
-        $pmLog->add([
-            'user_name' => '',
-            'date_mod' => date("Y-m-d H:i:s"),
-            'itemtype' => "PluginMonitoringService",
-            'items_id' => $this->getID(),
-            'action' => 'add',
-            'value' => $DB->escape("Added the service '{$this->fields['service_description']}'' for {$my_host->getTypeName()} '{$my_host->getName()}''")
-        ]);
+        PluginMonitoringLog::logEvent(
+            'add',
+            $DB->escape("Added the service '{$this->fields['service_description']}'' for {$my_host->getTypeName()} '{$my_host->getName()}''"),
+            "",
+            "PluginMonitoringService",
+            $this->getID());
     }
 
 
@@ -1177,20 +1174,17 @@ class PluginMonitoringService extends CommonDBTM
         // Find the service related host in the session (see PluginMonitoringComponentscatalog_Host::unlinkComponents)
         if (isset($_SESSION['plugin_monitoring']['cc_host'])
             and isset($_SESSION['plugin_monitoring']['cc_host']['itemtype'])) {
-            /* @var CommonDBTM $item */
+            /* @var CommonDBTM $my_host */
             $itemtype = $_SESSION['plugin_monitoring']['cc_host']['itemtype'];
-            $item = new $itemtype();
-            $item->getFromDB($_SESSION['plugin_monitoring']['cc_host']['items_id']);
+            $my_host = new $itemtype();
+            $my_host->getFromDB($_SESSION['plugin_monitoring']['cc_host']['items_id']);
 
-            $pmLog = new PluginMonitoringLog();
-            $pmLog->add([
-                'user_name' => '',
-                'date_mod' => date("Y-m-d H:i:s"),
-                'itemtype' => "PluginMonitoringService",
-                'items_id' => $this->getID(),
-                'action' => 'add',
-                'value' => $DB->escape("Deleted the service '{$this->fields['service_description']}'' for {$item->getTypeName()} '{$item->getName()}''")
-            ]);
+            PluginMonitoringLog::logEvent(
+                'delete',
+                $DB->escape("Deleted the service '{$this->fields['service_description']}'' for {$my_host->getTypeName()} '{$my_host->getName()}''"),
+                "",
+                "PluginMonitoringService",
+                $this->getID());
             unset($_SESSION['plugin_monitoring']['cc_host']);
         }
     }

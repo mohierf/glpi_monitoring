@@ -492,6 +492,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_tags` (
   `ip` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `locked_ip` tinyint(1) NOT NULL DEFAULT '0',
   `auto_restart` tinyint(1) NOT NULL DEFAULT '0',
+  `last_status` text DEFAULT NULL COLLATE utf8_unicode_ci,
   `username` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `password` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)

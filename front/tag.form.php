@@ -33,5 +33,9 @@ include ("../../../inc/includes.php");
 
 Session::checkRight("plugin_monitoring_tag", READ);
 
+Html::header(
+    __('Monitoring - tags', 'monitoring'),
+    '', 'config', 'pluginmonitoringmenu', 'tag');
+
 $dropdown = new PluginMonitoringTag();
 include (GLPI_ROOT . "/front/dropdown.common.form.php");

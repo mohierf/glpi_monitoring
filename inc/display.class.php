@@ -43,19 +43,27 @@ class PluginMonitoringDisplay extends CommonDBTM
         $redirect = FALSE;
         $a_url = [];
 
-        echo "<table class='tab_cadre'>";
+        echo "<table class='tab_cadre' style='margin-bottom: 20px;'>";
         echo "<tr>";
 
         /*
          * Add monitoring framework restart commands if necessary
          */
         if (Session::haveRight("plugin_monitoring_command_fmwk", CREATE)) {
-            echo "<td style='width: 17%; padding: 1%;'>";
+            echo "<td style='width: 27%; padding: 1%;'>";
+
+            $changed = PluginMonitoringLog::hasConfigurationChanged(true);
+            if ($changed) {
+                $pmAlignakWS = new PluginMonitoringAlignakWS();
+                $pmAlignakWS->ReloadRequest();
+            }
+
+            PluginMonitoringLog::isFrameworkRunning(true);
 
             PluginMonitoringDisplay::restartFramework();
 
             echo "</td>";
-            echo "<td style='width: 77%; padding: 1%;'>";
+            echo "<td style='width: 67%; padding: 1%;'>";
         } else {
             echo "<td style='width: 97%; padding: 1%;'>";
         }
@@ -68,17 +76,16 @@ class PluginMonitoringDisplay extends CommonDBTM
             echo "<table class='tab_cadre_fixe'>";
             echo "<tr class='tab_bg_1'>";
 
-            echo "<th colspan='2'>";
-            $this->displayPuce('display_system_status');
+            $status = PluginMonitoringTag::getServersStatus();
+            $class_state = "";
+            if ($status != 'ok') {
+                $class_state = "state-type-soft background-" . strtolower($status);
+            }
+            echo "<th colspan='2' class='$class_state'>";
+            $this->displayPuce('status_system');
             echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/status_system.php'>";
             echo __('System status', 'monitoring');
             echo "</a>";
-            $pmTag = new PluginMonitoringTag();
-            $servers = 'OK';
-            if (!$pmTag->get_servers_status()) {
-                $servers = 'CRITICAL';
-            }
-            echo "<div class='service service" . $servers . "' style='float : left;'></div>";
             $a_url[] = $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/status_system.php";
             echo "</th>";
 
@@ -111,44 +118,6 @@ class PluginMonitoringDisplay extends CommonDBTM
                 $redirect = true;
             } else if (basename($_SERVER['PHP_SELF']) == 'host.php') {
                 $redirect = true;
-            }
-        }
-
-        if (Session::haveRight("plugin_monitoring_displayview", PluginMonitoringProfile::DASHBOARD)) {
-            $i = 1;
-            $pmDisplayview = new PluginMonitoringDisplayview();
-            $a_views = $pmDisplayview->getViews();
-            if (count($a_views) > 0) {
-                echo "<table class='tab_cadre_fixe' width='950'>";
-                echo "<tr class='tab_bg_1'>";
-
-                foreach ($a_views as $views_id => $name) {
-                    $pmDisplayview->getFromDB($views_id);
-                    if ($pmDisplayview->haveVisibilityAccess()) {
-                        if ($i == 6) {
-                            echo "</tr>";
-                            echo "<tr class='tab_bg_1'>";
-                            $i = 1;
-                        }
-                        echo "<th width='20%'>";
-                        $this->displayPuce('display_view', $views_id);
-                        echo "<a href='" . $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/display_view.php?id=" . $views_id . "'>";
-                        echo htmlentities($name);
-                        echo "</a>";
-                        echo "</th>";
-                        $i++;
-                        $a_url[] = $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/display_view.php?id=" . $views_id;
-                    }
-                }
-                // Fred : what is it for ?
-                // It's to finish properly the table
-                /** @noinspection PhpExpressionResultUnusedInspection */
-                for ($i; $i < 6; $i++) {
-                    echo "<td width='20%'>";
-                    echo "</td>";
-                }
-                echo "</tr>";
-                echo "</table>";
             }
         }
 
@@ -1105,7 +1074,7 @@ class PluginMonitoringDisplay extends CommonDBTM
                 $display = true;
             }
             if ($display) {
-                echo "<img src='" . $CFG_GLPI['root_doc'] . "/pics/right.png' /> ";
+                echo "<img src='" . $CFG_GLPI['root_doc'] . "/pics/redbutton.png' /> ";
             }
         }
     }
@@ -1150,6 +1119,18 @@ class PluginMonitoringDisplay extends CommonDBTM
                     'button' => __('Restart monitoring', 'monitoring'),
                 ],
             ];
+            if (PLUGIN_MONITORING_SYSTEM == 'alignak') {
+                $fmwk_commands = [
+                    'reload_configuration' => [
+                        'command' => 'reload_configuration',
+                        'title' => __('Reload monitoring configuration from the Glpi database', 'monitoring'),
+                        'button' => __('Reload monitoring', 'monitoring'),
+                    ]
+                ];
+            }
+
+            // Configuration reload happened in the last 30 minutes?
+            $recent_restarts = PluginMonitoringLog::isRestartRecent(1800);
 
             foreach ($fmwk_commands as $command) {
                 echo '<table class="tab_cadre">';
@@ -1158,26 +1139,35 @@ class PluginMonitoringDisplay extends CommonDBTM
                 echo '<button title="'. $command['title'] .'">' . $command['button'] . '</button>';
                 echo '</td>';
                 echo '<td id="list_'. $command['command'] .'" style="display:none;">';
-                echo '<ul>';
+                echo "<table><tr>";
+
                 $url = $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/restart_fmwk.form.php?action=" . $command['command'];
-                echo '<li>';
-                echo '<a href="' . $url . '">' . __('All instances', 'monitoring') . '</a>';
-                echo '</li>';
+
+                echo '<td><a class="monitoring-button" href="'. $url .'">';
+                echo __("All instances", "monitoring");
+                echo '</a></td>';
                 if (count($a_tags) > 0) {
                     foreach ($a_tags as $taginfo => $data) {
+                        $button_class = "msgboxmonit msgboxmonit-green";
+                        if ($recent_restarts) {
+                            $tag_name = $data['name'];
+                            foreach ($recent_restarts as $restart) {
+                                if ($restart['value'] == $tag_name) {
+                                    $button_class = "msgboxmonit msgboxmonit-red";
+                                    break;
+                                }
+                            }
+                        }
                         $url = $CFG_GLPI['root_doc'] . "/plugins/monitoring/front/restart_fmwk.form.php?action=" . $command['command'] . "&tag=" . $data['id'];
-                        echo '<li>';
-                        echo '<a href="' . $url . '">' . $taginfo . '</a>';
-                        echo '</li>';
+
+                        echo '<td><a class="monitoring-button'. $button_class .'" href="'. $url .'">';
+                        echo $taginfo;
+                        echo '</a></td>';
                     }
                 }
-                echo '</ul>';
-                echo '</td>';
-
-                echo '</tr>';
-                echo '</table>';
+                echo '</tr></table>';
+                echo '</tr></table>';
             }
-            echo '<br/>';
         }
     }
 }

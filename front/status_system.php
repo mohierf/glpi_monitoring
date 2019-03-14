@@ -43,11 +43,9 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
 }
 
 $pmDisplay = new PluginMonitoringDisplay();
-$pmTag = new PluginMonitoringTag();
-
 $pmDisplay->dashboard();
 
-$pmTag->servers_status();
+PluginMonitoringTag::getServersStatus(true);
 
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Html::footer();

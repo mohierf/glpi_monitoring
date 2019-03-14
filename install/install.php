@@ -473,6 +473,17 @@ class PluginMonitoringInstall
             ]
         );
 
+        CronTask::Register('PluginMonitoringTag', 'frameworkStatus',
+            MINUTE_TIMESTAMP * 5,
+            [
+                'comment' => __('Check the monitoring framework status.', 'monitoring'),
+                'mode' => CronTask::MODE_EXTERNAL,
+                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
+                'hourmin' => 0, 'hourmax' => 24,
+                'logs_lifetime' => 30
+            ]
+        );
+
         // Fred: do not manage unavailability
 //        CronTask::Register('PluginMonitoringUnavailability', 'unavailability',
 //            MINUTE_TIMESTAMP * 5,

@@ -43,13 +43,10 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
 }
 
 $pmDisplay = new PluginMonitoringDisplay();
+$pmDisplay->dashboard();
+
 $pmDisplayview = new PluginMonitoringDisplayview();
 $pmDisplayview_item = new PluginMonitoringDisplayview_item();
-$pmMessage = new PluginMonitoringMessage();
-
-$pmMessage->getMessages();
-
-$pmDisplay->dashboard();
 
 $pass = 0;
 $a_views = $pmDisplayview->getViews();

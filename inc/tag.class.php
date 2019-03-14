@@ -41,16 +41,13 @@ class PluginMonitoringTag extends CommonDropdown
 
     public $display_dropdowntitle = false;
 
-//    public $first_level_menu = "plugins";
-//    public $second_level_menu = "pluginmonitoringmenu";
-//    public $third_level_menu = "tag";
-
     static $rightname = 'plugin_monitoring_tag';
 
     /**
      * Get name of this type
      *
      * @param int $nb
+     *
      * @return string name of this type by language of the user connected
      *
      */
@@ -69,7 +66,149 @@ class PluginMonitoringTag extends CommonDropdown
     }
 
 
-    function showForm($items_id, $options = array(), $copy = array())
+    static function cronInfo($name)
+    {
+        switch ($name) {
+            case 'frameworkStatus':
+                return [
+                    'description' => __('Get the monitoring framework status', 'monitoring')
+                ];
+                break;
+        }
+        return [];
+    }
+
+
+    /**
+     * @param CronTask $task
+     *
+     * @return bool
+     */
+    static function cronFrameworkStatus($task)
+    {
+        if (!isset($_SESSION['plugin_monitoring']['reduced_interface'])) {
+            $_SESSION['plugin_monitoring']['reduced_interface'] = false;
+        }
+
+        PluginMonitoringToolbox::logIfDebug("PluginMonitoringTag::get servers status");
+
+        $pmTag = new self();
+        $pmAlignakWS = new PluginMonitoringAlignakWS();
+
+        $ok = true;
+        $servers = $pmTag->find();
+        $task->log("Found " . count($servers) . " monitoring server instances.");
+        foreach ($servers as $data) {
+            $pmTag->getFromDB($data['id']);
+            $task->log("Get status for: " . $pmTag->getName() . ", url: " . $pmTag->getUrl());
+
+            $result = $pmAlignakWS->getStatus($data['id']);
+            if ($result !== false) {
+                $task->log($pmTag->getName() . " is : " . $result);
+                if ($result !== 'up') {
+                    $ok = false;
+                }
+                PluginMonitoringLog::logEvent(
+                    "status", $result, "", "PluginMonitoringTag", $pmTag->getID());
+            } else {
+                $ok = false;
+                $task->log($pmTag->getName() . " is not responding.");
+            }
+        }
+        if ($ok) {
+            $task->log("Global status is ok. At least one monitoring server is up and running");
+        }
+
+        return $ok;
+    }
+
+
+    public function getSearchOptionsNew()
+    {
+        return $this->rawSearchOptions();
+    }
+
+    function rawSearchOptions()
+    {
+
+        $tab = [];
+
+        $tab[] = [
+            'id' => 'common',
+            'name' => __('Tags', 'monitoring')
+        ];
+
+        $index = 1;
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'name',
+            'name' => __('Name'),
+            'datatype' => 'itemlink'
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'tag',
+            'name' => __('Tag'),
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'comment',
+            'name' => __('Comment'),
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'is_active',
+            'datatype' => 'bool',
+            'name' => __('Active?', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'auto_restart',
+            'datatype' => 'bool',
+            'name' => __('Automatic restart ?', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => $index++,
+            'table' => $this->getTable(),
+            'field' => 'url',
+            'name' => __('URL', 'kiosks'),
+        ];
+
+        $tab[] = [
+            'id' => $index,
+            'table' => $this->getTable(),
+            'field' => 'ip',
+            'name' => __('Address', 'kiosks'),
+        ];
+
+        /*
+         * Include other fields here
+         */
+
+        $tab[] = [
+            'id' => '99',
+            'table' => $this->getTable(),
+            'field' => 'id',
+            'name' => __('ID'),
+            'usehaving' => true,
+            'searchtype' => 'equals',
+        ];
+
+        return $tab;
+    }
+
+
+    function showForm($items_id, $options = [], $copy = [])
     {
         if (count($copy) > 0) {
             foreach ($copy as $key => $value) {
@@ -101,7 +240,7 @@ class PluginMonitoringTag extends CommonDropdown
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Active ?', 'monitoring') . "</td>";
         echo "<td>";
-        if (self::canCreate()) {
+        if (self::canUpdate()) {
             Dropdown::showYesNo('is_active', $this->fields['is_active']);
         } else {
             echo Dropdown::getYesNo($this->fields['is_active']);
@@ -112,9 +251,9 @@ class PluginMonitoringTag extends CommonDropdown
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Monitoring framework web services URI', 'monitoring') . " :</td>";
         echo "<td>";
-        if (! $this->fields["url"]) {
+        if (!$this->fields["url"]) {
             $url = "http://" . $this->fields["tag"] . ':7770';
-            echo '<span class="red">' . __('Default URL: ', 'monitoring'). $url . '</span>';
+            echo '<span class="red">' . __('Default URL: ', 'monitoring') . $url . '</span>';
         }
         Html::autocompletionTextField($this, 'url');
         echo "</td>";
@@ -153,7 +292,7 @@ class PluginMonitoringTag extends CommonDropdown
     }
 
 
-    function setIP($ip, $tag='', $name='')
+    function setIP($ip, $tag = '', $name = '')
     {
         // Tag value
         if (empty($tag)) {
@@ -164,7 +303,7 @@ class PluginMonitoringTag extends CommonDropdown
             }
         }
         // Tag exist?
-        if (! $this->getFromDBByCrit(['tag' => $tag])) {
+        if (!$this->getFromDBByCrit(['tag' => $tag])) {
             $this->add([
                 'tag' => $tag,
                 'name' => $name,
@@ -206,7 +345,7 @@ class PluginMonitoringTag extends CommonDropdown
     }
 
 
-    function getUrl($tag='')
+    function getUrl($tag = '')
     {
         if (!empty($tag)) {
             if ($this->getFromDBByCrit(['tag' => $tag])) {
@@ -222,7 +361,7 @@ class PluginMonitoringTag extends CommonDropdown
     }
 
 
-    function getAuth($tag='')
+    function getAuth($tag = '')
     {
         if (!empty($tag)) {
             if ($this->getFromDBByCrit(['tag' => $tag])) {
@@ -243,113 +382,79 @@ class PluginMonitoringTag extends CommonDropdown
             return $a_tag['id'];
         }
 
-        return $this->add(array('tag' => $tag));
+        return $this->add(['tag' => $tag]);
     }
 
 
-    function servers_status()
+    /**
+     * @param bool $display
+     *
+     * @return string
+     */
+    static function getServersStatus($display = false)
     {
-
-        $servers = $this->find();
-
-        echo "<table class='tab_cadre' width='950'>";
-        foreach ($servers as $data) {
-            PluginMonitoringToolbox::log("- " . $data['tag']);
-
-            $url = $data["url"];
-            if (! $data["url"]) {
-                $url = "http://" . $data["tag"] . ':7770';
-            }
-            PluginMonitoringToolbox::log("-> " . $url . self::URL_STATUS);
-
-            echo "<tr class='tab_bg_1'>";
-            echo "<th colspan='2'>";
-            echo $data['ip'];
-            echo "</th>";
-            echo "</tr>";
-
-            echo "<tr class='tab_bg_1'>";
-            echo "<td>";
-            echo "ping :";
-            echo "</td>";
-            echo "<td>";
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url . self::URL_PING);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 4);
-            $ret = curl_exec($ch);
-            curl_close($ch);
-            echo $ret;
-            echo "</td>";
-            echo "</tr>";
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url . self::URL_STATUS);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 4);
-            $ret = curl_exec($ch);
-            curl_close($ch);
-            if ($ret != '') {
-                foreach (json_decode($ret) as $module => $dataret) {
-                    echo "<tr class='tab_bg_1'>";
-                    echo "<td>";
-                    echo $module;
-                    echo "</td>";
-                    echo "<td>";
-                    if ($dataret[0]->alive == 1) {
-                        echo "<div class='service serviceOK' style='float : left;'></div>";
-                    } else {
-                        echo "<div class='service serviceCRITICAL' style='float : left;'></div>";
-                    }
-                    echo "</td>";
-                    echo "</tr>";
-                }
-            }
+        // Update servers status
+        $task = new CronTask();
+        if ($task->getFromDBByCrit(['name' => 'FrameworkStatus'])) {
+            self::cronFrameworkStatus($task);
         }
-        echo "</table>";
-    }
 
+        if ($display) {
+            echo "<table class='tab_cadre' width='950'>";
+        }
 
-    static function get_servers_status()
-    {
-        $ok = true;
         $pmTag = new self();
-        $servers = $pmTag->find("`is_active`='1'");
+        $servers = $pmTag->find();
 
-        PluginMonitoringToolbox::logIfDebug("PluginMonitoringTag::get servers status");
+        $overall_state = 'ok';
 
         foreach ($servers as $data) {
-            PluginMonitoringToolbox::log("- " . $data['tag']);
+            $pmTag->getFromDB($data['id']);
 
-            $url = $data["url"];
-            if (! $data["url"]) {
-                $url = "http://" . $data["tag"] . ':7770';
-            }
-            PluginMonitoringToolbox::log("-> " . $url . self::URL_STATUS);
+            $status = explode(PHP_EOL, $data['last_status']);
+            $state = $status[0];
+            $class_state = 'background-' . strtolower($state);
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url . self::URL_STATUS);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 4);
-            $ret = curl_exec($ch);
-            curl_close($ch);
-            PluginMonitoringToolbox::log("= " . $ret);
+            if ($data['is_active'] == '1') {
+                switch ($state) {
+                    case 'critical':
+                        if ($overall_state != $state) $overall_state = $state;
+                        break;
 
-            if (strstr($ret, 'Not found')) {
-                $ok = false;
-            } else if ($ret != '') {
-                foreach (json_decode($ret) as $module => $dataret) {
-                    if ($dataret[0]->alive != 1) {
-                        $ok = false;
-                    }
+                    case 'warning':
+                    case 'unknown':
+                        if ($overall_state == 'ok') $overall_state = $state;
+                        break;
                 }
-            } else {
-                $ok = false;
+            }
+
+            if ($display) {
+                echo "<tr class='tab_bg_1'>";
+                echo "<th colspan='4'>";
+                echo $pmTag->getName();
+                echo "</th>";
+                echo "</tr>";
+
+                echo "<tr class='$class_state'>";
+                echo "<td>";
+                echo $data['ip'];
+                echo "</td>";
+                echo "<td>";
+                echo $data['tag'];
+                echo "</td>";
+                echo "<td>";
+                echo "</strong>$state</strong>";
+                echo "</td>";
+                echo "<td>";
+                echo nl2br($data['last_status']);
+                echo "</td>";
+                echo "</tr>";
             }
         }
-        return $ok;
+        if ($display) {
+            echo "</table>";
+        }
+
+        return $overall_state;
     }
 }

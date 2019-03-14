@@ -37,10 +37,19 @@ class PluginMonitoringUpgradeTo9_3_0_2
      */
     public function upgrade(Migration $migration)
     {
+        // Add the build service flag for a component
         $table = 'glpi_plugin_monitoring_components';
         $migration->addField($table, 'build_service', 'bool', [
             'value' => '0',
             'after' => 'description'
+        ]);
+        $migration->migrationOneTable($table);
+
+        // Add the last server status field
+        $table = 'glpi_plugin_monitoring_tags';
+        $migration->addField($table, 'last_status', 'text', [
+            'value' => 'unknown',
+            'after' => 'auto_restart'
         ]);
         $migration->migrationOneTable($table);
     }

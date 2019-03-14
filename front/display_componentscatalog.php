@@ -55,10 +55,6 @@ if (isset($_POST['reduced_interface'])) {
 }
 
 $pmDisplay = new PluginMonitoringDisplay();
-$pmMessage = new PluginMonitoringMessage();
-
-$pmMessage->getMessages();
-
 $pmDisplay->dashboard();
 
 $pmDisplay->refreshPage(TRUE);

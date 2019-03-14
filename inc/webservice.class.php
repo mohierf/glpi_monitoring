@@ -136,13 +136,13 @@ class PluginMonitoringWebservice
         $pmShinken = new PluginMonitoringShinken();
         switch ($file) {
             case 'commands.cfg':
+                // Log monitoring framework restart event ... starts with commands!
+                PluginMonitoringLog::logRestart($fmwk_instance);
+
                 $output = $pmShinken->generateCommandsCfg($entity, $file_output);
                 break;
 
             case 'hosts.cfg':
-                // Log monitoring framework restart event ...
-                PluginMonitoringLog::logRestart($fmwk_instance);
-
                 $output = $pmShinken->generateHostsCfg($entity, $file_output);
                 break;
 
@@ -159,6 +159,9 @@ class PluginMonitoringWebservice
                 break;
 
             case 'timeperiods.cfg':
+                // Log monitoring framework restart event ... finishes with timeperiods!
+                PluginMonitoringLog::logRestartFinished($fmwk_instance);
+
                 $output = $pmShinken->generateTimeperiodsCfg($entity, $file_output);
                 break;
 
@@ -183,6 +186,7 @@ class PluginMonitoringWebservice
                     'timeperiods.cfg' => $pmShinken->generateTimeperiodsCfg($entity, $file_output),
                     'realms.cfg' => $pmShinken->generateRealmsCfg($entity, $file_output)
                 ];
+                PluginMonitoringLog::logRestartFinished($fmwk_instance);
                 break;
         }
 

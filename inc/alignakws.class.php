@@ -34,12 +34,65 @@ if (!defined('GLPI_ROOT')) {
     die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringShinkenwebservice extends CommonDBTM
+class PluginMonitoringAlignakWS extends CommonDBTM
 {
+
+    function getStatus($tag)
+    {
+        $pmTag = new PluginMonitoringTag();
+        if (!$pmTag->getFromDB($tag)) {
+            return false;
+        }
+        $result = $this->sendCommand($pmTag, 'status', [], '');
+        if ($result === false) {
+            // Set the monitoring server tag as not active and the status as unknown...
+            $pmTag->update(['id' => $pmTag->getID(), 'is_active' => false, 'last_status' => 'unknown']);
+
+            return false;
+        } else {
+            PluginMonitoringToolbox::logIfDebug(
+                "command '/status' sent to the monitoring framework: " . $pmTag->getName() . " (" . $pmTag->getUrl() . ")");
+
+            $status = "ok";
+            $state = 0;
+            if (isset($result['livestate'])) {
+                // $result['livestate']['state'] is always 'up' because the arbiter respond!
+                $status = $result['livestate']['state'] . " - " . $result['livestate']['output'];
+            }
+            if (isset($result['services'])) {
+                foreach ($result['services'] as $daemon) {
+                    $status .= PHP_EOL . $daemon['name'] . ": " . $daemon['livestate']['state'] . ", " . $daemon['livestate']['output'];
+                    switch ($daemon['livestate']['state']) {
+                        case "ok":
+                            $state = max($state, 0);
+                            break;
+                        case "warning":
+                            $state = max($state, 1);
+                            break;
+                        case "critical":
+                            $state = max($state, 2);
+                            break;
+                        default:
+                            $state = max($state, 3);
+                            break;
+                    }
+                }
+                $status = ["ok", "warning", "critical", "unknown"][$state] . PHP_EOL . $status;
+            }
+            // Set the monitoring server tag as active...
+            $pmTag->update(['id' => $pmTag->getID(), 'is_active' => true, 'last_status' => $status]);
+
+            PluginMonitoringToolbox::log("status for : " . $pmTag->getName() . " is: " . $status);
+
+            return $status;
+        }
+    }
+
 
     function sendAcknowledge($host_id = -1, $service_id = -1, $author = '', $comment = '', $sticky = '1', $notify = '1', $persistent = '1', $operation = '')
     {
 //      global $DB;
+        Toolbox::deprecated('PluginMonitoringAlignakWS::sendAcknowledge method is deprecated');
 
         if (($host_id == -1) && ($service_id == -1)) {
             PluginMonitoringToolbox::log("acknowledge, sendAcknowledge, host : $host_id / $service_id\n");
@@ -91,6 +144,7 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
     function sendDowntime($host_id = -1, $service_id = -1, $author = '', $comment = '', $flexible = '0', $start_time = '0', $end_time = '0', $duration = '3600', $operation = '')
     {
 //      global $DB;
+        Toolbox::deprecated('PluginMonitoringAlignakWS::sendDowntime method is deprecated');
 
         if (($host_id == -1) && ($service_id == -1)) return false;
 
@@ -133,45 +187,57 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
     }
 
 
-    function sendRestartArbiter($force = false, $tag = null, $command = 'restart')
+    function ReloadRequest($force = false, $tag = null, $command = 'reload_configuration')
     {
-        $pmTag = new PluginMonitoringTag();
-        $pmLog = new PluginMonitoringLog();
+        PluginMonitoringToolbox::log("ReloadRequest, command : $command, tag: $tag, force: $force");
 
-        PluginMonitoringToolbox::logIfDebug("sendRestartArbiter, command : $command, tag: $tag, force: $force\n");
-
-        if ($pmLog->isRestartRecent() and !$force) {
-            PluginMonitoringToolbox::log("sendRestartArbiter, no monitoring framework sent. Previous was too recent!");
+        if (PluginMonitoringLog::isRestartRecent() and !$force) {
+            PluginMonitoringToolbox::log("ReloadRequest, no command sent. Previous was too recent!");
             return;
         }
 
         $a_tags = [];
+        $pmTag = new PluginMonitoringTag();
         if (!empty($tag)) {
-            $a_tags[] = $pmTag->getFromDB($tag);
+            if ($pmTag->getFromDB($tag)) {
+                $a_tags[] = $pmTag->fields;
+            }
         } else {
             $a_tags = $pmTag->find("`is_active` = '1'");
         }
 
-        foreach ($a_tags as $index => $data) {
-            PluginMonitoringToolbox::log("sendRestartArbiter, " . print_r($data, true));
+        foreach ($a_tags as $data) {
+            PluginMonitoringToolbox::logIfDebug("ReloadRequest, tag data: " . print_r($data, true));
             $pmTag->getFromDB($data['id']);
 
-            if ($this->sendCommand($pmTag, $command, [], '')) {
-                PluginMonitoringToolbox::log("sendRestartArbiter, command sent to the monitoring framework");
-                $input = [];
-                $input['user_name'] = $_SESSION['glpifirstname'] . ' ' . $_SESSION['glpirealname'] . ' (' . $_SESSION['glpiname'] . ')';
-                $input['action'] = $command . "_planned";
-                $input['date_mod'] = date("Y-m-d H:i:s");
-                $input['value'] = $data['tag'];
-                $pmLog->add($input);
+            $result = $this->sendCommand($pmTag, $command, [], '');
+            if ($result) {
+                PluginMonitoringToolbox::log(
+                    "command '$command' sent to the monitoring framework: " . $pmTag->getName() . " (" . $pmTag->getUrl() . ")");
+
+                if (isset($result['_message'])) {
+                    Session::addMessageAfterRedirect(
+                        __('Monitoring framework communication succeeded: ', 'monitoring') .
+                        $result['_message'], false);
+                } else {
+                    Session::addMessageAfterRedirect(
+                        __('Monitoring framework communication succeeded: ', 'monitoring') .
+                        $result, false);
+                }
+
+                PluginMonitoringLog::logEvent(
+                    $command . "_planned", $data['tag'], "", "PluginMonitoringTag", $pmTag->getID());
             } else {
-                PluginMonitoringToolbox::log("sendRestartArbiter, failed sending command to the monitoring framework!");
+                PluginMonitoringToolbox::log(
+                    "ReloadRequest, failed sending '$command' to the monitoring framework: " . $pmTag->getName() . " (" . $pmTag->getUrl() . ")");
             }
         }
     }
 
 
     /**
+     * Alignak WS function
+     * -------------------
      * @param PluginMonitoringTag $tag
      * @param string $action
      * @param array $a_fields
@@ -181,6 +247,54 @@ class PluginMonitoringShinkenwebservice extends CommonDBTM
      */
     function sendCommand($tag, $action, $a_fields, $fields_string = '')
     {
+        $url = $tag->getUrl();
+        $url = $url . '/' . $action;
+        $auth = $tag->getAuth();
+
+        if ($fields_string == '') {
+            foreach ($a_fields as $key => $value) {
+                $fields_string .= $key . '=' . $value . '&';
+            }
+            rtrim($fields_string, '&');
+        }
+
+        // CURL request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        $result = curl_exec($ch);
+        if ($result === false) {
+            Session::addMessageAfterRedirect(
+                __('Monitoring framework communication failed: ', 'monitoring') .
+                curl_error($ch) . '<br/>' . $url . ' ' . $fields_string,
+                false, ERROR);
+        } else {
+            // Decode the JSON response
+            $result = json_decode($result, true);
+            PluginMonitoringToolbox::logIfDebug("command '$action' response: " . print_r($result, true));
+        }
+        curl_close($ch);
+
+        return $result;
+    }
+
+
+    /**
+     * The original Shinken post function
+     * ----------------------------------
+     * @param PluginMonitoringTag $tag
+     * @param string $action
+     * @param array $a_fields
+     * @param string $fields_string
+     *
+     * @return bool
+     */
+    function postCommand($tag, $action, $a_fields, $fields_string = '')
+    {
+        Toolbox::deprecated('PluginMonitoringAlignakWS::postCommand method is deprecated');
+
         $url = $tag->getUrl();
         $url = $url . '/' . $action;
         $auth = $tag->getAuth();

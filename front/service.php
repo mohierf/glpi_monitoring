@@ -55,9 +55,6 @@ if (isset($_POST['reduced_interface'])) {
     $_SESSION['plugin_monitoring']['reduced_interface'] = $_POST['reduced_interface'];
 }
 
-$pmMessage = new PluginMonitoringMessage();
-$pmMessage->getMessages();
-
 $pmDisplay = new PluginMonitoringDisplay();
 $pmDisplay->dashboard(true);
 $pmDisplay->showServicesCounters(true);
