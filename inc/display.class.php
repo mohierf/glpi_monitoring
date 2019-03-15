@@ -36,6 +36,11 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginMonitoringDisplay extends CommonDBTM
 {
+    /**
+     * Display the dashboard part of the main page
+     *
+     * @param bool $refresh
+     */
     function dashboard($refresh = false)
     {
         global $CFG_GLPI;
@@ -136,18 +141,6 @@ class PluginMonitoringDisplay extends CommonDBTM
         if ($redirect) {
             Html::redirect(array_shift($a_url));
         }
-    }
-
-
-    function defineTabs($options = [])
-    {
-        Toolbox::deprecated('PluginMonitoringDisplay::defineTabs() method is deprecated');
-    }
-
-
-    function showTabs()
-    {
-        Toolbox::deprecated('PluginMonitoringDisplay::showTabs() method is deprecated');
     }
 
 
@@ -672,7 +665,7 @@ class PluginMonitoringDisplay extends CommonDBTM
     }
 
 
-    function displayHostsCounters($display = true)
+    function displayHostsCounters($display = true, $reduced = false)
     {
         global $CFG_GLPI;
 
@@ -764,28 +757,31 @@ class PluginMonitoringDisplay extends CommonDBTM
         }
 
         // Hosts counters table
-        echo "<table class='center tab_cadre' style='width=80%'>";
+        $font_size_label = $reduced ? "visibility: hidden" : "font-size: 12px;font-weight: bold;";
+        $font_size_counter = $reduced ? "font-size: 24px;font-weight: bold;" : "font-size: 52px;font-weight: bold;";
+        echo "<table class='center tab_cadre' style='width: 80%; margin-left: 10%; margin-top: 5px;'>";
         echo "<tr>";
         foreach ($a_states as $state => $status) {
             $link = $CFG_GLPI['root_doc'] .
                 "/plugins/monitoring/front/host.php?hidesearch=1"
-//              . "&reset=reset"
                 . "&criteria[0][field]=5"
                 . "&criteria[0][searchtype]=contains"
                 . "&criteria[0][value]=" . strtoupper($state)
 
                 . "&itemtype=PluginMonitoringHost"
                 . "&start=0'";
-            echo "<td class='center' style='width: 15%'>";
+            echo "<td class='center' style='width: 20%'>";
+            if (!$reduced) {
+                echo "<a href='" . $link . ">";
+                echo "<span class='font-$state' style='$font_size_label'>" . $status['label'] . "</span>";
+                echo "</a>";
+                echo "<br>";
+            }
             echo "<a href='" . $link . ">";
-            echo "<span class='font-$state' style='font-size: 12px;font-weight: bold;'>" . $status['label'] . "</span>";
+            echo "<span class='font-$state' style='$font_size_counter'>" . $status['counter'] . "</span>";
             echo "</a>";
             echo "<br>";
-            echo "<a href='" . $link . ">";
-            echo "<span class='font-$state' style='font-size: 52px;font-weight: bold;'>" . $status['counter'] . "</span>";
-            echo "</a>";
-            echo "<br>";
-            if ($status['soft'] >= 0) {
+            if (!$reduced and $status['soft'] >= 0) {
                 echo "<em style='font-size: 10px;font-weight: bold;'>" . __('Soft state : ', 'monitoring') . $status['soft'] . "</em>";
             }
             echo "</td>";
@@ -805,7 +801,7 @@ class PluginMonitoringDisplay extends CommonDBTM
     }
 
 
-    function displayServicesCounters($display = true, $a_query=[])
+    function displayServicesCounters($display = true, $reduced = false, $a_query=[])
     {
         global $CFG_GLPI;
 
@@ -878,10 +874,11 @@ class PluginMonitoringDisplay extends CommonDBTM
         if (!$display) {
             $a_states['ok'] = strval($ok);
             $a_states['ok_soft'] = strval($ok_soft);
-            $a_states['unreachable'] = strval($unreachable);
-            $a_states['unreachable_soft'] = strval($unreachable_soft);
-            $a_states['unknown'] = strval($unknown);
-            $a_states['unknown_soft'] = strval($unknown_soft);
+            // Group unknown and unreachable
+//            $a_states['unreachable'] = strval($unreachable);
+//            $a_states['unreachable_soft'] = strval($unreachable_soft);
+            $a_states['unknown'] = strval($unknown) + strval($unreachable);
+            $a_states['unknown_soft'] = strval($unknown_soft) + strval($unreachable_soft);
             $a_states['critical'] = strval($critical);
             $a_states['critical_soft'] = strval($critical_soft);
             $a_states['warning'] = strval($warning);
@@ -899,19 +896,23 @@ class PluginMonitoringDisplay extends CommonDBTM
             $a_states['critical'] = [
                 'counter' => $critical, 'soft' => $critical_soft, 'label' => __('Critical', 'monitoring')
             ];
-            $a_states['unreachable'] = [
-                'counter' => $unreachable, 'soft' => $unreachable_soft, 'label' => __('Unreachable', 'monitoring')
-            ];
+            // Group unknown and unreachable
+//            $a_states['unreachable'] = [
+//                'counter' => $unreachable, 'soft' => $unreachable_soft, 'label' => __('Unreachable', 'monitoring')
+//            ];
             $a_states['unknown'] = [
-                'counter' => $unknown, 'soft' => $unknown_soft, 'label' => __('Unknown', 'monitoring')
+                'counter' => $unknown + $unreachable, 'soft' => $unknown_soft + $unreachable_soft,
+                'label' => __('Unknown', 'monitoring')
             ];
             $a_states['acknowledge'] = [
                 'counter' => $acknowledge, 'soft' => -1, 'label' => __('Acknowledged', 'monitoring')
             ];
         }
 
-        // Hosts counters table
-        echo "<table class='center tab_cadre' style='width=80%'>";
+        // Services counters table
+        $font_size_label = $reduced ? "visibility: hidden" : "font-size: 12px;font-weight: bold;";
+        $font_size_counter = $reduced ? "font-size: 24px;font-weight: bold;" : "font-size: 52px;font-weight: bold;";
+        echo "<table class='center tab_cadre' style='width: 80%; margin-left: 10%; margin-top: 5px;'>";
         echo "<tr>";
         foreach ($a_states as $state => $status) {
             $link = $CFG_GLPI['root_doc'] .
@@ -923,16 +924,18 @@ class PluginMonitoringDisplay extends CommonDBTM
 
                 . "&itemtype=PluginMonitoringHost"
                 . "&start=0'";
-            echo "<td class='center' style='width: 15%'>";
+            echo "<td class='center' style='width: 20%'>";
+            if (!$reduced) {
+                echo "<a href='" . $link . ">";
+                echo "<span class='font-$state' style='$font_size_label'>" . $status['label'] . "</span>";
+                echo "</a>";
+                echo "<br>";
+            }
             echo "<a href='" . $link . ">";
-            echo "<span class='font-$state' style='font-size: 12px;font-weight: bold;'>" . $status['label'] . "</span>";
+            echo "<span class='font-$state' style='$font_size_counter'>" . $status['counter'] . "</span>";
             echo "</a>";
             echo "<br>";
-            echo "<a href='" . $link . ">";
-            echo "<span class='font-$state' style='font-size: 52px;font-weight: bold;'>" . $status['counter'] . "</span>";
-            echo "</a>";
-            echo "<br>";
-            if ($status['soft'] >= 0) {
+            if (!$reduced and $status['soft'] >= 0) {
                 echo "<em style='font-size: 10px;font-weight: bold;'>" . __('Soft state : ', 'monitoring') . $status['soft'] . "</em>";
             }
             echo "</td>";
