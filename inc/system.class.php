@@ -48,8 +48,8 @@ class PluginMonitoringSystem extends CommonDBTM
         if (!$withtemplate) {
             switch ($item->getType()) {
                 case 'Central' :
-                    if (Session::haveRight("plugin_monitoring_homepage", READ)
-                        and Session::haveRight("plugin_monitoring_system_status", PluginMonitoringSystem::HOMEPAGE)) {
+                    if (Session::haveRight("plugin_monitoring_central", READ)
+                        and Session::haveRight("plugin_monitoring_system_status", PluginMonitoringProfile::HOMEPAGE)) {
                         return [1 => __('System status', 'monitoring')];
                     } else {
                         return '';
@@ -68,7 +68,8 @@ class PluginMonitoringSystem extends CommonDBTM
                 echo "<table class='tab_cadre' width='950'>";
                 echo "<tr class='tab_bg_1'>";
                 echo "<th height='80'>";
-                echo __('Sorry, this content is not yet available in the Monitoring', 'monitoring');
+                PluginMonitoringTag::getServersStatus(true);
+
                 echo "</th>";
                 echo "</tr>";
                 echo "</table>";

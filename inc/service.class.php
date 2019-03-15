@@ -245,8 +245,8 @@ class PluginMonitoringService extends CommonDBTM
         if (!$withtemplate) {
             switch ($item->getType()) {
                 case 'Central' :
-                    if (Session::haveRight("plugin_monitoring_homepage", READ)
-                        and Session::haveRight("plugin_monitoring_service", self::HOMEPAGE)) {
+                    if (Session::haveRight("plugin_monitoring_central", READ)
+                        and Session::haveRight("plugin_monitoring_service_status", self::HOMEPAGE)) {
                         return [1 => __('Monitored services', 'monitoring')];
                     }
                     break;
@@ -681,7 +681,8 @@ class PluginMonitoringService extends CommonDBTM
         $pmDisplay = new PluginMonitoringDisplay();
         PluginMonitoringToolbox::log("Extra query: " . print_r($extra_query, true));
 
-        $pmDisplay->displayServicesCounters(true, $extra_query);
+        // Reduced mode with an extra query
+        $pmDisplay->displayServicesCounters(true, true, $extra_query);
         $pmDisplay->showResourcesBoard('', true, $params);
     }
 

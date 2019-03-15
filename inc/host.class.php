@@ -209,7 +209,7 @@ class PluginMonitoringHost extends CommonDBTM
         if (!$withtemplate) {
             switch ($item->getType()) {
                 case 'Central':
-                    if (Session::haveRight("plugin_monitoring_homepage", READ)
+                    if (Session::haveRight("plugin_monitoring_central", READ)
                         and Session::haveRight("plugin_monitoring_host_status", self::HOMEPAGE)) {
                         return [1 => __('Monitored hosts', 'monitoring')];
                     }
@@ -219,10 +219,13 @@ class PluginMonitoringHost extends CommonDBTM
                     /* @var CommonDBTM $item */
                     $array_ret = [];
                     if ($item->getID() > 0 and self::canView()) {
-                        $array_ret[] = self::createTabEntry(
-                            __('Monitoring configuration', 'monitoring'));
-                        $array_ret[] = self::createTabEntry(
-                            __('Resources', 'monitoring'), self::countForItem($item));
+                        if (Session::haveRight("plugin_monitoring_configuration", READ)) {
+                            $array_ret[] = self::createTabEntry(
+                                __('Monitoring configuration', 'monitoring'));
+                        } else if (Session::haveRight("plugin_monitoring_service_status", READ)) {
+                            $array_ret[] = self::createTabEntry(
+                                __('Resources', 'monitoring'), self::countForItem($item));
+                        }
                     }
                     return $array_ret;
                     break;
@@ -258,15 +261,22 @@ class PluginMonitoringHost extends CommonDBTM
                 return true;
         }
         if ($item->getID() > 0) {
-            if ($tabnum == 0) {
-                // Host monitoring configuration
-                $pmHostconfig = new PluginMonitoringHostconfig();
-                $pmHostconfig->showForm($item->getID(), get_class($item));
-            }
-            if ($tabnum == 1) {
-                // Host services
-                $pmService = new PluginMonitoringService();
-                $pmService->listByHost($item->getType(), $item->getID());
+            if ($item->getID() > 0 and self::canView()) {
+                if (Session::haveRight("plugin_monitoring_service_status", READ)) {
+                    // Host services
+                    $pmService = new PluginMonitoringService();
+                    $pmService->listByHost($item->getType(), $item->getID());
+                }
+//                if (Session::haveRight("plugin_monitoring_service_event", READ)) {
+//                    // Host services
+//                    $pmService = new PluginMonitoringService();
+//                    $pmService->listByHost($item->getType(), $item->getID());
+//                }
+                if (Session::haveRight("plugin_monitoring_configuration", READ)) {
+                    // Host monitoring configuration
+                    $pmHostconfig = new PluginMonitoringHostconfig();
+                    $pmHostconfig->showForm($item->getID(), get_class($item));
+                }
             }
         }
         return true;

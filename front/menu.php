@@ -33,7 +33,7 @@ include("../../../inc/includes.php");
 
 Session::checkCentralAccess();
 
-Session::checkRight("plugin_monitoring_central", READ);
+Session::checkRight("plugin_monitoring_configuration", READ);
 
 Html::header(
     __('Monitoring - dashboard', 'monitoring'),
@@ -45,7 +45,7 @@ $toDisplayArea = 0;
  * Redirect to the dashboard if acces is granted and no configuration is allowed
  */
 if (Session::haveRight("plugin_monitoring_dashboard", READ)
-    and !Session::haveRight("config", READ)) {
+    and !Session::haveRight("plugin_monitoring_configuration", READ)) {
     Html::redirect($CFG_GLPI['root_doc'] . "/plugins/monitoring/front/dashboard.php");
 }
 
@@ -131,7 +131,7 @@ if (Session::haveRight("plugin_monitoring_dashboard", READ)) {
 //}
 
 
-if (Session::haveRight("config", READ)) {
+if (Session::haveRight("plugin_monitoring_configuration", READ)) {
     $toDisplayArea++;
 
     echo '<table class="tab_cadre" style="width:100%; padding: 10px">';

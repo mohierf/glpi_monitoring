@@ -64,6 +64,16 @@ class PluginMonitoringProfile extends Profile
     }
 
 
+    function defineTabs($options = []) {
+
+        $ong = [];
+        $this->addDefaultFormTab($ong);
+        $this->addStandardTab(__CLASS__, $ong, $options);
+        $this->addStandardTab('Log', $ong, $options);
+
+        return $ong;
+    }
+
     /**
      * show Tab content
      *
@@ -132,12 +142,6 @@ class PluginMonitoringProfile extends Profile
         ];
         if (!$self_service) {
             $rights[] = [
-                'rights' => [READ => __('Read')],
-                'label' => __('Menu', 'monitoring'),
-                'field' => 'plugin_monitoring_menu'
-            ];
-
-            $rights[] = [
                 'rights' => [READ => __('Read'), UPDATE => __('Update')],
                 'itemtype' => 'PluginMonitoringConfig',
                 'label' => __('Configuration', 'monitoring'),
@@ -145,9 +149,9 @@ class PluginMonitoringProfile extends Profile
             ];
 
             $rights[] = [
-                'rights' => [self::DASHBOARD => __('Dashboard')],
+                'rights' => [READ => __('Read')],
                 'itemtype' => 'PluginMonitoringDashboard',
-                'label' => __('Dashboards', 'monitoring'),
+                'label' => __('Dashboard', 'monitoring'),
                 'field' => 'plugin_monitoring_dashboard'
             ];
         }
@@ -165,15 +169,6 @@ class PluginMonitoringProfile extends Profile
     function getRightsMonitoring($self_service = false)
     {
         $rights = [
-
-            ['rights' => [READ => __('Read')],
-                'label' => __('Dashboard', 'monitoring'),
-                'field' => 'plugin_monitoring_dashboard'
-            ],
-            ['rights' => [READ => __('Read')],
-                'label' => __('Home page', 'monitoring'),
-                'field' => 'plugin_monitoring_homepage'
-            ],
 
             ['itemtype' => 'PluginMonitoringAcknowledge',
                 'label' => __('Acknowledge', 'monitoring'),
@@ -243,20 +238,25 @@ class PluginMonitoringProfile extends Profile
                 'label' => __('Restart monitoring framework', 'monitoring'),
                 'field' => 'plugin_monitoring_command_fmwk'
             ],
-            ['rights' => [self::HOMEPAGE => __('Home page'), UPDATE => __('Update'), CREATE => __('Create')],
-                'itemtype' => 'PluginMonitoringService',
-                'label' => __('Services', 'monitoring'),
-                'field' => 'plugin_monitoring_service'
-            ],
             ['rights' => [self::HOMEPAGE => __('Home page'), self::DASHBOARD => __('Dashboard')],
                 'itemtype' => 'PluginMonitoringSystem',
                 'label' => __('System status', 'monitoring'),
                 'field' => 'plugin_monitoring_system_status'
             ],
-            ['rights' => [self::HOMEPAGE => __('Home page'), self::DASHBOARD => __('Dashboard')],
+            ['rights' => [READ => __('Read'), self::HOMEPAGE => __('Home page'), self::DASHBOARD => __('Dashboard')],
                 'itemtype' => 'PluginMonitoringHost',
-                'label' => __('Host status', 'monitoring'),
+                'label' => __('Hosts status', 'monitoring'),
                 'field' => 'plugin_monitoring_host_status'
+            ],
+            ['rights' => [READ => __('Read'), self::HOMEPAGE => __('Home page'), self::DASHBOARD => __('Dashboard')],
+                'itemtype' => 'PluginMonitoringService',
+                'label' => __('Services status', 'monitoring'),
+                'field' => 'plugin_monitoring_service_status'
+            ],
+            ['rights' => [READ => __('Read'), self::HOMEPAGE => __('Home page'), self::DASHBOARD => __('Dashboard')],
+                'itemtype' => 'PluginMonitoringServiceevent',
+                'label' => __('Service events', 'monitoring'),
+                'field' => 'plugin_monitoring_service_event'
             ],
             ['rights' => [CREATE => __('Create')],
                 'label' => __('Host actions', 'monitoring'),

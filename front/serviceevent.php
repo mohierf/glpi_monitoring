@@ -32,7 +32,7 @@
 
 include("../../../inc/includes.php");
 
-Session::checkRight("plugin_monitoring_service", READ);
+Session::checkRight("plugin_monitoring_service_event", READ);
 
 Html::header(__('Monitoring - resources events', 'monitoring'), '', "plugins", "monitoring", "event");
 

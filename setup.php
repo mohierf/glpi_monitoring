@@ -213,7 +213,7 @@ function plugin_init_monitoring()
             $PLUGIN_HOOKS['config_page']['monitoring'] = 'front/config.form.php';
 
             // Add an entry to the Administration menu
-            if (Session::haveRight('plugin_monitoring_menu', READ)) {
+            if (Session::haveRight('plugin_monitoring_configuration', READ)) {
                 $PLUGIN_HOOKS['menu_toadd']['monitoring'] = [
 //                    'admin' => 'PluginMonitoringMenu',
                     'config' => 'PluginMonitoringMenu'
@@ -229,28 +229,28 @@ function plugin_init_monitoring()
         $PLUGIN_HOOKS['headings']['monitoring'] = 'plugin_get_headings_monitoring';
         $PLUGIN_HOOKS['headings_action']['monitoring'] = 'plugin_headings_actions_monitoring';
 
-        // Icons add, search...
-        // Still useful to declare all that stuff ? Menu is ok without this ...
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['componentscatalog'] = 'front/componentscatalog.form.php?add=1';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['componentscatalog'] = 'front/componentscatalog.php';
-
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['displayview'] = 'front/displayview.form.php?add=1';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['displayview'] = 'front/displayview.php';
-
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['PluginMonitoringRealm'] = 'front/realm.form.php?add=1';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['PluginMonitoringRealm'] = 'front/realm.php';
-
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['perfdata'] = 'front/perfdata.form.php?add=1';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['perfdata'] = 'front/perfdata.php';
-
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['customitem_gauge'] = 'front/customitem_gauge.form.php?add=1';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['customitem_gauge'] = 'front/customitem_gauge.php';
-
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['customitem_counter'] = 'front/customitem_counter.form.php?add=1';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['customitem_counter'] = 'front/customitem_counter.php';
-
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/display.php';
-        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/host.php';
+//        // Icons add, search...
+//        // Still useful to declare all that stuff ? Menu is ok without this ...
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['componentscatalog'] = 'front/componentscatalog.form.php?add=1';
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['componentscatalog'] = 'front/componentscatalog.php';
+//
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['displayview'] = 'front/displayview.form.php?add=1';
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['displayview'] = 'front/displayview.php';
+//
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['PluginMonitoringRealm'] = 'front/realm.form.php?add=1';
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['PluginMonitoringRealm'] = 'front/realm.php';
+//
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['perfdata'] = 'front/perfdata.form.php?add=1';
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['perfdata'] = 'front/perfdata.php';
+//
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['customitem_gauge'] = 'front/customitem_gauge.form.php?add=1';
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['customitem_gauge'] = 'front/customitem_gauge.php';
+//
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['customitem_counter'] = 'front/customitem_counter.form.php?add=1';
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['customitem_counter'] = 'front/customitem_counter.php';
+//
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/display.php';
+//        $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/host.php';
 
         $rule_check = [
             'PluginMonitoringComponentscatalog_rule', 'doesThisItemVerifyRule'

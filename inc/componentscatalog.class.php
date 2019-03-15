@@ -99,7 +99,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
         if (!$withtemplate) {
             switch ($item->getType()) {
                 case 'Central' :
-                    if (Session::haveRight("plugin_monitoring_homepage", READ)
+                    if (Session::haveRight("plugin_monitoring_central", READ)
                         && Session::haveRight("plugin_monitoring_componentscatalog", PluginMonitoringComponentscatalog::HOMEPAGE)) {
                         return [1 => __('Components catalogs', 'monitoring')];
                     }
@@ -686,7 +686,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
             // Do not display fake host service ...
             if ($services[$i] == '_fake_') continue;
 
-            if (Session::haveRight("plugin_monitoring_service", READ)) {
+            if (Session::haveRight("plugin_monitoring_service_status", READ)) {
                 $link = $CFG_GLPI['root_doc'] .
                     "/plugins/monitoring/front/service.php?hidesearch=1"
 //                    . "&reset=reset"
@@ -751,7 +751,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
                 echo "<tr class='services tab_bg_3'>";
             }
             // echo "<td><div style='width: 5px !important;'>&nbsp;</div></td>";
-            if (Session::haveRight("plugin_monitoring_service", READ)) {
+            if (Session::haveRight("plugin_monitoring_service_status", READ)) {
                 /* @var $item CommonDBTM */
                 $item = new $hosts_ids[$hosts_id]['itemtype'];
                 $item->getFromDB($hosts_ids[$hosts_id]['items_id']);
@@ -766,7 +766,7 @@ class PluginMonitoringComponentscatalog extends CommonDropdown
                     $overallServicesState = $resources[$services[$i]]['state'];
                 }
                 echo '<td class="serviceState">';
-                if (Session::haveRight("plugin_monitoring_service", READ)) {
+                if (Session::haveRight("plugin_monitoring_service_status", READ)) {
                     $link_service = $link;
                     $link_service .= "&link[1]=AND&field[1]=2&searchtype[1]=equals&contains[1]=" .
                         $resources[$services[$i]]['plugin_monitoring_components_id'];
