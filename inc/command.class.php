@@ -96,9 +96,22 @@ class PluginMonitoringCommand extends CommonDBTM
         // Shinken 2.0 and Alignak
         // - default installed checks
         $input = [];
-        $input['name'] = 'Check host alive (ICMP)';
-        $input['command_name'] = 'check_host_alive';
+        $input['name'] = 'No check command (passive hosts)';
+        $input['command_name'] = '';
         $input['command_line'] = "\$NAGIOSPLUGINSDIR$/check_icmp -H \$HOSTADDRESS$ -w 1000,100% -c 3000,100% -p 1";
+        $this->add($input);
+
+        // - default internal commands
+        $input = [];
+        $input['name'] = 'Host is always Up';
+        $input['command_name'] = 'Always UP';
+        $input['command_line'] = "_internal_host_check!0";
+        $this->add($input);
+
+        $input = [];
+        $input['name'] = 'Service is always Ok';
+        $input['command_name'] = 'Always OK';
+        $input['command_line'] = "_internal_service_check!0";
         $this->add($input);
 
         $input = [];

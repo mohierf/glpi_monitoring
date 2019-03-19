@@ -42,6 +42,8 @@ class PluginMonitoringShinken extends CommonDBTM
     const INITIAL_SERVICE_STATE = 'UNKNOWN';
     const INITIAL_SERVICE_STATE_TYPE = 'HARD';
 
+    const HOSTGROUP_LEVEL = 3;
+
     // Comment to remove custom variable from host/service configuration
     public static $default = [
         // GLPI root entity name
@@ -1118,6 +1120,11 @@ class PluginMonitoringShinken extends CommonDBTM
                     continue;
                 }
 
+                if ($a_component['build_service'] != '1') {
+                    PluginMonitoringToolbox::log("service: {$data['id']} - no data built for this service.");
+                    continue;
+                }
+
                 // Service component catalog host
                 if (!isset($componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']])) {
                     PluginMonitoringToolbox::log("[ERROR] service: {$data['id']} - no associated CC host !");
@@ -1557,12 +1564,7 @@ class PluginMonitoringShinken extends CommonDBTM
             `name` AS entityName, 
             `level` AS entityLevel, 
             `comment`, `address`, `postcode`, `town`, 
-            `state` AS state, 
-            `country` AS country, 
-            `website` AS website , 
-            `fax` AS fax, 
-            `email` AS email, 
-            `phonenumber` AS phonenumber
+            `state`, `country`, `website`, `fax`, `email`, `phonenumber`
          FROM `glpi_entities` $where";
 
         if ($result = $DB->query($query)) {
@@ -1580,6 +1582,10 @@ class PluginMonitoringShinken extends CommonDBTM
                       action_url	url
                    }
                  */
+                if ($data['entityLevel'] > self::HOSTGROUP_LEVEL) {
+                    continue;
+                }
+
                 $my_group = [];
                 // Hostgroup name
                 $hostgroup_name = self::monitoringFilter($data['entityName']);

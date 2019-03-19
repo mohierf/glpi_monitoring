@@ -122,8 +122,6 @@ function plugin_init_monitoring()
     $Plugin = new Plugin();
     if ($Plugin->isActivated('monitoring')) {
 
-//        include __DIR__ . '/lib/alignak-backend-php-client/src/Client.php';
-
         // Classes registration
         Plugin::registerClass('PluginMonitoringCommmand');
         Plugin::registerClass('PluginMonitoringNotificationcommand');
@@ -135,10 +133,6 @@ function plugin_init_monitoring()
 
         Plugin::registerClass('PluginMonitoringEntity',
             ['addtabon' => ['Entity']]);
-//        Plugin::registerClass('PluginMonitoringComponentscatalog',
-//            ['addtabon' => ['Central']]);
-//        Plugin::registerClass('PluginMonitoringDisplayview',
-//            ['addtabon' => ['Central']]);
 
         Plugin::registerClass('PluginMonitoringHost',
             ['addtabon' => ['Central', 'Computer']]);
@@ -151,8 +145,6 @@ function plugin_init_monitoring()
 
         Plugin::registerClass('PluginMonitoringProfile',
             ['addtabon' => ['Profile']]);
-//        Plugin::registerClass('PluginMonitoringUnavailability',
-//            ['addtabon' => ['Computer', 'NetworkEquipment']]);
         Plugin::registerClass('PluginMonitoringSystem',
             ['addtabon' => ['Central']]);
 
@@ -168,24 +160,10 @@ function plugin_init_monitoring()
             "lib/nvd3/src/nv.d3.css",
             "lib/jqueryplugins/tagbox/css/jquery.tagbox.css",
             "css/views.css",
-
-//          "css/webui/bootstrap.css",
-//          "css/webui/bootstrap-theme.min.css",
-//          "css/webui/font-awesome.min.css",
-//          "css/webui/alertify.min.css",
-//          "css/webui/alertify.bootstrap.min.css",
-//          "css/webui/alignak_webui.css",
-//          "css/webui/alignak_webui-items.css",
-//          "css/webui/datatables.min.css",
-//          "css/webui/timeline.css",
         ];
         $PLUGIN_HOOKS['add_javascript']['monitoring'] = [
             "lib/jscolor/jscolor.min.js",
             "lib/jqueryplugins/tagbox/js/jquery.tagbox.min.js",
-//          "lib/webui/bootstrap.min.js",
-//          "lib/webui/datatables.min.js",
-//          "lib/webui/alignak_webui-external.js",
-//          "lib/webui/Chart.min.js"
         ];
 
         // Plugin profiles management

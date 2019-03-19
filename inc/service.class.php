@@ -654,13 +654,38 @@ class PluginMonitoringService extends CommonDBTM
 
 
     /**
+     * Get a list of services associated with host
+     *
+     * @param string $itemtype  type of item (eg. Computer)
+     * @param integer $items_id id of the object
+     *
+     */
+    function getListByHost($itemtype, $items_id)
+    {
+        /* @var CommonDBTM $item */
+        $item = new $itemtype();
+        $item->getFromDB($items_id);
+
+        $pmServices = new PluginMonitoringService();
+        $a_services = $pmServices->find("`host_name`='". $item->getName() ."'");
+        foreach ($a_services as $index => $data) {
+            PluginMonitoringToolbox::logIfDebug("service, " . print_r($data, true));
+
+            if (!empty($host_services_state_list)) {
+                $host_services_state_list .= "\n";
+            }
+        }
+    }
+
+
+    /**
      * Display services associated with host
      *
      * @param string $itemtype  type of item (eg. Computer)
      * @param integer $items_id id of the object
      *
      */
-    function listByHost($itemtype, $items_id)
+    function displayListByHost($itemtype, $items_id)
     {
         /* @var CommonDBTM $item */
         $item = new $itemtype();

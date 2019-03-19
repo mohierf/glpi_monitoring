@@ -49,8 +49,8 @@ if (isset($_POST["copy"])) {
     }
     if (empty($_POST['name'])
 // No more mandatory!
-//        or empty($_POST['plugin_monitoring_checks_id'])
-//        or empty($_POST['plugin_monitoring_commands_id'])
+        or empty($_POST['plugin_monitoring_checks_id'])
+        or empty($_POST['plugin_monitoring_commands_id'])
         or empty($_POST['calendars_id'])) {
 
         $_SESSION['plugin_monitoring_components'] = $_POST;

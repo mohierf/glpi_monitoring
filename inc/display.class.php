@@ -178,7 +178,7 @@ class PluginMonitoringDisplay extends CommonDBTM
         */
         $search_columns = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
         // Will not be displayed
-        $ignored_columns = [2, 3, 4];
+        $ignored_columns = [4];
 
         PluginMonitoringToolbox::log("Parameters: " . print_r($params, true));
         $data = Search::prepareDatasForSearch('PluginMonitoringService', $params, $search_columns);
@@ -537,7 +537,7 @@ class PluginMonitoringDisplay extends CommonDBTM
             if ($index == PluginMonitoringService::COLUMN_HOST_NAME and !empty($data[$index][0]['name'])) {
                 $link = $CFG_GLPI['root_doc'] .
                     "/plugins/monitoring/front/host.php?"
-                    . "&criteria[0][field]=" . 5
+                    . "&criteria[0][field]=" . 2
                     . "&criteria[0][searchtype]=contains"
                     . "&criteria[0][value]=^" . $data[$index][0]['name'] . "$"
                     . "&itemtype=PluginMonitoringHost"

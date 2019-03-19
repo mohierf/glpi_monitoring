@@ -265,7 +265,7 @@ class PluginMonitoringHost extends CommonDBTM
                 if (Session::haveRight("plugin_monitoring_service_status", READ)) {
                     // Host services
                     $pmService = new PluginMonitoringService();
-                    $pmService->listByHost($item->getType(), $item->getID());
+                    $pmService->displayListByHost($item->getType(), $item->getID());
                 }
 //                if (Session::haveRight("plugin_monitoring_service_event", READ)) {
 //                    // Host services
@@ -281,26 +281,6 @@ class PluginMonitoringHost extends CommonDBTM
         }
         return true;
     }
-
-
-    /**
-     * @since version 0.85
-     *
-     * @see   commonDBTM::getRights()
-     *
-     * @param string $interface
-     *
-     * @return array
-    function getRights($interface = 'central')
-    {
-
-        $values = [READ => __('Read')];
-        $values[self::HOMEPAGE] = __('See in homepage', 'monitoring');
-        $values[self::DASHBOARD] = __('See in dashboard', 'monitoring');
-
-        return $values;
-    }
-    */
 
 
     /**
@@ -369,38 +349,37 @@ class PluginMonitoringHost extends CommonDBTM
 
 
     /**
-     * Get host identifier for a service
+     * Get all services for an host
      */
-    function getServicesID()
+    function getMyServices()
     {
         if ($this->getID() == -1) return -1;
 
-        global $DB;
+        $pmS = new PluginMonitoringService();
+        return $pmS->find("`host_name`='" . $this->fields['host_name'] . "'");
+    }
 
-        $query = "SELECT
-                  `glpi_plugin_monitoring_services`.`id` as service_id
-                  , `glpi_plugin_monitoring_services`.`service_description` as service_name
-                  , `glpi_plugin_monitoring_hosts`.`id` as host_id
-                  , `glpi_computers`.`name` as host_name
-               FROM
-                  `glpi_plugin_monitoring_hosts`
-               INNER JOIN `glpi_plugin_monitoring_componentscatalogs_hosts`
-                    ON (`glpi_plugin_monitoring_hosts`.`itemtype` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`) AND (`glpi_plugin_monitoring_hosts`.`items_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id`)
-               INNER JOIN `glpi_computers`
-                    ON (`glpi_plugin_monitoring_hosts`.`items_id` = `glpi_computers`.`id`)
-               INNER JOIN `glpi_plugin_monitoring_services`
-                    ON (`glpi_plugin_monitoring_services`.`plugin_monitoring_componentscatalogs_hosts_id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id`)
-               WHERE (`glpi_plugin_monitoring_hosts`.`id` = '" . $this->getID() . "');";
-        $result = $DB->query($query);
-        if ($DB->numrows($result) > 0) {
-            $a_services = [];
-            while ($data = $DB->fetch_array($result)) {
-                $a_services[] = $data['service_id'];
+
+    /**
+     * Get all monitoring components for an host
+     */
+    function getMyComponents()
+    {
+        if ($this->getID() == -1) return -1;
+
+        $my_services = $this->getMyServices();
+        if ($my_services == -1) return $my_services;
+
+        $a_components = [];
+        $pmS = new PluginMonitoringService();
+        $pmC = new PluginMonitoringComponent();
+        foreach ($my_services as $service) {
+            $pmS->getFromDB($service['id']);
+            if ($pmC->getFromDB($pmS->fields['plugin_monitoring_components_id'])) {
+                $a_components[] = $pmC->getID();
             }
-            return $a_services;
-        } else {
-            return false;
         }
+        return $pmC->find("`id` IN ('" . implode("','", $a_components) . "')");
     }
 
 
@@ -698,8 +677,6 @@ class PluginMonitoringHost extends CommonDBTM
 
         return ([$host_services_state, $host_services_state_list, $host_services_ids]);
     }
-
-
 
 
     /**
