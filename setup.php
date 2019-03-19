@@ -39,7 +39,7 @@
  * Plugin global configuration variables
  */
 define("PLUGIN_MONITORING_OFFICIAL_RELEASE", "0");
-define('PLUGIN_MONITORING_VERSION', '9.3+0.2');
+define('PLUGIN_MONITORING_VERSION', '9.3+1.0');
 define('PLUGIN_MONITORING_PHP_MIN_VERSION', '5.6');
 define('PLUGIN_MONITORING_GLPI_MIN_VERSION', '9.2');
 define('PLUGIN_MONITORING_NAME', 'monitoring plugin');
