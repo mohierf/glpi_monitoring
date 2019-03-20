@@ -56,20 +56,18 @@ class PluginMonitoringServiceevent extends CommonDBTM
                     }
                     break;
 
-                case 'Computer':
-                    /* @var CommonDBTM $item */
-                    $array_ret = [];
-                    if ($item->getID() > 0 and self::canView()) {
-                        if (Session::haveRight("plugin_monitoring_service_event", READ)) {
-                            $array_ret[] = self::createTabEntry(__('Services events', 'monitoring'));
-                        }
-                    }
-                    return $array_ret;
-                    break;
+//                case 'Computer':
+//                    /* @var CommonDBTM $item */
+//                    $array_ret = [];
+//                    if ($item->getID() > 0 and self::canView()) {
+//                        if (Session::haveRight("plugin_monitoring_service_event", READ)) {
+//                            $array_ret[] = self::createTabEntry(__('Services events', 'monitoring'));
+//                        }
+//                    }
+//                    return $array_ret;
+//                    break;
             }
         }
-        return '';
-
         return '';
     }
 
@@ -79,18 +77,18 @@ class PluginMonitoringServiceevent extends CommonDBTM
 
         if ($item->getType() == 'Computer') {
             if (self::canView()) {
-                // Show list filtered on computer, sorted on day descending ...
-                $_GET = [
-                    'field' => [22],
-                    'searchtype' => ['equals'],
-                    'contains' => [$item->getID()],
-                    'itemtype' => 'PluginMonitoringServiceevent',
-                    'start' => 0,
-                    'sort' => 3,
-                    'order' => 'DESC'];
-                Search::manageGetValues(self::getTypeName());
-                Search::showList(self::getTypeName(), $_GET);
-                return true;
+//                // Show list filtered on computer, sorted on day descending ...
+//                $_GET = [
+//                    'field' => [22],
+//                    'searchtype' => ['equals'],
+//                    'contains' => [$item->getID()],
+//                    'itemtype' => 'PluginMonitoringServiceevent',
+//                    'start' => 0,
+//                    'sort' => 3,
+//                    'order' => 'DESC'];
+//                Search::manageGetValues(self::getTypeName());
+//                Search::showList(self::getTypeName(), $_GET);
+//                return true;
             }
         }
         return true;
