@@ -65,8 +65,9 @@ class PluginMonitoringMenu extends CommonGLPI
      * @global array $CFG_GLPI
      * @return array
      */
-    static function getAdditionalMenuOptions() {
-        global $CFG_GLPI;
+    static function getAdditionalMenuOptions()
+    {
+        global $PLUGIN_HOOKS, $CFG_GLPI;
 
         $elements = [
             'config' => 'PluginMonitoringConfig',
@@ -99,19 +100,19 @@ class PluginMonitoringMenu extends CommonGLPI
         $options = [];
 
         $options['menu']['title'] = self::getTypeName();
-        $options['menu']['page']  = self::getSearchURL(false);
+        $options['menu']['page'] = self::getSearchURL(false);
         if (Session::haveRight('plugin_monitoring_configuration', READ)) {
-            $options['menu']['links']['config']  = PluginMonitoringConfig::getFormURL(false);
+            $options['menu']['links']['config'] = "/plugins/monitoring/" . $PLUGIN_HOOKS['config_page']['monitoring'];
         }
         foreach ($elements as $type => $itemtype) {
             $options[$type]['title'] = $itemtype::getTypeName();
-            $options[$type]['page']  = $itemtype::getSearchURL(false);
+            $options[$type]['page'] = $itemtype::getSearchURL(false);
             $options[$type]['links']['search'] = $itemtype::getSearchURL(false);
             if ($itemtype::canCreate()) {
                 $options[$type]['links']['add'] = $itemtype::getFormURL(false);
             }
             if (Session::haveRight('plugin_monitoring_configuration', UPDATE)) {
-                $options[$type]['links']['config']  = PluginMonitoringConfig::getFormURL(false);
+                $options[$type]['links']['config'] = PluginMonitoringConfig::getFormURL(false);
             }
         }
         // hack for config

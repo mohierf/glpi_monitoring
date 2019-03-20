@@ -37,7 +37,7 @@ Session::checkRight("plugin_monitoring_configuration", READ);
 
 Html::header(
     __('Monitoring - dashboard', 'monitoring'),
-    '', 'config', 'pluginmonitoringmenu', 'dashboard');
+    '', 'config', 'pluginmonitoringmenu', 'menu');
 
 $toDisplayArea = 0;
 

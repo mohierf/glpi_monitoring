@@ -41,7 +41,6 @@ Html::header(__('Monitoring - configuration', 'monitoring'),
 $pmConfig = new PluginMonitoringConfig();
 if (isset ($_POST["update"])) {
     $pmConfig->update($_POST);
-    $pmConfig->load_alignak_url();
     Html::back();
 } else if (isset($_POST['timezones_add'])) {
     $input = [];

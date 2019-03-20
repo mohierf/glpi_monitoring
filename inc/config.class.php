@@ -193,32 +193,15 @@ class PluginMonitoringConfig extends CommonDBTM
         Dropdown::showYesNo("extra_debug", $this->fields['extra_debug']);
         echo "</td></tr>";
 
-//        echo '<tr class="tab_bg_1">';
-//        echo "<td >" . __('Build configuration files:') . "</td>";
-//        echo "<td colspan='3'>";
-//        Dropdown::showYesNo("build_files", $this->fields['build_files']);
-//        echo "</td></tr>";
-//
-//        echo '<tr class="tab_bg_1">';
-//        echo '<td>';
-//        echo __('Alignak backend URL', 'alignak');
-//        echo '</td>';
-//        echo '<td>';
-//        Html::autocompletionTextField($this, 'alignak_backend_url', ['value' => $this->fields['alignak_backend_url']]);
-//        echo '</td>';
-//        echo '</tr>';
-//
-//        echo '<tr class="tab_bg_1">';
-//        echo '<td>';
-//        echo __('Alignak Web UI URL', 'alignak');
-//        echo '</td>';
-//        echo '<td>';
-//        Html::autocompletionTextField($this, 'alignak_webui_url', ['value' => $this->fields['alignak_webui_url']]);
-//        echo '</td>';
-//        echo '</tr>';
+        echo "<tr class='tab_bg_1'>";
+        echo "<td >" . __('Build files:') . "</td>";
+        echo "<td colspan='3'>";
+        Dropdown::showYesNo("build_files", $this->fields['build_files']);
+        echo "</td></tr>";
 
         echo "<tr class='tab_bg_2'>";
         echo "<td colspan='4' class='center'>";
+        echo "<input name='id' type='hidden' value='$ID' />";
         echo "<input type='submit' name='update' class='submit' value=\"" . _sx('button', 'Save') . "\">";
         echo "</td></tr>";
 
@@ -260,39 +243,4 @@ class PluginMonitoringConfig extends CommonDBTM
         return $a_timezones;
 
     }
-
-
-    function rrmdir($dir)
-    {
-
-        if (is_dir($dir)) {
-            $objects = scandir($dir);
-            foreach ($objects as $object) {
-                if ($object != "." && $object != "..") {
-                    if (filetype($dir . "/" . $object) == "dir") {
-                        $this->rrmdir($dir . "/" . $object);
-                    } else {
-                        unlink($dir . "/" . $object);
-                    }
-                }
-            }
-            reset($objects);
-            rmdir($dir);
-        }
-    }
-
-
-    static function load_alignak_url()
-    {
-        global $PM_CONFIG;
-
-        PluginMonitoringToolbox::log("Configuration: " . print_r($PM_CONFIG), true);
-
-        $config = new PluginMonitoringConfig();
-        $config->getFromDB(1);
-        PluginMonitoringToolbox::log("Configuration: " . print_r($config->fields), true);
-        $PM_CONFIG['alignak_webui_url'] = $config->fields['alignak_webui_url'];
-        $PM_CONFIG['alignak_backend_url'] = $config->fields['alignak_backend_url'];
-    }
-
 }
