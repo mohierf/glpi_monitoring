@@ -264,7 +264,7 @@ class PluginMonitoringService extends CommonDBTM
                 $pmDisplay = new PluginMonitoringDisplay();
                 $pmDisplay->showServicesCounters(true);
                 $params = Search::manageParams("PluginMonitoringService", []);
-                $pmDisplay->showResourcesBoard('', true, $params);
+                $pmDisplay->showResourcesBoard('', false, $params);
                 break;
         }
         return true;
@@ -708,7 +708,7 @@ class PluginMonitoringService extends CommonDBTM
 
         // Reduced mode with an extra query
         $pmDisplay->displayServicesCounters(true, true, $extra_query);
-        $pmDisplay->showResourcesBoard('', true, $params);
+        $pmDisplay->showResourcesBoard('', false, $params);
     }
 
 
