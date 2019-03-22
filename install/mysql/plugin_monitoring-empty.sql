@@ -190,72 +190,6 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_configs` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
-CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_displayviews` (
-   `id` int(11) NOT NULL AUTO_INCREMENT,
-   `name` varchar(255) DEFAULT NULL,
-   `entities_id` int(11) NOT NULL DEFAULT '0',
-   `is_recursive` tinyint(1) NOT NULL DEFAULT '0',
-   `is_active` tinyint(1) NOT NULL DEFAULT '0',
-   `users_id` int(11) NOT NULL DEFAULT '0',
-   `counter` varchar(255) DEFAULT NULL,
-   `in_central` tinyint(1) NOT NULL DEFAULT '0',
-   `width` int(5) NOT NULL DEFAULT '950',
-   `is_frontview` tinyint(1) NOT NULL DEFAULT '0',
-   `comment` text DEFAULT NULL COLLATE utf8_unicode_ci,
-   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_displayviews_groups` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `pluginmonitoringdisplayviews_id` int(11) NOT NULL DEFAULT '0',
-  `groups_id` int(11) NOT NULL DEFAULT '0',
-  `entities_id` int(11) NOT NULL DEFAULT '-1',
-  `is_recursive` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `pluginmonitoringdisplayviews_id` (`pluginmonitoringdisplayviews_id`),
-  KEY `groups_id` (`groups_id`),
-  KEY `entities_id` (`entities_id`),
-  KEY `is_recursive` (`is_recursive`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_displayviews_users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `pluginmonitoringdisplayviews_id` int(11) NOT NULL DEFAULT '0',
-  `users_id` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `pluginmonitoringdisplayviews_id` (`pluginmonitoringdisplayviews_id`),
-  KEY `groups_id` (`users_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_displayviews_items` (
-   `id` int(11) NOT NULL AUTO_INCREMENT,
-   `plugin_monitoring_displayviews_id` int(11) NOT NULL DEFAULT '0',
-   `x` int(5) NOT NULL DEFAULT '0',
-   `y` int(5) NOT NULL DEFAULT '0',
-   `items_id` int(11) NOT NULL DEFAULT '0',
-   `itemtype` varchar(100) DEFAULT NULL,
-   `extra_infos` varchar(255) DEFAULT NULL,
-   `is_minemap` tinyint(1) NOT NULL DEFAULT '0',
-   PRIMARY KEY (`id`),
-   KEY `plugin_monitoring_displayviews_id` (`plugin_monitoring_displayviews_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_displayviews_rules` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `plugin_monitoring_displayviews_id` int(11) NOT NULL DEFAULT '0',
-  `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `itemtype` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `type` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `condition` text DEFAULT NULL COLLATE utf8_unicode_ci,
-  PRIMARY KEY (`id`),
-  KEY `plugin_monitoring_displayviews_id` (`plugin_monitoring_displayviews_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
 CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_entities` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `entities_id` int(11) NOT NULL DEFAULT '0',
@@ -497,57 +431,6 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_tags` (
   `password` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_perfdatas` (
-   `id` int(11) NOT NULL AUTO_INCREMENT,
-   `name` varchar(255) DEFAULT NULL,
-   `perfdata` text DEFAULT NULL COLLATE utf8_unicode_ci,
-   PRIMARY KEY (`id`),
-   KEY `name` (`name`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_perfdatadetails` (
-   `id` int(11) NOT NULL AUTO_INCREMENT,
-   `name` varchar(255) DEFAULT NULL,
-   `dynamic_name` tinyint(1) NOT NULL DEFAULT '0',
-   `plugin_monitoring_perfdatas_id` int(11) NOT NULL DEFAULT '0',
-   `position` int(2) NOT NULL DEFAULT '0',
-   `dsname_num` tinyint(1) NOT NULL DEFAULT '1',
-   `dsname1` varchar(255) DEFAULT NULL,
-   `dsname2` varchar(255) DEFAULT NULL,
-   `dsname3` varchar(255) DEFAULT NULL,
-   `dsname4` varchar(255) DEFAULT NULL,
-   `dsname5` varchar(255) DEFAULT NULL,
-   `dsname6` varchar(255) DEFAULT NULL,
-   `dsname7` varchar(255) DEFAULT NULL,
-   `dsname8` varchar(255) DEFAULT NULL,
-   `dsname9` varchar(255) DEFAULT NULL,
-   `dsname10` varchar(255) DEFAULT NULL,
-   `dsname11` varchar(255) DEFAULT NULL,
-   `dsname12` varchar(255) DEFAULT NULL,
-   `dsname13` varchar(255) DEFAULT NULL,
-   `dsname14` varchar(255) DEFAULT NULL,
-   `dsname15` varchar(255) DEFAULT NULL,
-   `dsnameincr1` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr2` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr3` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr4` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr5` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr6` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr7` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr8` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr9` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr10` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr11` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr12` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr13` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr14` tinyint(1) NOT NULL DEFAULT '0',
-   `dsnameincr15` tinyint(1) NOT NULL DEFAULT '0',
-   PRIMARY KEY (`id`),
-   KEY `plugin_monitoring_perfdatas_id` (`plugin_monitoring_perfdatas_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE IF NOT EXISTS `glpi_plugin_monitoring_hostdailycounters` (

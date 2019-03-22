@@ -105,7 +105,7 @@ class PluginMonitoringComponentscatalog_Component extends CommonDBTM
 
             echo "<td width='10'>";
             if ($can_edit) {
-                Html::showMassiveActionCheckBox('PluginMonitoringComponentscatalog_Component', $data["id"]);
+                Html::showMassiveActionCheckBox(__CLASS__, $data["id"]);
             }
             echo "</td>";
 

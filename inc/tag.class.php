@@ -123,11 +123,6 @@ class PluginMonitoringTag extends CommonDropdown
     }
 
 
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
-
     function rawSearchOptions()
     {
 
@@ -387,16 +382,20 @@ class PluginMonitoringTag extends CommonDropdown
 
 
     /**
-     * @param bool $display
+     * @param bool $display    set to display the servers status
+     *
+     * @param bool $get_status set to get the servers status, else it will use the last known status
      *
      * @return string
      */
-    static function getServersStatus($display = false)
+    static function getServersStatus($display = false, $get_status = false)
     {
-        // Update servers status
-        $task = new CronTask();
-        if ($task->getFromDBByCrit(['name' => 'FrameworkStatus'])) {
-            self::cronFrameworkStatus($task);
+        if ($get_status) {
+            // Update servers status
+            $task = new CronTask();
+            if ($task->getFromDBByCrit(['name' => 'FrameworkStatus'])) {
+                self::cronFrameworkStatus($task);
+            }
         }
 
         if ($display) {
@@ -408,12 +407,17 @@ class PluginMonitoringTag extends CommonDropdown
 
         $overall_state = 'ok';
 
+        $active_servers = 0;
         foreach ($servers as $data) {
             $pmTag->getFromDB($data['id']);
 
             $status = explode(PHP_EOL, $data['last_status']);
             $state = $status[0];
-            $class_state = 'background-' . strtolower($state);
+            $class_state = 'background-greyed';
+            if ($data['is_active']) {
+                $active_servers ++;
+                $class_state = 'background-' . strtolower($state);
+            }
 
             if ($data['is_active'] == '1') {
                 switch ($state) {
@@ -430,12 +434,15 @@ class PluginMonitoringTag extends CommonDropdown
 
             if ($display) {
                 echo "<tr class='tab_bg_1'>";
-                echo "<th colspan='4'>";
+                echo "<th colspan='5'>";
                 echo $pmTag->getName();
                 echo "</th>";
                 echo "</tr>";
 
                 echo "<tr class='$class_state'>";
+                echo "<td>";
+                echo Dropdown::getYesNo($data['is_active']);
+                echo "</td>";
                 echo "<td>";
                 echo $data['ip'];
                 echo "</td>";
@@ -453,6 +460,10 @@ class PluginMonitoringTag extends CommonDropdown
         }
         if ($display) {
             echo "</table>";
+        }
+
+        if ($active_servers == 0) {
+            $overall_state = 'none';
         }
 
         return $overall_state;

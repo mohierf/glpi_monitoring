@@ -37,8 +37,8 @@ Session::checkRight("plugin_monitoring_acknowledge", READ);
 Html::header(__('Monitoring - acknowledges', 'monitoring'),
     "", "config", "pluginmonitoringmenu", "acknowledge");
 
-$pmDisplay = new PluginMonitoringDisplay();
-$pmDisplay->dashboard();
+$pmD = new PluginMonitoringDashboard();
+$pmD->showMenu();
 
 Search::show('PluginMonitoringAcknowledge');
 

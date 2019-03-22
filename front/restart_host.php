@@ -43,44 +43,79 @@ if (!defined('GLPI_ROOT')) {
 
 Session::checkLoginUser();
 
-if (empty($_POST)) {
-    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
-}
+PluginMonitoringToolbox::log("restart_host, server data: " . print_r($_SERVER, true));
 
-// Get FusionInventory agent associated with host ...
-if (!isset($_POST['host_id'])) {
-    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing computer id in parameters !', 'monitoring');
-    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
-}
-$computerId = $_POST['host_id'];
-if (!isset($_POST['host_name'])) {
-    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing computer name in parameters !', 'monitoring');
-    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
-}
-$computerName = $_POST['host_name'];
+PluginMonitoringToolbox::log("restart_host, Request for a restart of an host, posted data: " . print_r($_POST, true));
 
+Session::checkRight("plugin_monitoring_host_actions", CREATE);
+
+//$redirect = $CFG_GLPI["root_doc"] . "/plugins/monitoring/index.php";
+$redirect = $_SERVER['HTTP_REFERER'];
+
+/*
+ * Fusion inventory installed?
+ */
 if (!class_exists("PluginFusioninventoryAgent")) {
-    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Plugin FusionInventory is not installed!', 'monitoring');
-    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+    PluginMonitoringToolbox::log("restart_host, plugin Fusion inventory is not installed!");
+    Html::redirect($redirect);
 }
-$agent = new PluginFusioninventoryAgent();
-$fusionAgentId = $agent->getAgentWithComputerid($computerId);
 
-// Get FusionInventory task associated with host command ...
+/*
+ * Posted data?
+ */
+if (empty($_POST)) {
+    PluginMonitoringToolbox::log("restart_host, no posted data!");
+    Html::redirect($redirect);
+}
+
+/*
+ * Check posted data?
+ */
 if (!isset($_POST['host_command'])) {
-    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Missing host command in parameters !', 'monitoring');
-    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+    PluginMonitoringToolbox::log("restart_host, parameters: missing host_command");
+    Html::redirect($redirect);
 }
 $host_command = $_POST['host_command'];
+if (!isset($_POST['host_id'])) {
+    PluginMonitoringToolbox::log("restart_host, parameters: missing host_id");
+    Html::redirect($redirect);
+}
+$host_id = $_POST['host_id'];
+if (!isset($_POST['host_name'])) {
+    PluginMonitoringToolbox::log("restart_host, parameters: missing host_name");
+    Html::redirect($redirect);
+}
+$host_name = $_POST['host_name'];
+$computer = new Computer();
+if (!$computer->getFromDBByCrit(['name' => $host_name])) {
+    PluginMonitoringToolbox::log("restart_host, computer named $host_name not found in the database!");
+    Html::redirect($redirect);
+}
+
+/*
+ * Get FusionInventory agent related to the computer
+ */
+$agent = new PluginFusioninventoryAgent();
+$agent_id = $agent->getAgentWithComputerid($host_id);
+if ($agent_id === false) {
+    $message = "restart_host, no FI agent for the computer named $host_name.";
+    PluginMonitoringToolbox::log($message);
+    Session::addMessageAfterRedirect($message, WARNING);
+    Html::redirect($redirect);
+}
+
+/*
+ * Get FusionInventory task related with the host command ...
+ */
 $pfTaskjob = new PluginFusioninventoryTaskjob();
 $a_lists = $pfTaskjob->find("name LIKE '$host_command'", '', 1);
-
 if (count($a_lists) == 0) {
-    $_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Host command task not found : ', 'monitoring') . $host_command;
-    Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+    $message = "restart_host, FI task not found for the command $host_command.";
+    PluginMonitoringToolbox::log($message);
+    Session::addMessageAfterRedirect($message, ERROR);
+    Html::redirect($redirect);
 }
 $a_list = current($a_lists);
-
 $taskjob_id = $a_list['id'];
 $definition = importArrayFromDB($a_list['definition']);
 
@@ -100,11 +135,21 @@ $query = "INSERT INTO `glpi_plugin_fusioninventory_taskjobstates`
    (`plugin_fusioninventory_taskjobs_id`, `items_id`, `itemtype`, `state`,
     `plugin_fusioninventory_agents_id`, `uniqid`)
    VALUES
-   ('" . $taskjob_id . "', '" . $definition[0]['PluginFusioninventoryDeployPackage'] . "',
+   ('$taskjob_id', '" . $definition[0]['PluginFusioninventoryDeployPackage'] . "',
     'PluginFusioninventoryDeployPackage', '0',
-    '" . $fusionAgentId . "', '" . uniqid() . "')";
+    '$agent_id', '" . uniqid() . "')";
 
-$result = $DB->query($query);
+try {
+    $result = $DB->query($query);
+    $message = sprintf(__("Host command '%s' requested for the host '%s'", 'monitoring'),
+        $host_command, $host_name );
+    PluginMonitoringToolbox::log($message);
+    Session::addMessageAfterRedirect($message);
+} catch (Exception $e) {
+    $message = sprintf(__("Host command '%s' requested for the host '%s', failed. Error: %s", 'monitoring'),
+        $host_command, $host_name, $e->getMessage());
+    PluginMonitoringToolbox::log($message);
+    Session::addMessageAfterRedirect($message, ERROR);
+}
 
-$_SESSION["MESSAGE_AFTER_REDIRECT"] = __('Host command \'', 'monitoring') . $host_command . __('\' requested for the host \'', 'monitoring') . $computerName . '\'';
-Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
+Html::redirect($redirect);

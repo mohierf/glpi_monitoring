@@ -53,14 +53,6 @@ class PluginMonitoringService extends CommonDBTM
     }
 
 
-    /*
-     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
-     */
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
-
     /**
      * WARNING: change the index order with very much care ... the display of the
      * services table is using some fixed index values!
@@ -261,10 +253,10 @@ class PluginMonitoringService extends CommonDBTM
 
         switch ($item->getType()) {
             case 'Central' :
-                $pmDisplay = new PluginMonitoringDisplay();
-                $pmDisplay->showServicesCounters(true);
+                $pmD = new PluginMonitoringDashboard();
+                $pmD->getServicesCounters(true);
                 $params = Search::manageParams("PluginMonitoringService", []);
-                $pmDisplay->showResourcesBoard('', false, $params);
+                $pmD->showResourcesBoard('', false, $params);
                 break;
         }
         return true;
@@ -272,23 +264,17 @@ class PluginMonitoringService extends CommonDBTM
 
 
     /**
-     * @since version 0.85
+     * Count the monitoring services matching the provided query
      *
-     * @see   commonDBTM::getRights()
+     * @param array $where  Glpi query to match with
      *
-     * @param string $interface
-     *
-     * @return array
-     * function getRights($interface = 'central')
-     * {
-     *
-     * $values = [];
-     * $values[self::HOMEPAGE] = __('See in homepage', 'monitoring');
-     * $values[self::DASHBOARD] = __('See in dashboard', 'monitoring');
-     *
-     * return $values;
-     * }
+     * @return integer
      */
+    static function countWhere($where)
+    {
+        $dbu = new DbUtils();
+        return $dbu->countElementsInTableForMyEntities(self::getTable(), $where);
+    }
 
 
     /**
@@ -703,12 +689,12 @@ class PluginMonitoringService extends CommonDBTM
         ];
 
         $extra_query = ["host_name" => $item->getName()];
-        $pmDisplay = new PluginMonitoringDisplay();
+        $pmD = new PluginMonitoringDashboard();
         PluginMonitoringToolbox::log("Extra query: " . print_r($extra_query, true));
 
         // Reduced mode with an extra query
-        $pmDisplay->displayServicesCounters(true, true, $extra_query);
-        $pmDisplay->showResourcesBoard('', false, $params);
+        $pmD->getServicesCounters(true, true, $extra_query);
+        $pmD->showResourcesBoard('', false, $params);
     }
 
 

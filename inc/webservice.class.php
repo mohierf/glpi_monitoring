@@ -30,6 +30,12 @@
  *
  */
 
+
+/*
+ * ---------------
+ * todo: NOTE that all this file content has not been tested with the current version
+ * ---------------
+ */
 if (!defined('GLPI_ROOT')) {
     die("Sorry. You can't access directly to this file");
 }
@@ -90,12 +96,13 @@ class PluginMonitoringWebservice
         $entity = (isset($params['entity']) and !empty($params['entity'])) ? $params['entity'] : '';
         /*
          * If file_output is set, the output of the called functions will be formated according to the
-         * Nagios legacy file format: define host{...}, else the output will be a standard PHP mapped array!
+         * Nagios legacy file format: define host{...}, else the output will be a standard PHP
+         * mapped array!
          */
         $file_output = (isset($params['file_output']) and !empty($params['file_output'])) ? true : false;
         /*
-         * If file is not set, then it is considerd that all available data are built and returned. Same behavior
-         * as if file were set to 'all'
+         * If file is not set, then it is considerd that all available data are built and returned.
+         * Same behavior as if file were set to 'all'
          */
         $file = (isset($params['file']) and !empty($params['file'])) ? $params['file'] : 'all';
 
@@ -105,19 +112,18 @@ class PluginMonitoringWebservice
         // Get entities concerned by the provided tag and get the definition order of the highest entty
         $pmEntity = new PluginMonitoringEntity();
         $a_entities_allowed = $pmEntity->getEntitiesByTag($entity, true);
-        if (!isset($_SESSION['plugin_monitoring']['allowed_entities'])) {
-            $_SESSION['plugin_monitoring']['allowed_entities'] = $a_entities_allowed;
-            $_SESSION['plugin_monitoring']['entities'] = [];
-            foreach ($a_entities_allowed as $entity_id) {
-                $pmEntity = PluginMonitoringEntity::getForEntity($entity_id);
-                if (! $pmEntity) {
-                    // This should not happen thanks to the default configuration
-                    continue;
-                }
-
-                // Get main entity information: tag, jet lag, definitiuon order, graphite prefix
-                $_SESSION['plugin_monitoring']['entities'][$entity_id] = $pmEntity->fields;
+        PluginMonitoringToolbox::logIfDebug("Got entities tagged with $entity: " . print_r($a_entities_allowed, true));
+        $_SESSION['plugin_monitoring']['allowed_entities'] = $a_entities_allowed;
+        $_SESSION['plugin_monitoring']['entities'] = [];
+        foreach ($a_entities_allowed as $entity_id) {
+            $pmEntity = PluginMonitoringEntity::getForEntity($entity_id);
+            if (! $pmEntity) {
+                // This should not happen thanks to the default configuration
+                continue;
             }
+
+            // Get main entity information: tag, jet lag, definition order, graphite prefix
+            $_SESSION['plugin_monitoring']['entities'][$entity_id] = $pmEntity->fields;
         }
 
         if (!isset($_SESSION['plugin_monitoring']['default_contact_template'])) {
@@ -298,13 +304,12 @@ class PluginMonitoringWebservice
             return $response;
         }
 
-        $pm = new PluginMonitoringDisplay();
+        $pm = new PluginMonitoringDashboard();
+        // Return counters without displaying
         if ($params['view'] == 'Hosts') {
-            // Return counters
-            return $pm->displayHostsCounters(false);
+            return $pm->getHostsCounters(false);
         } else {
-            return $pm->displayServicesCounters(false);
-//            return $pm->displayCounters($params['view'], 0);
+            return $pm->getServicesCounters(false);
         }
     }
 

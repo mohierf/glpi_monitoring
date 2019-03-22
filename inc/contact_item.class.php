@@ -98,7 +98,7 @@ class PluginMonitoringContact_Item extends CommonDBTM
                 echo "<tr>";
                 echo "<td width='10'>";
                 if ($can_edit) {
-                    Html::showMassiveActionCheckBox('PluginMonitoringComponentscatalog_Component', $data["id"]);
+                    Html::showMassiveActionCheckBox(__CLASS__, $data["id"]);
                 }
                 echo "</td>";
 
@@ -152,7 +152,7 @@ class PluginMonitoringContact_Item extends CommonDBTM
                 echo "<tr>";
                 echo "<td width='10'>";
                 if ($can_edit) {
-                    Html::showMassiveActionCheckBox('PluginMonitoringComponentscatalog_Component', $data["id"]);
+                    Html::showMassiveActionCheckBox(__CLASS__, $data["id"]);
                 }
                 echo "</td>";
 

@@ -35,9 +35,8 @@ include ("../../../inc/includes.php");
 // Check if current user have the appropriate right
 Session::checkRight("plugin_monitoring_realm", READ);
 
-Html::header(
-    __('Monitoring - realms', 'monitoring'),
-    '', 'config', 'pluginmonitoringmenu', 'realm');
+Html::header(__('Monitoring - dashboard', 'monitoring'),
+    "", "config", "pluginmonitoringmenu", "realm");
 
 $dropdown = new PluginMonitoringRealm();
 include (GLPI_ROOT . "/front/dropdown.common.php");

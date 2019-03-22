@@ -54,14 +54,6 @@ class PluginMonitoringHost extends CommonDBTM
     }
 
 
-    /*
-     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
-     */
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
-
     /**
      * WARNING: change the index order with very much care ... the display of the
      * hosts table is using some fixed index values!
@@ -223,10 +215,10 @@ class PluginMonitoringHost extends CommonDBTM
                             $array_ret[] = self::createTabEntry(
                                 __('Monitoring configuration', 'monitoring'));
                             $array_ret[] = self::createTabEntry(
-                                __('Resources', 'monitoring'), self::countForItem($item));
+                                __('Resources', 'monitoring'), self::coutServicesFor($item));
                         } else if (Session::haveRight("plugin_monitoring_service_status", READ)) {
                             $array_ret[] = self::createTabEntry(
-                                __('Resources', 'monitoring'), self::countForItem($item));
+                                __('Resources', 'monitoring'), self::coutServicesFor($item));
                         }
                     }
                     return $array_ret;
@@ -238,17 +230,31 @@ class PluginMonitoringHost extends CommonDBTM
 
 
     /**
-     * Get the services count for the provided computer
+     * Get the services count for the provided host (computer)
      *
      * @param CommonDBTM $item
      *
      * @return integer
      */
-    static function countForItem(CommonDBTM $item)
+    static function coutServicesFor(CommonDBTM $item)
     {
         $dbu = new DbUtils();
         return $dbu->countElementsInTableForMyEntities('glpi_plugin_monitoring_services', [
             'host_name' => $item->getField('name')]);
+    }
+
+
+    /**
+     * Count the monitoring hosts matching the provided query
+     *
+     * @param array $where  Glpi query to match with
+     *
+     * @return integer
+     */
+    static function countWhere($where)
+    {
+        $dbu = new DbUtils();
+        return $dbu->countElementsInTableForMyEntities(self::getTable(), $where);
     }
 
 
@@ -257,9 +263,9 @@ class PluginMonitoringHost extends CommonDBTM
         /* @var CommonDBTM $item */
         switch ($item->getType()) {
             case 'Central' :
-                $pmDisplay = new PluginMonitoringDisplay();
-                $pmDisplay->displayHostsCounters();
-                $pmDisplay->showHostsBoard([]);
+                $pmD = new PluginMonitoringDashboard();
+                $pmD->getHostsCounters();
+                $pmD->showHostsBoard([]);
                 return true;
         }
         if ($item->getID() > 0) {
@@ -348,6 +354,33 @@ class PluginMonitoringHost extends CommonDBTM
         }
 
         return $hostname;
+    }
+
+
+    /**
+     * Get the PM client entity (indeed it is the 2nd level entity of the current host)
+     *
+     * @param bool $name true to get the name, else returns the id
+     *
+     * @return int|string
+     */
+    function getClientEntity($name = false) {
+        $entity = new Entity();
+        if ($entity->getFromDB($this->fields['entities_id'])) {
+            $entities = getAncestorsOf("glpi_entities", $this->fields['entities_id']);
+            if (count($entities) >= 2) {
+                if ($entity->getFromDB($entities[1])) {
+                    if ($name) {
+                        return $entity->getName();
+                    }
+                    return $entities[1];
+                }
+            }
+        }
+        if ($name) {
+            return "Unknown client";
+        }
+        return -1;
     }
 
 

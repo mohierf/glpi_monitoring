@@ -83,6 +83,8 @@ class PluginMonitoringMenu extends CommonGLPI
             'hn_template' => 'PluginMonitoringHostnotificationtemplate',
             'sn_template' => 'PluginMonitoringServicenotificationtemplate',
 
+            'dashboard' => 'PluginMonitoringDashboard',
+
             'entity' => 'PluginMonitoringEntity',
             'host' => 'PluginMonitoringHost',
             'service' => 'PluginMonitoringService',

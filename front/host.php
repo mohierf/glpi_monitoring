@@ -32,11 +32,10 @@
 
 include("../../../inc/includes.php");
 
-$title = __('Monitoring - dashboard (hosts)', 'monitoring');
+$title = __('Monitoring - hosts status', 'monitoring');
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Session::checkCentralAccess();
-    Html::header($title, $_SERVER["PHP_SELF"], "plugins",
-        "PluginMonitoringDashboard", "dashboard");
+    Html::header($title, "", "config", "pluginmonitoringmenu", "dashboard");
 } else {
     Session::checkHelpdeskAccess();
     Html::helpHeader($title, $_SERVER['PHP_SELF']);
@@ -55,9 +54,9 @@ if (isset($_POST['reduced_interface'])) {
     $_SESSION['plugin_monitoring']['reduced_interface'] = $_POST['reduced_interface'];
 }
 
-$pmDisplay = new PluginMonitoringDisplay();
-$pmDisplay->dashboard(true);
-$pmDisplay->showHostsCounters(true);
+$pmD = new PluginMonitoringDashboard();
+$pmD->showMenu();
+$pmD->getHostsCounters(true);
 
 // Manage search
 if (isset($_SESSION['plugin_monitoring']['host'])) {
@@ -84,7 +83,7 @@ if (isset($_GET['hidesearch'])) {
     echo "</div>";
 }
 
-$pmDisplay->showHostsBoard($params);
+$pmD->showHostsBoard($params);
 if (isset($_SESSION['glpisearch']['PluginMonitoringHost']['reset'])) {
     unset($_SESSION['glpisearch']['PluginMonitoringHost']['reset']);
 }

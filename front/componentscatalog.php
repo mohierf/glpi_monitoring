@@ -37,5 +37,7 @@ Session::checkRight("plugin_monitoring_componentscatalog", READ);
 Html::header(__('Monitoring - components catalogs', 'monitoring'),
     "", "config", "pluginmonitoringmenu", "componentscatalog");
 
-$dropdown = new PluginMonitoringComponentscatalog();
-include (GLPI_ROOT . "/front/dropdown.common.php");
+
+Search::show('PluginMonitoringComponentscatalog');
+
+Html::footer();

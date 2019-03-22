@@ -100,14 +100,6 @@ class PluginMonitoringEntity extends CommonDBTM
     }
 
 
-    /*
-     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
-     */
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
-
     function rawSearchOptions()
     {
 
@@ -259,6 +251,12 @@ class PluginMonitoringEntity extends CommonDBTM
         echo "<td>" . __('Tag', 'monitoring') . " :</td>";
         echo "<td>";
         echo "<input type='text' name='tag' value='" . $this->fields["tag"] . "' size='30'/>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<th colspan='4'>";
+        echo __('Entity configuration', 'monitoring');
+        echo "</th>";
+        echo "</tr>";
 
         echo "</td>";
         echo "<td>" . __('Definition order', 'monitoring') . " :</td>";

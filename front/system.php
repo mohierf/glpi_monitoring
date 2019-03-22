@@ -30,14 +30,23 @@
  *
  */
 
-include ("../../../inc/includes.php");
+include("../../../inc/includes.php");
 
-Session::checkRight("plugin_monitoring_displayview", READ);
+$title = __('Monitoring - system status', 'monitoring');
+if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
+    Session::checkCentralAccess();
+    Html::header($title, "", "config", "pluginmonitoringmenu", "dashboard");
+} else {
+    Session::checkHelpdeskAccess();
+    Html::helpHeader($title, $_SERVER['PHP_SELF']);
+}
 
-Html::header(__('Monitoring - gauge', 'monitoring'),$_SERVER["PHP_SELF"], "plugins",
-             "monitoring", "customitem_gauge");
+$pmD= new PluginMonitoringDashboard();
+$pmD->showMenu();
+PluginMonitoringTag::getServersStatus(true, true);
 
-
-Search::show('PluginMonitoringCustomitem_gauge');
-
-Html::footer();
+if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
+    Html::footer();
+} else {
+    Html::helpFooter();
+}

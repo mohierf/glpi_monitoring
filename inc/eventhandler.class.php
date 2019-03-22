@@ -46,10 +46,6 @@ class PluginMonitoringEventhandler extends CommonDBTM
     }
 
 
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
     function rawSearchOptions()
     {
 

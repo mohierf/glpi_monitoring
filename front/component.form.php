@@ -38,9 +38,9 @@ Html::header(__('Monitoring - components', 'monitoring'),
     "", "config", "pluginmonitoringmenu", "component");
 
 
-$pMonitoringComponent = new PluginMonitoringComponent();
+$pmComponent = new PluginMonitoringComponent();
 if (isset($_POST["copy"])) {
-    $pMonitoringComponent->showForm(0, [], $_POST);
+    $pmComponent->showForm(0, [], $_POST);
     Html::footer();
     exit;
 } else if (isset ($_POST["add"])) {
@@ -59,7 +59,7 @@ if (isset($_POST["copy"])) {
         Html::back();
     }
 
-    $pMonitoringComponent->add($_POST);
+    $pmComponent->add($_POST);
     Html::back();
 } else if (isset ($_POST["update"])) {
     if (isset($_POST['arg'])) {
@@ -76,11 +76,11 @@ if (isset($_POST["copy"])) {
         Session::addMessageAfterRedirect("<span class='red'>" . __('Fields with asterisk are required', 'monitoring') . "</span>");
         Html::back();
     }
-    $pMonitoringComponent->update($_POST);
+    $pmComponent->update($_POST);
     Html::back();
 } else if (isset ($_POST["purge"])) {
-    $pMonitoringComponent->delete($_POST);
-    $pMonitoringComponent->redirectToList();
+    $pmComponent->delete($_POST);
+    $pmComponent->redirectToList();
 } else if (isset($_POST['updateperfdata'])) {
     $a_perfname = [];
 
@@ -107,7 +107,7 @@ if (isset($_POST["copy"])) {
     // $input['perfnamecolor'] = exportArrayToDB($a_perfnamecolor);
     $input['perfnamecolor'] = serialize($a_perfnamecolor);
 
-    $pMonitoringComponent->update($input);
+    $pmComponent->update($input);
     Html::back();
 }
 
@@ -115,6 +115,6 @@ if (!isset($_GET["id"])) {
     $_GET["id"] = "";
 }
 
-$pMonitoringComponent->display(['id' => $_GET["id"]]);
+$pmComponent->display(['id' => $_GET["id"]]);
 
 Html::footer();

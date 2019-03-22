@@ -140,11 +140,6 @@ class PluginMonitoringNotificationcommand extends CommonDBTM
     }
 
 
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
-
     function rawSearchOptions()
     {
 

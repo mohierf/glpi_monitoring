@@ -48,13 +48,16 @@ define('PLUGIN_MONITORING_LOG', 'plugin-monitoring');
 /*
  * Set to:
  * - shinken for Shinken
- * - alignak for Algnak (configuration files)
+ * - alignak for Alignak (configuration files)
  * - alignak_backend for Alignak backend connection (removed from initial source code!)
  */
 define("PLUGIN_MONITORING_SYSTEM", "alignak");
 
+if (!defined("PLUGIN_MONITORING_PATH")) {
+    define("PLUGIN_MONITORING_PATH", "plugins/monitoring");
+}
 if (!defined("PLUGIN_MONITORING_DIR")) {
-    define("PLUGIN_MONITORING_DIR", GLPI_ROOT . "/plugins/monitoring");
+    define("PLUGIN_MONITORING_DIR", GLPI_ROOT . "/" . PLUGIN_MONITORING_PATH);
 }
 if (!defined("PLUGIN_MONITORING_DOC_DIR")) {
     define("PLUGIN_MONITORING_DOC_DIR", GLPI_PLUGIN_DOC_DIR . "/monitoring");
@@ -315,15 +318,19 @@ function plugin_version_monitoring()
  */
 function plugin_monitoring_check_prerequisites()
 {
+    $plugin = new Plugin();
     $return = true;
 
-    $plugin = new Plugin();
     if (!$plugin->isInstalled('webservices')) {
-        echo __("This plugin requires the 'Web services' plugin to be installed and activated", "kiosks");
+        echo __("This plugin requires the 'Web services' plugin to be installed and activated", "monitoring");
         $return = false;
     } elseif (!$plugin->isActivated('webservices')) {
-        echo __("This plugin requires the 'Web services' plugin to be activated", "kiosks");
+        echo __("This plugin requires the 'Web services' plugin to be activated", "monitoring");
         $return = false;
+    }
+
+    if (!$plugin->isInstalled('fusioninventory')) {
+        echo __("Some features of this plugin require the 'Fusion Inventory' plugin to be installed and activated", "monitoring");
     }
 
     $version = rtrim(GLPI_VERSION, '-dev');

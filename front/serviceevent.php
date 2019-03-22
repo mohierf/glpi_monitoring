@@ -36,8 +36,8 @@ Session::checkRight("plugin_monitoring_service_event", READ);
 
 Html::header(__('Monitoring - resources events', 'monitoring'), '', "plugins", "monitoring", "event");
 
-$pmDisplay = new PluginMonitoringDisplay();
-$pmDisplay->dashboard();
+$pmD = new PluginMonitoringDashboard();
+$pmD->showMenu();
 
 Search::show('PluginMonitoringServiceevent');
 

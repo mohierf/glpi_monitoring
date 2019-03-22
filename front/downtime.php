@@ -37,8 +37,8 @@ Session::checkRight("plugin_monitoring_downtime", READ);
 Html::header(__('Monitoring - downtimes', 'monitoring'),
     "", "config", "pluginmonitoringmenu", "downtime");
 
-$pmDisplay = new PluginMonitoringDisplay();
-$pmDisplay->dashboard();
+$pmD = new PluginMonitoringDashboard();
+$pmD->showMenu();
 
 Search::show('PluginMonitoringDowntime');
 

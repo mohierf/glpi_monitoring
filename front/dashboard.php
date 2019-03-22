@@ -32,19 +32,19 @@
 
 include("../../../inc/includes.php");
 
+$title = __('Monitoring - dashboard', 'monitoring');
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Session::checkCentralAccess();
-    Html::header(__('Monitoring - dashboard', 'monitoring'),
-        "", "config", "pluginmonitoringmenu", "dashboard");
+    Html::header($title, "", "config", "pluginmonitoringmenu", "dashboard");
 } else {
     Session::checkHelpdeskAccess();
-    Html::helpHeader(__('Monitoring - dashboard', 'monitoring'), "");
+    Html::helpHeader($title, $_SERVER['PHP_SELF']);
 }
 
 Session::checkRight("plugin_monitoring_dashboard", READ);
 
-$pmDisplay = new PluginMonitoringDisplay();
-$pmDisplay->dashboard();
+$pmD = new PluginMonitoringDashboard();
+$pmD->showMenu(false);
 
 
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {

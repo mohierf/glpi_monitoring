@@ -110,7 +110,7 @@ class PluginMonitoringComponentscatalog_Host extends CommonDBTM
 
                 echo "<td width='10'>";
                 if ($can_edit) {
-                    Html::showMassiveActionCheckBox('PluginMonitoringComponentscatalog_Host', $data["id"]);
+                    Html::showMassiveActionCheckBox(__CLASS__, $data["id"]);
                 }
                 echo "</td>";
                 echo "<td class='center'>";

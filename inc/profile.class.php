@@ -178,18 +178,6 @@ class PluginMonitoringProfile extends Profile
                 'label' => __('Downtime', 'monitoring'),
                 'field' => 'plugin_monitoring_downtime'
             ],
-//            ['itemtype' => 'PluginMonitoringDisplayview',
-//                'label' => __('Views', 'monitoring'),
-//                'field' => 'plugin_monitoring_displayview'
-//            ],
-//            ['itemtype' => 'PluginMonitoringSlider',
-//                'label' => __('Slider', 'monitoring'),
-//                'field' => 'plugin_monitoring_slider'
-//            ],
-//            ['itemtype' => 'PluginMonitoringServicescatalog',
-//                'label' => __('Services catalog', 'monitoring'),
-//                'field' => 'plugin_monitoring_servicescatalog'
-//            ],
             ['itemtype' => 'PluginMonitoringComponentscatalog',
                 'label' => __('Components catalog', 'monitoring'),
                 'field' => 'plugin_monitoring_componentscatalog'
@@ -214,14 +202,6 @@ class PluginMonitoringProfile extends Profile
                 'label' => __('Command', 'monitoring'),
                 'field' => 'plugin_monitoring_command'
             ],
-//            ['itemtype' => 'PluginMonitoringPerfdata',
-//                'label' => __('Performance data', 'monitoring'),
-//                'field' => 'plugin_monitoring_perfdata'
-//            ],
-//            ['itemtype' => 'PluginMonitoringEventhandler',
-//                'label' => __('Event handler', 'monitoring'),
-//                'field' => 'plugin_monitoring_eventhandler'
-//            ],
             ['itemtype' => 'PluginMonitoringRealm',
                 'label' => __('Reamls', 'monitoring'),
                 'field' => 'plugin_monitoring_realm'

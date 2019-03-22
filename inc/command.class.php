@@ -68,29 +68,36 @@ class PluginMonitoringCommand extends CommonDBTM
         $input['command_line'] = $DB->escape("nohup sh -c 'systemctl stop alignak && sleep 3 && systemctl start alignak'  > /dev/null 2>&1 &");
         $this->add($input);
 
-        // Shinken 1.4
-        // - restart/reload Shinken
-        $input = [];
-        $input['name'] = "Shinken (1.4) reload";
-        // Default is not active ...
-        $input['is_active'] = "0";
-        $input['command_name'] = "restart_shinken";
-        $input['command_line'] = $DB->escape("nohup sh -c '/usr/local/shinken/bin/stop_arbiter.sh && sleep 3 && /usr/local/shinken/bin/launch_arbiter.sh'  > /dev/null 2>&1 &");
-        $this->add($input);
+//        // Shinken 1.4
+//        // - restart/reload Shinken
+//        $input = [];
+//        $input['name'] = "Shinken (1.4) reload";
+//        // Default is not active ...
+//        $input['is_active'] = "0";
+//        $input['command_name'] = "restart_shinken";
+//        $input['command_line'] = $DB->escape("nohup sh -c '/usr/local/shinken/bin/stop_arbiter.sh && sleep 3 && /usr/local/shinken/bin/launch_arbiter.sh'  > /dev/null 2>&1 &");
+//        $this->add($input);
+//
+//        // Shinken 2.0
+//        // - restart/reload Shinken
+//        // - same command_name as default Shinken's
+//        $input = [];
+//        $input['name'] = "Shinken (2.x) restart";
+//        $input['command_name'] = "restart-shinken";
+//        $input['command_line'] = $DB->escape("nohup sh -c '/etc/init.d/shinken restart'  > /dev/null 2>&1 &");
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = "Shinken (2.x) reload";
+//        $input['command_name'] = "reload-shinken";
+//        $input['command_line'] = $DB->escape("nohup sh -c '/etc/init.d/shinken reload'  > /dev/null 2>&1 &");
+//        $this->add($input);
 
-        // Shinken 2.0
-        // - restart/reload Shinken
-        // - same command_name as default Shinken's
+        // Plugin Monitoring - Host action command
         $input = [];
-        $input['name'] = "Shinken (2.x) restart";
-        $input['command_name'] = "restart-shinken";
-        $input['command_line'] = $DB->escape("nohup sh -c '/etc/init.d/shinken restart'  > /dev/null 2>&1 &");
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = "Shinken (2.x) reload";
-        $input['command_name'] = "reload-shinken";
-        $input['command_line'] = $DB->escape("nohup sh -c '/etc/init.d/shinken reload'  > /dev/null 2>&1 &");
+        $input['name'] = "Host action";
+        $input['command_name'] = "host_action";
+        $input['command_line'] = $DB->escape("restart_host");
         $this->add($input);
 
         // Shinken 2.0 and Alignak
@@ -121,244 +128,236 @@ class PluginMonitoringCommand extends CommonDBTM
         $this->add($input);
 
         $input = [];
-        $input['name'] = 'Ask a nrpe agent';
-        $input['command_name'] = 'check_nrpe';
-        $input['command_line'] = "\$NAGIOSPLUGINSDIR\$/check_nrpe -H \$HOSTADDRESS\$ -t \$ARG1\$ -u \$ARG2\$ -c \$ARG3\$";
-        $input['module_type'] = 'nrpe_poller';
-        $arg = [];
-        $arg['ARG1'] = 'NRPE timeout (seconds)';
-        $arg['ARG2'] = 'NRPE SSL enable/disable (-n to disable)';
-        $arg['ARG3'] = 'NRPE check command';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Ask a nrpe agent with arguments';
-        $input['command_name'] = 'check_nrpe_args';
-        $input['command_line'] = "\$NAGIOSPLUGINSDIR\$/check_nrpe -H \$HOSTADDRESS\$ -t \$ARG1\$ -u \$ARG2\$ -c \$ARG3\$ -a  \$ARG4\$ \$ARG5\$ \$ARG6\$ \$ARG7\$ \$ARG8\$ \$ARG9\$";
-        $input['module_type'] = 'nrpe_poller';
-        $arg = [];
-        $arg['ARG1'] = 'NRPE timeout (seconds)';
-        $arg['ARG2'] = 'NRPE SSL enable/disable (-n to disable)';
-        $arg['ARG3'] = 'NRPE check command';
-        $arg['ARG4'] = 'NRPE check argument';
-        $arg['ARG5'] = 'NRPE check argument';
-        $arg['ARG6'] = 'NRPE check argument';
-        $arg['ARG7'] = 'NRPE check argument';
-        $arg['ARG8'] = 'NRPE check argument';
-        $arg['ARG9'] = 'NRPE check argument';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
-
-
-        // Plugin Monitoring - Host action command
-        $input = [];
-        $input['name'] = "Host action";
-        $input['command_name'] = "host_action";
-        $input['command_line'] = $DB->escape("host_action");
-        $this->add($input);
-
-
-        // Nagios plugins
-        $input = [];
-        $input['name'] = "Dummy check";
-        $input['command_name'] = "check_dummy";
-        $input['command_line'] = $DB->escape("\$PLUGINSDIR\$/check_dummy \$ARG1\$ \"\$ARG2$\"");
-        $arg = [];
-        $arg['ARG1'] = 'INTEGER: dummy status code';
-        $arg['ARG2'] = 'TEXT: dummy status output text';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Simple tcp port check';
-        $input['command_name'] = 'check_tcp';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_tcp  -H \$HOSTADDRESS\$ -p \$ARG1\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Simple web check';
-        $input['command_name'] = 'check_http';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_http -H \$HOSTADDRESS\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Simple web check with SSL';
-        $input['command_name'] = 'check_https';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_http -H \$HOSTADDRESS\$ -S";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Check a DNS entry';
-        $input['command_name'] = 'check_dig';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_dig -H \$HOSTADDRESS\$ -l \$ARG1\$";
-        $arg = [];
-        $arg['ARG1'] = 'Machine name to lookup';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Check a FTP service';
-        $input['command_name'] = 'check_ftp';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_ftp -H \$HOSTADDRESS\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Look at good ssh launch';
-        $input['command_name'] = 'check_ssh';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_ssh -H \$HOSTADDRESS\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Look for good SMTP connexion';
-        $input['command_name'] = 'check_smtp';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_smtp -H \$HOSTADDRESS\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Look for good SMTPS connexion';
-        $input['command_name'] = 'check_smtps';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_smtp -H \$HOSTADDRESS\$ -S";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Look at a SSL certificate';
-        $input['command_name'] = 'check_https_certificate';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_http -H \$HOSTADDRESS\$ -C 30";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Look at an HP printer state';
-        $input['command_name'] = 'check_hpjd';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_hpjd -H \$HOSTADDRESS\$ -C \$SNMPCOMMUNITYREAD\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Look at Oracle connexion';
-        $input['command_name'] = 'check_oracle_listener';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_oracle --tns \$HOSTADDRESS\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Look at MSSQL connexion';
-        $input['command_name'] = 'check_mssql_connexion';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_mssql_health --hostname \$HOSTADDRESS\$ --username \"\$MSSQLUSER\$\" --password \"\$MSSQLPASSWORD\$\" --mode connection-time";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Ldap query';
-        $input['command_name'] = 'check_ldap';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_ldap -H \$HOSTADDRESS\$ -b \"\$LDAPBASE\$\" -D \$DOMAINUSER\$ -P \"\$DOMAINPASSWORD\$\"";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Ldaps query';
-        $input['command_name'] = 'check_ldaps';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_ldaps -H \$HOSTADDRESS\$ -b \"\$LDAPBASE\$\" -D \$DOMAINUSER\$ -P \"\$DOMAINPASSWORD\$\"";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Distant mysql check';
-        $input['command_name'] = 'check_mysql_connexion';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_mysql -H \$HOSTADDRESS\$ -u \$MYSQLUSER\$ -p \$MYSQLPASSWORD\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'ESX hosts checks';
-        $input['command_name'] = 'check_esx_host';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_esx3.pl -D \$VCENTER\$ -H \$HOSTADDRESS\$ -u \$VCENTERLOGIN\$ -p \$VCENTERPASSWORD\$ l \$ARG1\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'ESX VM checks';
-        $input['command_name'] = 'check_esx_vm';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_esx3.pl -D \$VCENTER\$ -N \$HOSTALIAS\$ -u \$VCENTERLOGIN\$ -p \$VCENTERLOGIN\$ -l \$ARG1\$";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Check Linux host alive';
-        $input['command_name'] = 'check_linux_host_alive';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_tcp -H \$HOSTADDRESS\$ -p 22 -t 3";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Check Windows host alive';
-        $input['command_name'] = 'check_windows_host_alive';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_tcp -H \$HOSTADDRESS\$ -p 139 -t 3";
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Check disk';
-        $input['command_name'] = 'check_disk';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_disk -w \$ARG1\$ -c \$ARG2\$ -p \$ARG3\$";
-        $arg = [];
-        $arg['ARG1'] = 'INTEGER: WARNING status if less than INTEGER units of disk are free\n
-         PERCENT%: WARNING status if less than PERCENT of disk space is free';
-        $arg['ARG2'] = 'INTEGER: CRITICAL status if less than INTEGER units of disk are free\n
-         PERCENT%: CRITICAL status if less than PERCENT of disk space is free';
-        $arg['ARG3'] = 'Path or partition';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Check local disk';
-        $input['command_name'] = 'check-host-alive';
-        $input['command_line'] = "\$PLUGINSDIR\$/check.sh \$HOSTADDRESS\$ -c \$ARG1\$ SERVICE \$USER1\$";
-        $this->add($input);
-
-        $input = [];
         $input['name'] = 'Business rules';
         $input['command_name'] = 'bp_rule';
         $input['command_line'] = "";
         $this->add($input);
 
-        $input = [];
-        $input['name'] = 'Check local cpu';
-        $input['command_name'] = 'check_cpu_usage';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_cpu_usage -w \$ARG1\$ -c \$ARG2\$";
-        $arg = [];
-        $arg['ARG1'] = 'Percentage of CPU for warning';
-        $arg['ARG2'] = 'Percentage of CPU for critical';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
+//        // Nagios plugins
+//        // - NRPE check
+//        $input = [];
+//        $input['name'] = 'Ask a nrpe agent';
+//        $input['command_name'] = 'check_nrpe';
+//        $input['command_line'] = "\$NAGIOSPLUGINSDIR\$/check_nrpe -H \$HOSTADDRESS\$ -t \$ARG1\$ -u \$ARG2\$ -c \$ARG3\$";
+//        $input['module_type'] = 'nrpe_poller';
+//        $arg = [];
+//        $arg['ARG1'] = 'NRPE timeout (seconds)';
+//        $arg['ARG2'] = 'NRPE SSL enable/disable (-n to disable)';
+//        $arg['ARG3'] = 'NRPE check command';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Ask a nrpe agent with arguments';
+//        $input['command_name'] = 'check_nrpe_args';
+//        $input['command_line'] = "\$NAGIOSPLUGINSDIR\$/check_nrpe -H \$HOSTADDRESS\$ -t \$ARG1\$ -u \$ARG2\$ -c \$ARG3\$ -a  \$ARG4\$ \$ARG5\$ \$ARG6\$ \$ARG7\$ \$ARG8\$ \$ARG9\$";
+//        $input['module_type'] = 'nrpe_poller';
+//        $arg = [];
+//        $arg['ARG1'] = 'NRPE timeout (seconds)';
+//        $arg['ARG2'] = 'NRPE SSL enable/disable (-n to disable)';
+//        $arg['ARG3'] = 'NRPE check command';
+//        $arg['ARG4'] = 'NRPE check argument';
+//        $arg['ARG5'] = 'NRPE check argument';
+//        $arg['ARG6'] = 'NRPE check argument';
+//        $arg['ARG7'] = 'NRPE check argument';
+//        $arg['ARG8'] = 'NRPE check argument';
+//        $arg['ARG9'] = 'NRPE check argument';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = "Dummy check";
+//        $input['command_name'] = "check_dummy";
+//        $input['command_line'] = $DB->escape("\$PLUGINSDIR\$/check_dummy \$ARG1\$ \"\$ARG2$\"");
+//        $arg = [];
+//        $arg['ARG1'] = 'INTEGER: dummy status code';
+//        $arg['ARG2'] = 'TEXT: dummy status output text';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Simple tcp port check';
+//        $input['command_name'] = 'check_tcp';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_tcp  -H \$HOSTADDRESS\$ -p \$ARG1\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Simple web check';
+//        $input['command_name'] = 'check_http';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_http -H \$HOSTADDRESS\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Simple web check with SSL';
+//        $input['command_name'] = 'check_https';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_http -H \$HOSTADDRESS\$ -S";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check a DNS entry';
+//        $input['command_name'] = 'check_dig';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_dig -H \$HOSTADDRESS\$ -l \$ARG1\$";
+//        $arg = [];
+//        $arg['ARG1'] = 'Machine name to lookup';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check a FTP service';
+//        $input['command_name'] = 'check_ftp';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_ftp -H \$HOSTADDRESS\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Look at good ssh launch';
+//        $input['command_name'] = 'check_ssh';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_ssh -H \$HOSTADDRESS\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Look for good SMTP connexion';
+//        $input['command_name'] = 'check_smtp';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_smtp -H \$HOSTADDRESS\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Look for good SMTPS connexion';
+//        $input['command_name'] = 'check_smtps';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_smtp -H \$HOSTADDRESS\$ -S";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Look at a SSL certificate';
+//        $input['command_name'] = 'check_https_certificate';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_http -H \$HOSTADDRESS\$ -C 30";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Look at an HP printer state';
+//        $input['command_name'] = 'check_hpjd';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_hpjd -H \$HOSTADDRESS\$ -C \$SNMPCOMMUNITYREAD\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Look at Oracle connexion';
+//        $input['command_name'] = 'check_oracle_listener';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_oracle --tns \$HOSTADDRESS\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Look at MSSQL connexion';
+//        $input['command_name'] = 'check_mssql_connexion';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_mssql_health --hostname \$HOSTADDRESS\$ --username \"\$MSSQLUSER\$\" --password \"\$MSSQLPASSWORD\$\" --mode connection-time";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Ldap query';
+//        $input['command_name'] = 'check_ldap';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_ldap -H \$HOSTADDRESS\$ -b \"\$LDAPBASE\$\" -D \$DOMAINUSER\$ -P \"\$DOMAINPASSWORD\$\"";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Ldaps query';
+//        $input['command_name'] = 'check_ldaps';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_ldaps -H \$HOSTADDRESS\$ -b \"\$LDAPBASE\$\" -D \$DOMAINUSER\$ -P \"\$DOMAINPASSWORD\$\"";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Distant mysql check';
+//        $input['command_name'] = 'check_mysql_connexion';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_mysql -H \$HOSTADDRESS\$ -u \$MYSQLUSER\$ -p \$MYSQLPASSWORD\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'ESX hosts checks';
+//        $input['command_name'] = 'check_esx_host';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_esx3.pl -D \$VCENTER\$ -H \$HOSTADDRESS\$ -u \$VCENTERLOGIN\$ -p \$VCENTERPASSWORD\$ l \$ARG1\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'ESX VM checks';
+//        $input['command_name'] = 'check_esx_vm';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_esx3.pl -D \$VCENTER\$ -N \$HOSTALIAS\$ -u \$VCENTERLOGIN\$ -p \$VCENTERLOGIN\$ -l \$ARG1\$";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check Linux host alive';
+//        $input['command_name'] = 'check_linux_host_alive';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_tcp -H \$HOSTADDRESS\$ -p 22 -t 3";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check Windows host alive';
+//        $input['command_name'] = 'check_windows_host_alive';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_tcp -H \$HOSTADDRESS\$ -p 139 -t 3";
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check disk';
+//        $input['command_name'] = 'check_disk';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_disk -w \$ARG1\$ -c \$ARG2\$ -p \$ARG3\$";
+//        $arg = [];
+//        $arg['ARG1'] = 'INTEGER: WARNING status if less than INTEGER units of disk are free\n
+//         PERCENT%: WARNING status if less than PERCENT of disk space is free';
+//        $arg['ARG2'] = 'INTEGER: CRITICAL status if less than INTEGER units of disk are free\n
+//         PERCENT%: CRITICAL status if less than PERCENT of disk space is free';
+//        $arg['ARG3'] = 'Path or partition';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check local disk';
+//        $input['command_name'] = 'check-host-alive';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check.sh \$HOSTADDRESS\$ -c \$ARG1\$ SERVICE \$USER1\$";
+//        $this->add($input);
 
-        $input = [];
-        $input['name'] = 'Check load';
-        $input['command_name'] = 'check_load';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_load -r -w \$ARG1\$ -c \$ARG2\$";
-        $arg = [];
-        $arg['ARG1'] = 'WARNING status if load average exceeds WLOADn (WLOAD1,WLOAD5,WLOAD15)';
-        $arg['ARG2'] = 'CRITICAL status if load average exceed CLOADn (CLOAD1,CLOAD5,CLOAD15)';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Check snmp';
-        $input['command_name'] = 'check_snmp';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_snmp -H \$HOSTADDRESS\$ -P \$ARG1\$ -C \$ARG2\$ -o \$ARG3\$,\$ARG4\$,\$ARG5\$,\$ARG6\$,\$ARG7\$,\$ARG8\$,\$ARG9\$,\$ARG10\$";
-        $arg = [];
-        $arg['ARG1'] = 'SNMP protocol version (1|2c|3) [SNMP:version]';
-        $arg['ARG2'] = 'Community string for SNMP communication [SNMP:authentication]';
-        $arg['ARG3'] = 'oid [OID:ifinoctets]';
-        $arg['ARG4'] = 'oid [OID:ifoutoctets]';
-        $arg['ARG5'] = 'oid [OID:ifinerrors]';
-        $arg['ARG6'] = 'oid [OID:ifouterrors]';
-        $arg['ARG7'] = 'oid';
-        $arg['ARG8'] = 'oid';
-        $arg['ARG9'] = 'oid';
-        $arg['ARG10'] = 'oid';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
-
-        $input = [];
-        $input['name'] = 'Check users connected';
-        $input['command_name'] = 'check_users';
-        $input['command_line'] = "\$PLUGINSDIR\$/check_users -w \$ARG1\$ -c \$ARG2\$";
-        $arg = [];
-        $arg['ARG1'] = 'Set WARNING status if more than INTEGER users are logged in';
-        $arg['ARG2'] = 'Set CRITICAL status if more than INTEGER users are logged in';
-        $input['arguments'] = exportArrayToDB($arg);
-        $this->add($input);
+//        $input = [];
+//        $input['name'] = 'Check local cpu';
+//        $input['command_name'] = 'check_cpu_usage';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_cpu_usage -w \$ARG1\$ -c \$ARG2\$";
+//        $arg = [];
+//        $arg['ARG1'] = 'Percentage of CPU for warning';
+//        $arg['ARG2'] = 'Percentage of CPU for critical';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check load';
+//        $input['command_name'] = 'check_load';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_load -r -w \$ARG1\$ -c \$ARG2\$";
+//        $arg = [];
+//        $arg['ARG1'] = 'WARNING status if load average exceeds WLOADn (WLOAD1,WLOAD5,WLOAD15)';
+//        $arg['ARG2'] = 'CRITICAL status if load average exceed CLOADn (CLOAD1,CLOAD5,CLOAD15)';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check snmp';
+//        $input['command_name'] = 'check_snmp';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_snmp -H \$HOSTADDRESS\$ -P \$ARG1\$ -C \$ARG2\$ -o \$ARG3\$,\$ARG4\$,\$ARG5\$,\$ARG6\$,\$ARG7\$,\$ARG8\$,\$ARG9\$,\$ARG10\$";
+//        $arg = [];
+//        $arg['ARG1'] = 'SNMP protocol version (1|2c|3) [SNMP:version]';
+//        $arg['ARG2'] = 'Community string for SNMP communication [SNMP:authentication]';
+//        $arg['ARG3'] = 'oid [OID:ifinoctets]';
+//        $arg['ARG4'] = 'oid [OID:ifoutoctets]';
+//        $arg['ARG5'] = 'oid [OID:ifinerrors]';
+//        $arg['ARG6'] = 'oid [OID:ifouterrors]';
+//        $arg['ARG7'] = 'oid';
+//        $arg['ARG8'] = 'oid';
+//        $arg['ARG9'] = 'oid';
+//        $arg['ARG10'] = 'oid';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
+//
+//        $input = [];
+//        $input['name'] = 'Check users connected';
+//        $input['command_name'] = 'check_users';
+//        $input['command_line'] = "\$PLUGINSDIR\$/check_users -w \$ARG1\$ -c \$ARG2\$";
+//        $arg = [];
+//        $arg['ARG1'] = 'Set WARNING status if more than INTEGER users are logged in';
+//        $arg['ARG2'] = 'Set CRITICAL status if more than INTEGER users are logged in';
+//        $input['arguments'] = exportArrayToDB($arg);
+//        $this->add($input);
 
         $migration->displayMessage("  created default check commands");
     }
@@ -369,11 +368,6 @@ class PluginMonitoringCommand extends CommonDBTM
         return __('Commands', 'monitoring');
     }
 
-
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
 
     function rawSearchOptions()
     {

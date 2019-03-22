@@ -96,14 +96,6 @@ class PluginMonitoringCheck extends CommonDBTM
     }
 
 
-    /*
-     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
-     */
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
-
     function rawSearchOptions()
     {
 

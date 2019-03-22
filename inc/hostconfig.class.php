@@ -88,14 +88,6 @@ class PluginMonitoringHostconfig extends CommonDBTM
     }
 
 
-    /*
-     * Search options, see: https://glpi-developer-documentation.readthedocs.io/en/master/devapi/search.html#search-options
-     */
-    public function getSearchOptionsNew()
-    {
-        return $this->rawSearchOptions();
-    }
-
     function rawSearchOptions()
     {
 
@@ -121,7 +113,16 @@ class PluginMonitoringHostconfig extends CommonDBTM
             'field' => 'name',
             'datatype' => 'itemlink',
             'linkfield' => 'plugin_monitoring_components_id',
-            'name' => __('Host check component', 'monitoring'),
+            'name' => __('Hosts check component', 'monitoring'),
+        ];
+
+        $tab[] = [
+            'id' => $index,
+            'table' => PluginMonitoringRealm::getTable(),
+            'field' => 'name',
+            'datatype' => 'itemlink',
+            'linkfield' => 'plugin_monitoring_realms_id',
+            'name' => __('Hosts realm', 'monitoring'),
         ];
 
         /*
@@ -195,7 +196,7 @@ class PluginMonitoringHostconfig extends CommonDBTM
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>";
-        echo __('Host check component', 'monitoring') . "&nbsp;:";
+        echo __('Hosts check component', 'monitoring') . "&nbsp;:";
         echo "</td>";
         echo "<td>";
         $toadd = [];
@@ -211,7 +212,7 @@ class PluginMonitoringHostconfig extends CommonDBTM
             ]);
         echo "</td>";
 
-        echo "<td>" . __('Realm', 'monitoring') . "&nbsp;:</td>";
+        echo "<td>" . __('Hosts realm', 'monitoring') . "&nbsp;:</td>";
         echo "<td>";
         $toadd = [];
         if ($inherited) {

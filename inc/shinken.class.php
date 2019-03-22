@@ -56,20 +56,23 @@ class PluginMonitoringShinken extends CommonDBTM
             'entityId' => '_ENTITIESID',
             // Entity name
             'entityName' => '_ENTITY',
+            // Client name
+            'clientName' => '_CLIENT',
             // Entity complete
             'entityComplete' => '_ENTITY_COMPLETE',
             // Item type
             'itemType' => '_ITEMTYPE',
             // Item id
             'itemId' => '_ITEMSID',
-            // Location
-            'location' => '_LOC_NAME',
-            // Latitude
-            'lat' => '_LOC_LAT',
-            // Longitude
-            'lng' => '_LOC_LNG',
-            // Altitude
-            'alt' => '_LOC_ALT',
+            // Not defined - no more used!
+//            // Location
+//            'location' => '_LOC_NAME',
+//            // Latitude
+//            'lat' => '_LOC_LAT',
+//            // Longitude
+//            'lng' => '_LOC_LNG',
+//            // Altitude
+//            'alt' => '_LOC_ALT',
             // Full GPS
             'gps' => '_GPS',
             // documents
@@ -430,8 +433,8 @@ class PluginMonitoringShinken extends CommonDBTM
         // Huge query to get almost all in one operation!
         $query = "SELECT
          `glpi_plugin_monitoring_componentscatalogs_hosts`.*,
-         CONCAT_WS('', `glpi_computers`.`id`, `glpi_printers`.`id`, `glpi_networkequipments`.`id`) AS id,
-         CONCAT_WS('', `glpi_computers`.`comment`, `glpi_printers`.`comment`, `glpi_networkequipments`.`comment`) AS comment,
+         `glpi_computers`.`id` AS id,
+         `glpi_computers`.`comment` AS comment,
          `glpi_entities`.`id` AS entityId, `glpi_entities`.`name` AS entityName,
          `glpi_entities`.`completename` AS entityFullName,
          `glpi_computertypes`.`name` AS typeName,
@@ -442,33 +445,22 @@ class PluginMonitoringShinken extends CommonDBTM
          `glpi_locations`.`comment` AS locationComment, 
          `glpi_locations`.`latitude` AS lat, 
          `glpi_locations`.`longitude` AS lng, 
-         `glpi_locations`.`altitude` AS alt,
-         `glpi_plugin_monitoring_services`.`networkports_id`
+         `glpi_locations`.`altitude` AS alt
          FROM `glpi_plugin_monitoring_componentscatalogs_hosts`
          LEFT JOIN `glpi_computers`
             ON `glpi_computers`.`id` = `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id`
                AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Computer'
 
-         LEFT JOIN `glpi_printers`
-            ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_printers`.`id`
-               AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='Printer'
-
-         LEFT JOIN `glpi_networkequipments`
-            ON `glpi_plugin_monitoring_componentscatalogs_hosts`.`items_id` = `glpi_networkequipments`.`id`
-               AND `glpi_plugin_monitoring_componentscatalogs_hosts`.`itemtype`='NetworkEquipment'
-
          LEFT JOIN `glpi_entities`
-            ON ((`glpi_computers`.`entities_id` = `glpi_entities`.`id` AND `glpi_computers`.`id` IS NOT NULL)
-                OR (`glpi_printers`.`entities_id` = `glpi_entities`.`id` AND `glpi_printers`.`id` IS NOT NULL)
-                OR (`glpi_networkequipments`.`entities_id` = `glpi_entities`.`id` AND `glpi_networkequipments`.`id` IS NOT NULL)
-                )
-
-         LEFT JOIN `glpi_computertypes` ON `glpi_computertypes`.`id` = `glpi_computers`.`computertypes_id`
-         LEFT JOIN `glpi_computermodels` ON `glpi_computermodels`.`id` = `glpi_computers`.`computermodels_id`
-         LEFT JOIN `glpi_locations` ON `glpi_locations`.`id` = `glpi_computers`.`locations_id`
-         LEFT JOIN `glpi_plugin_monitoring_services`
-            ON `glpi_plugin_monitoring_services`.`plugin_monitoring_componentscatalogs_hosts_id`
-               = `glpi_plugin_monitoring_componentscatalogs_hosts`.`id` $where GROUP BY `itemtype`, `items_id`";
+            ON `glpi_computers`.`entities_id` = `glpi_entities`.`id` 
+         LEFT JOIN `glpi_computertypes` 
+            ON `glpi_computertypes`.`id` = `glpi_computers`.`computertypes_id`
+         LEFT JOIN `glpi_computermodels` 
+            ON `glpi_computermodels`.`id` = `glpi_computers`.`computermodels_id`
+         LEFT JOIN `glpi_locations` 
+            ON `glpi_locations`.`id` = `glpi_computers`.`locations_id`
+         $where GROUP BY `itemtype`, `items_id`";
+        PluginMonitoringToolbox::log("generateHostsCfg, query: " . $query);
 
         if ($result = $DB->query($query)) {
             PluginMonitoringToolbox::log("generateHostsCfg, huge query execution, got " . $DB->numrows($result) . " rows, duration: " . $TIMER_DEBUG->getTime());
@@ -477,7 +469,7 @@ class PluginMonitoringShinken extends CommonDBTM
                 $new_template = null;
                 $my_template = [];
 
-                /* @var CommonDBTM $my_host_item */
+                /* @var Computer $my_host_item */
                 $my_host_type = $data['itemtype'];
                 $my_host_item = new $my_host_type;
                 if (!$my_host_item->getFromDB($data['items_id'])) {
@@ -493,6 +485,13 @@ class PluginMonitoringShinken extends CommonDBTM
                         PluginMonitoringToolbox::log('[ERROR] Host monitoring item not found: ' . print_r($data, true));
                         continue;
                     }
+                }
+                // Update monitoring host entity
+                if ($pmHost->fields['entities_id'] != $data['entityId']) {
+                    $pmHost->update([
+                        'id' => $pmHost->getID(),
+                        'entities_id' => $data['entityId']
+                    ]);
                 }
 
                 // Host component catalog
@@ -524,6 +523,7 @@ class PluginMonitoringShinken extends CommonDBTM
                 if ($PM_CONFIG['append_id_hostname'] == 1) {
                     $this->set_value(self::monitoringFilter($my_host_item->getName() . '-' . $my_host_item->getID()), 'host_name', $my_host);
                 }
+                // Set host templates as CC name and its additional templates if any are defined
                 $this->set_value(self::monitoringFilter($pmCC->getName()), 'use', $my_host);
                 if (!empty($pmCC->getField('additional_templates'))) {
                     $this->set_value($pmCC->getField('additional_templates'), 'use', $my_host);
@@ -562,23 +562,27 @@ class PluginMonitoringShinken extends CommonDBTM
                     }
                 }
 
-//                $this->set_value($my_host_item->fields[$parm], '_glpi_' . $parm, $my_host);
-
                 // Host customs variables
+                // - monitoring host identifier
                 $this->set_value($pmHost->getID(), self::$default['glpi']['hostId'], $my_host);
-                if (isset(self::$default['glpi']['entityId'])) {
-                    $this->set_value($data['entityId'], self::$default['glpi']['entityId'], $my_host);
-                }
-                if (isset(self::$default['glpi']['itemType'])) {
-                    $this->set_value($my_host_type, self::$default['glpi']['itemType'], $my_host);
-                }
-                if (isset(self::$default['glpi']['itemId'])) {
-                    $this->set_value($data['items_id'], self::$default['glpi']['itemId'], $my_host);
-                }
-                if (isset(self::$default['glpi']['entityName'])) {
-                    $this->set_value(strtolower(self::monitoringFilter($data['entityName'])),
-                        self::$default['glpi']['entityName'], $my_host);
-                }
+                // - host type
+                $this->set_value($my_host_type, self::$default['glpi']['itemType'], $my_host);
+                // - host identifier
+                $this->set_value($data['items_id'], self::$default['glpi']['itemId'], $my_host);
+                // - entity identifier
+                $this->set_value($data['entityId'], self::$default['glpi']['entityId'], $my_host);
+                // - entity name
+                $this->set_value(strtolower(self::monitoringFilter($data['entityName'])),
+                    self::$default['glpi']['entityName'], $my_host);
+                // - entity complete name
+                $this->set_value(self::monitoringFilter($data['entityFullName']), self::$default['glpi']['entityComplete'], $my_host);
+
+                // - client name
+                $clientName = $pmHost->getClientEntity(true);
+//                PluginMonitoringToolbox::log("3 client: " . $clientName);
+                $this->set_value($clientName, self::$default['glpi']['clientName'], $my_host);
+
+                // - some other Glpi information
                 $this->set_value($data['entityId'], '_glpi_entity_id', $my_host);
                 $this->set_value($data['locationName'], '_glpi_location_name', $my_host);
                 $this->set_value($data['entityFullName'], '_glpi_entity_full_name', $my_host);
@@ -588,24 +592,22 @@ class PluginMonitoringShinken extends CommonDBTM
                 $this->set_value($data['modelName'], '_glpi_model_name', $my_host);
                 $this->set_value($data['modelComment'], '_glpi_model_comment', $my_host);
 
-                if ($new_template) {
+                // Graphite prefix - from the entity full name
+                if (isset(self::$default['graphite']['prefix']['name'])) {
+                    $data['entityFullName'] = self::graphiteEntity(
+                        $data['entityFullName'],
+                        $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['graphite_prefix']);
 
-                    $this->set_value(self::monitoringFilter($data['entityFullName']), self::$default['glpi']['entityComplete'], $my_template);
+                    $this->set_value($data['entityFullName'],
+                        self::$default['graphite']['prefix']['name'], $my_host);
+                }
 
-                    // Graphite prefix
-                    if (isset(self::$default['graphite']['prefix']['name'])) {
-                        $data['entityFullName'] = self::graphiteEntity(
-                            $data['entityFullName'],
-                            $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['graphite_prefix']);
+                // Graphite prefix - from the client name
+                if (isset(self::$default['graphite']['prefix']['name'])) {
+                    $graphite_prefix = self::graphiteFilter($clientName, true);
 
-                        $this->set_value($data['entityFullName'],
-                            self::$default['graphite']['prefix']['name'], $my_template);
-                    }
-
-                    if (isset(self::$default['webui']['hostView']['name'])) {
-                        $this->set_value(self::$default['webui']['hostView']['value'],
-                            self::$default['webui']['hostView']['name'], $my_template);
-                    }
+                    $this->set_value($graphite_prefix,
+                        self::$default['graphite']['prefix']['name'], $my_host);
                 }
 
                 // Location and GPS
@@ -650,6 +652,12 @@ class PluginMonitoringShinken extends CommonDBTM
                 $this->set_value($ip, 'address', $my_host);
 
                 if ($new_template) {
+                    // Web UI host view
+                    if (isset(self::$default['webui']['hostView']['name'])) {
+                        $this->set_value(self::$default['webui']['hostView']['value'],
+                            self::$default['webui']['hostView']['name'], $my_template);
+                    }
+
                     // Host check command
                     $cmp_fields = null;
                     $hc_id = $pmHostconfig->getValueAncestor('plugin_monitoring_components_id',
@@ -743,16 +751,16 @@ class PluginMonitoringShinken extends CommonDBTM
                                 }
                             }
                         }
-                        if (! empty($pmCommand->fields['command_name'])) {
+                        if (!empty($pmCommand->fields['command_name'])) {
                             $this->set_value(PluginMonitoringCommand::$command_prefix . $pmCommand->fields['command_name'] . $args, 'check_command', $my_template);
                         }
                     }
 
                     // Check strategy
-                    if (! empty($cmp_fields['active_checks_enabled'])) {
+                    if (!empty($cmp_fields['active_checks_enabled'])) {
                         $this->set_value($cmp_fields['active_checks_enabled'], 'active_checks_enabled', $my_template);
                     }
-                    if (! empty($cmp_fields['passive_checks_enabled'])) {
+                    if (!empty($cmp_fields['passive_checks_enabled'])) {
                         $this->set_value($cmp_fields['passive_checks_enabled'], 'passive_checks_enabled', $my_template);
                     }
                     // Host check strategy (may not be defined!)
@@ -795,7 +803,7 @@ class PluginMonitoringShinken extends CommonDBTM
                     }
 
                     // Business impact
-                    if (! empty($cmp_fields['business_impact'])) {
+                    if (!empty($cmp_fields['business_impact'])) {
                         $this->set_value($cmp_fields['business_impact'], 'business_impact', $my_template);
                     }
                 }
@@ -837,6 +845,8 @@ class PluginMonitoringShinken extends CommonDBTM
                 $realm_id = $pmHostconfig->getValueAncestor('plugin_monitoring_realms_id', $entity_id, $my_host_type, $my_host_item->getID());
                 if ($pmRealm->getFromDB($realm_id)) {
                     $this->set_value($pmRealm->getName(), 'realm', $my_host);
+                    // Set the realm definition order from the current entity
+                    $pmRealm->fields['definition_order'] = $_SESSION['plugin_monitoring']['entities'][$entity_id]['definition_order'];
                     // Store realm for future use
                     $this->_addRealm($pmRealm);
                 }
@@ -1106,28 +1116,27 @@ class PluginMonitoringShinken extends CommonDBTM
         // --------------------------------------------------
         // "Normal" services ....
         $query = "SELECT * FROM `glpi_plugin_monitoring_services` $where";
-        PluginMonitoringToolbox::logIfDebug("generateServicesCfg, query: " . $query);
         PluginMonitoringToolbox::log("generateServicesCfg, query: " . $query);
         if ($result = $DB->query($query)) {
             PluginMonitoringToolbox::log("generateServicesCfg, huge query execution, got " . $DB->numrows($result) . " rows, duration: " . $TIMER_DEBUG->getTime());
             while ($data = $DB->fetch_array($result)) {
-                PluginMonitoringToolbox::logIfDebug(" - service: {$data['id']} - {$data['service_description']}");
+                PluginMonitoringToolbox::log(" - service: {$data['id']} - {$data['service_description']}");
 
                 // Service component
-                $a_component = $a_components[$data['plugin_monitoring_components_id']];
                 if (!isset($a_components[$data['plugin_monitoring_components_id']]) or empty($a_component)) {
-                    PluginMonitoringToolbox::log("[ERROR] service: {$data['id']} - no associated component !");
+                    PluginMonitoringToolbox::logIfDebug("[ERROR] service: {$data['id']} - no associated component !");
                     continue;
                 }
+                $a_component = $a_components[$data['plugin_monitoring_components_id']];
 
                 if ($a_component['build_service'] != '1') {
-                    PluginMonitoringToolbox::log("service: {$data['id']} - no data built for this service.");
+                    PluginMonitoringToolbox::logIfDebug("service: {$data['id']} - no data built for this service.");
                     continue;
                 }
 
                 // Service component catalog host
                 if (!isset($componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']])) {
-                    PluginMonitoringToolbox::log("[ERROR] service: {$data['id']} - no associated CC host !");
+                    PluginMonitoringToolbox::logIfDebug("[ERROR] service: {$data['id']} - no associated CC host !");
                     continue;
                 }
                 $cc_host = $componentscatalog_hosts[$data['plugin_monitoring_componentscatalogs_hosts_id']];
@@ -1304,7 +1313,7 @@ class PluginMonitoringShinken extends CommonDBTM
                         $this->set_value(PluginMonitoringCommand::$command_prefix . "check_nrpe!" . $a_command['command_name'], 'check_command', $my_service);
                     }
                 } else {
-                    if (! empty($a_command['command_name'])) {
+                    if (!empty($a_command['command_name'])) {
                         $this->set_value(PluginMonitoringCommand::$command_prefix . $a_command['command_name'] . $args, 'check_command', $my_service);
                     }
                 }
@@ -1618,10 +1627,10 @@ class PluginMonitoringShinken extends CommonDBTM
                 // Comments in notes ...
                 // PluginMonitoringToolbox::logIfDebug(" - location:{$data['locationName']} - {$data['locationComment']}");
                 $notes = [];
-                if (! empty($data['comment'])) {
+                if (!empty($data['comment'])) {
                     $notes[] = str_replace("\r\n", "<br>", $data['comment']);
                 }
-                if (! empty($data['address'])) {
+                if (!empty($data['address'])) {
                     $notes[] = str_replace("\r\n", "<br>", $data['address']);
                     if (!empty($data['postcode']) && !empty($data['town'])) {
                         $notes[] = $data['postcode'] . " " . $data['town'];
@@ -1709,7 +1718,7 @@ class PluginMonitoringShinken extends CommonDBTM
         }
 
         $query = "SELECT * FROM `glpi_plugin_monitoring_contacts_items` $where";
-        PluginMonitoringToolbox::logIfDebug("generateContactsCfg, query: ". $query);
+        PluginMonitoringToolbox::logIfDebug("generateContactsCfg, query: " . $query);
         if ($result = $DB->query($query)) {
             PluginMonitoringToolbox::log("generateContactsCfg, huge query execution, got " . $DB->numrows($result) . " rows, duration: " . $TIMER_DEBUG->getTime());
             while ($data = $DB->fetch_array($result)) {
@@ -1971,7 +1980,7 @@ class PluginMonitoringShinken extends CommonDBTM
                 foreach ($data as $key => $val) {
                     $this->set_value($val, $key, $my_timeperiod);
                 }
-                if (! empty($_SESSION['plugin_monitoring']['definition_order'])) {
+                if (!empty($_SESSION['plugin_monitoring']['definition_order'])) {
                     $this->set_value($_SESSION['plugin_monitoring']['definition_order'], 'definition_order', $my_timeperiod);
                 }
                 PluginMonitoringToolbox::logIfDebug(" - " . print_r($my_timeperiod, true));
@@ -1985,7 +1994,7 @@ class PluginMonitoringShinken extends CommonDBTM
                 foreach ($data as $key => $val) {
                     $this->set_value($val, $key, $my_timeperiod);
                 }
-                if (! empty($_SESSION['plugin_monitoring']['definition_order'])) {
+                if (!empty($_SESSION['plugin_monitoring']['definition_order'])) {
                     $this->set_value($_SESSION['plugin_monitoring']['definition_order'], 'definition_order', $my_timeperiod);
                 }
                 PluginMonitoringToolbox::logIfDebug(" - " . print_r($my_timeperiod, true));
@@ -2190,7 +2199,7 @@ class PluginMonitoringShinken extends CommonDBTM
 //        if (!isset($_SESSION['plugin_monitoring']['timeperiodsmapping'])) {
 //            $_SESSION['plugin_monitoring']['timeperiodsmapping'] = [];
 //        }
-        PluginMonitoringToolbox::log("Starting _addTimeperiod: $entities_id / $calendars_id ...");
+        PluginMonitoringToolbox::logIfDebug("Starting _addTimeperiod: $entities_id / $calendars_id ...");
 
         $calendar = new Calendar();
 //        $hostconfig = new PluginMonitoringHostconfig();
@@ -2205,7 +2214,7 @@ class PluginMonitoringShinken extends CommonDBTM
             PluginMonitoringToolbox::log("[ERROR]  invalid calendar: $calendars_id ...");
             return false;
         }
-        
+
         // Jetlag for required entity ...
         $tz_suffix = 0;
         if (isset($_SESSION['plugin_monitoring']['entities'][$entities_id])) {
@@ -2223,7 +2232,7 @@ class PluginMonitoringShinken extends CommonDBTM
 
         // If timeperiod already exists in memory ...
         if (isset($_SESSION['plugin_monitoring']['timeperiods'][$tmp['timeperiod_name']])) {
-            PluginMonitoringToolbox::log(" - TP '{$tmp['timeperiod_name']}' is still available.");
+            PluginMonitoringToolbox::logIfDebug(" - TP '{$tmp['timeperiod_name']}' is still defined.");
             return true;
         }
 
@@ -2436,7 +2445,7 @@ class PluginMonitoringShinken extends CommonDBTM
                 if ($data['name'] != 'All') {
                     $this->set_value('All', 'higher_realms', $my_realm);
                 }
-                if (! empty($_SESSION['plugin_monitoring']['definition_order'])) {
+                if (!empty($_SESSION['plugin_monitoring']['definition_order'])) {
                     $this->set_value($_SESSION['plugin_monitoring']['definition_order'], 'definition_order', $my_realm);
                 }
                 $this->set_value($data['is_default'], 'default', $my_realm);

@@ -62,7 +62,7 @@ if (Session::haveRight("plugin_monitoring_command_fmwk", CREATE)) {
 
     PluginMonitoringLog::isFrameworkRunning(true);
 
-    PluginMonitoringDisplay::restartFramework();
+    PluginMonitoringDashboard::restartFramework();
 
     echo "</td>";
     echo "<td style='width: 77%; padding: 1%;'>";

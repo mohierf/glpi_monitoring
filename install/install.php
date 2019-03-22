@@ -483,27 +483,6 @@ class PluginMonitoringInstall
                 'logs_lifetime' => 30
             ]
         );
-
-        // Fred: do not manage unavailability
-//        CronTask::Register('PluginMonitoringUnavailability', 'unavailability',
-//            MINUTE_TIMESTAMP * 5,
-//            [
-//                'mode' => CronTask::MODE_EXTERNAL,
-//                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
-//                'hourmin' => 0, 'hourmax' => 24,
-//                'logs_lifetime' => 30
-//            ]
-//        );
-        CronTask::Register('PluginMonitoringDisplayview_rule', 'replayallviewrules',
-            MINUTE_TIMESTAMP * 30,
-            [
-                'comment' => __('Run the rules engine to compute information.', 'monitoring'),
-                'mode' => CronTask::MODE_EXTERNAL,
-                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
-                'hourmin' => 0, 'hourmax' => 24,
-                'logs_lifetime' => 30
-            ]
-        );
     }
 
     /**
