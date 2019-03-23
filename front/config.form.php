@@ -42,32 +42,8 @@ $pmConfig = new PluginMonitoringConfig();
 if (isset ($_POST["update"])) {
     $pmConfig->update($_POST);
     Html::back();
-} else if (isset($_POST['timezones_add'])) {
-    $input = [];
-    $pmConfig->getFromDB($_POST['id']);
-    $input['id'] = $_POST['id'];
-    $a_timezones = importArrayFromDB($pmConfig->fields['timezones']);
-    foreach ($_POST['timezones_to_add'] as $timezone) {
-        $a_timezones[] = $timezone;
-    }
-    $input['timezones'] = exportArrayToDB($a_timezones);
-    $pmConfig->update($input);
-    Html::back();
-} else if (isset($_POST['timezones_delete'])) {
-    $input = [];
-    $pmConfig->getFromDB($_POST['id']);
-    $input['id'] = $_POST['id'];
-    $a_timezones = importArrayFromDB($pmConfig->fields['timezones']);
-    foreach ($_POST['timezones_to_delete'] as $timezone) {
-        $key = array_search($timezone, $a_timezones);
-        unset($a_timezones[$key]);
-    }
-    $input['timezones'] = exportArrayToDB($a_timezones);
-    $pmConfig->update($input);
-    Html::back();
 }
 
-
-$pmConfig->showForm(0, ['canedit' => Session::haveRight("config", UPDATE)]);
+$pmConfig->showForm(1);
 
 Html::footer();

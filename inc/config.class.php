@@ -72,8 +72,6 @@ class PluginMonitoringConfig extends CommonDBTM
     {
         global $DB, $PM_CONFIG;
 
-//        PluginMonitoringToolbox::logIfDebug("Loading configuration...");
-
         $table = self::getTable();
         if (!$DB->tableExists($table)) {
             PluginMonitoringToolbox::log("Not found any configuration parameters table!");
@@ -173,15 +171,8 @@ class PluginMonitoringConfig extends CommonDBTM
         return $result;
     }
 
-    static function configUpdate($input)
-    {
-        $input['configuration'] = 1 - $input['configuration'];
-        return $input;
-    }
-
     function showForm($ID = 0, $options = [])
     {
-
         $this->initForm($ID, $options);
         $this->showFormHeader($options);
 
@@ -208,39 +199,5 @@ class PluginMonitoringConfig extends CommonDBTM
         echo "</table>";
         echo "</div>";
         Html::closeForm();
-    }
-
-
-    static function getTimezones()
-    {
-        $a_timezones = [];
-        $a_timezones['0'] = "GMT";
-        $a_timezones['+1'] = "GMT+1";
-        $a_timezones['+2'] = "GMT+2";
-        $a_timezones['+3'] = "GMT+3";
-        $a_timezones['+4'] = "GMT+4";
-        $a_timezones['+5'] = "GMT+5";
-        $a_timezones['+6'] = "GMT+6";
-        $a_timezones['+7'] = "GMT+7";
-        $a_timezones['+8'] = "GMT+8";
-        $a_timezones['+9'] = "GMT+9";
-        $a_timezones['+10'] = "GMT+10";
-        $a_timezones['+11'] = "GMT+11";
-        $a_timezones['+12'] = "GMT+12";
-        $a_timezones['-1'] = "GMT-1";
-        $a_timezones['-2'] = "GMT-2";
-        $a_timezones['-3'] = "GMT-3";
-        $a_timezones['-4'] = "GMT-4";
-        $a_timezones['-5'] = "GMT-5";
-        $a_timezones['-6'] = "GMT-6";
-        $a_timezones['-7'] = "GMT-7";
-        $a_timezones['-8'] = "GMT-8";
-        $a_timezones['-9'] = "GMT-9";
-        $a_timezones['-10'] = "GMT-10";
-        $a_timezones['-11'] = "GMT-11";
-
-        ksort($a_timezones);
-        return $a_timezones;
-
     }
 }
