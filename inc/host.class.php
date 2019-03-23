@@ -247,7 +247,7 @@ class PluginMonitoringHost extends CommonDBTM
     /**
      * Count the monitoring hosts matching the provided query
      *
-     * @param array $where  Glpi query to match with
+     * @param array $where Glpi query to match with
      *
      * @return integer
      */
@@ -344,7 +344,7 @@ class PluginMonitoringHost extends CommonDBTM
      *
      * @param bool $monitoring_fmwk
      *
-     * @return string|string[]|null
+     * @return string
      */
     function getName($monitoring_fmwk = false)
     {
@@ -358,29 +358,42 @@ class PluginMonitoringHost extends CommonDBTM
 
 
     /**
-     * Get the PM client entity (indeed it is the 2nd level entity of the current host)
+     * Get the PM client entity name
      *
-     * @param bool $name true to get the name, else returns the id
+     * It returns the 2nd level entity of the current host, else the root entity
      *
-     * @return int|string
+     * If entity is not found it returns a constant strinc "Unknown client"
+     *
+     * @return array
      */
-    function getClientEntity($name = false) {
+    function getClientEntity()
+    {
+        PluginMonitoringToolbox::logIfDebug("Get client for: " . $this->getField('host_name'));
+        $client_name = "Unknown client";
+        $group_name = "";
+        $site_name = "";
         $entity = new Entity();
         if ($entity->getFromDB($this->fields['entities_id'])) {
             $entities = getAncestorsOf("glpi_entities", $this->fields['entities_id']);
-            if (count($entities) >= 2) {
-                if ($entity->getFromDB($entities[1])) {
-                    if ($name) {
-                        return $entity->getName();
-                    }
-                    return $entities[1];
+            $entities = array_keys($entities);
+
+            if (count($entities) > 3) {
+                $site_name = $entity->getName();
+            }
+            if (count($entities) > 2) {
+                if ($entity->getFromDB($entities[2])) {
+                    $group_name = $entity->getName();
                 }
             }
+            if (count($entities) > 1) {
+                if ($entity->getFromDB($entities[1])) {
+                    $client_name = $entity->getName();
+                }
+            } else {
+                $client_name = $entity->getName();
+            }
         }
-        if ($name) {
-            return "Unknown client";
-        }
-        return -1;
+        return [$client_name, $group_name, $site_name];
     }
 
 
@@ -662,7 +675,7 @@ class PluginMonitoringHost extends CommonDBTM
      * 1 : text string including date, state, event for each service
      * 2 : array of services id
      *
-     * @param int $id
+     * @param string $host_name concerned host
      * @param string $where
      *
      * @return array

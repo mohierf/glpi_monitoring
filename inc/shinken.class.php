@@ -63,8 +63,10 @@ class PluginMonitoringShinken extends CommonDBTM
             'entityId' => '_ENTITIESID',
             // Entity name
             'entityName' => '_ENTITY',
-            // Client name
-            'clientName' => '_CLIENT',
+            // Client, group and site names
+            'clientName' => '_client',
+            'groupName' => '_group',
+            'siteName' => '_site',
             // Entity complete
             'entityComplete' => '_ENTITY_COMPLETE',
             // Item type
@@ -509,7 +511,16 @@ class PluginMonitoringShinken extends CommonDBTM
                     $this->set_value($data['modelName'], 'use', $my_host);
                 }
 
-                PluginMonitoringToolbox::log("adding host " . $my_host['host_name'] . ", using: " . implode(',', $my_host['use']));
+                // - client, group and site name
+                $infos = $pmHost->getClientEntity();
+                $client_name = $infos[0];
+                $group_name = $infos[1];
+                $site_name = $infos[2];
+                $this->set_value($client_name, self::$default['glpi']['clientName'], $my_host);
+                $this->set_value($group_name, self::$default['glpi']['groupName'], $my_host);
+                $this->set_value($site_name, self::$default['glpi']['siteName'], $my_host);
+
+                PluginMonitoringToolbox::log("adding host " . $my_host['host_name'] . " for $client_name, using: " . implode(',', $my_host['use']));
 
                 $a_hosts_found[$my_host_item->getName()] = false;
 
@@ -558,11 +569,6 @@ class PluginMonitoringShinken extends CommonDBTM
                 // - entity complete name
                 $this->set_value(self::monitoringFilter($data['entityFullName']), self::$default['glpi']['entityComplete'], $my_host);
 
-                // - client name
-                $clientName = $pmHost->getClientEntity(true);
-//                PluginMonitoringToolbox::log("3 client: " . $clientName);
-                $this->set_value($clientName, self::$default['glpi']['clientName'], $my_host);
-
                 // - some other Glpi information
                 $this->set_value($data['entityId'], '_glpi_entity_id', $my_host);
                 $this->set_value($data['locationName'], '_glpi_location_name', $my_host);
@@ -573,28 +579,25 @@ class PluginMonitoringShinken extends CommonDBTM
                 $this->set_value($data['modelName'], '_glpi_model_name', $my_host);
                 $this->set_value($data['modelComment'], '_glpi_model_comment', $my_host);
 
-                // Graphite prefix - from the entity full name
-                if (isset(self::$default['graphite']['prefix']['name'])) {
-                    $data['entityFullName'] = self::graphiteEntity(
-                        $data['entityFullName'],
-                        $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['graphite_prefix']);
-
-                    $this->set_value($data['entityFullName'],
-                        self::$default['graphite']['prefix']['name'], $my_host);
-                }
-
+//                // Graphite prefix - from the entity full name
+//                if (isset(self::$default['graphite']['prefix']['name'])) {
+//                    $data['entityFullName'] = self::graphiteEntity(
+//                        $data['entityFullName'],
+//                        $_SESSION['plugin_monitoring']['entities'][$data['entityId']]['graphite_prefix']);
+//
+//                    $this->set_value($data['entityFullName'],
+//                        self::$default['graphite']['prefix']['name'], $my_host);
+//                }
+//
                 // Graphite prefix - from the client name
                 if (isset(self::$default['graphite']['prefix']['name'])) {
-                    $graphite_prefix = self::graphiteFilter($clientName, true);
-
-                    $this->set_value($graphite_prefix,
+                    $this->set_value(self::graphiteFilter($client_name, true),
                         self::$default['graphite']['prefix']['name'], $my_host);
                 }
 
                 // Location and GPS
                 if (isset(self::$default['glpi']['location'])) {
                     if (!empty($data['locationName'])) {
-//                    $string = utf8_decode(strip_tags(trim($data['locationName'])));
                         $string = preg_replace("/[\r\n]/", ".", $data['locationName']);
                         $this->set_value($this->monitoringFilter($string), self::$default['glpi']['location'], $my_host);
                         $data['hostLocation'] = $string;
