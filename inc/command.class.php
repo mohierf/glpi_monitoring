@@ -493,7 +493,7 @@ class PluginMonitoringCommand extends CommonDBTM
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Comment', 'monitoring') . "</td>";
-        echo "<td >";
+        echo "<td colspan='3'>";
         echo "<textarea cols='80' rows='4' name='comment' >" . $this->fields['comment'] . "</textarea>";
         echo "</td>";
         echo "</tr>";

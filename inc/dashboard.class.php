@@ -324,7 +324,7 @@ class PluginMonitoringDashboard extends CommonDBTM {
     {
         global $CFG_GLPI;
 
-        PluginMonitoringToolbox::log("Extra query: " . print_r($a_query, true));
+        PluginMonitoringToolbox::logIfDebug("Extra query: " . print_r($a_query, true));
 
         $play_sound = false;
 
@@ -510,7 +510,6 @@ class PluginMonitoringDashboard extends CommonDBTM {
         // Will not be displayed
         $ignored_columns = [4];
 
-        PluginMonitoringToolbox::log("Parameters: " . print_r($params, true));
         $data = Search::prepareDatasForSearch('PluginMonitoringService', $params, $search_columns);
         $data['tocompute'] = $data['toview'];
         Search::constructSQL($data);

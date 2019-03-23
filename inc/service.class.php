@@ -690,7 +690,7 @@ class PluginMonitoringService extends CommonDBTM
 
         $extra_query = ["host_name" => $item->getName()];
         $pmD = new PluginMonitoringDashboard();
-        PluginMonitoringToolbox::log("Extra query: " . print_r($extra_query, true));
+//        PluginMonitoringToolbox::log("Extra query: " . print_r($extra_query, true));
 
         // Reduced mode with an extra query
         $pmD->getServicesCounters(true, true, $extra_query);

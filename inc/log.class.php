@@ -303,11 +303,9 @@ class PluginMonitoringLog extends CommonDBTM
                 echo __("The configuration did not changed since the last restart", 'kiosks');
                 echo '</div>';
             }
-
-            return empty($message);
         }
 
-        return $message;
+        return !empty($message);
     }
 
 

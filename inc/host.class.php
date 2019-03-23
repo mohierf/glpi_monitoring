@@ -54,6 +54,35 @@ class PluginMonitoringHost extends CommonDBTM
     }
 
 
+//    static function cronInfo($name)
+//    {
+//        switch ($name) {
+//            case 'hostsCount':
+//                return [
+//                    'description' => __('Count the monitored hosts.', 'monitoring')
+//                ];
+//                break;
+//        }
+//        return [];
+//    }
+//
+//
+//    /**
+//     * @param CronTask $task
+//     *
+//     * @return bool
+//     */
+//    static function cronHostsCount($task)
+//    {
+//        PluginMonitoringToolbox::logIfDebug("PluginMonitoringHost::count monitored hosts list");
+//
+//        $pmHost = new self();
+//        $hosts = $pmHost->find("`is_default`='1'", '', 1);
+//        $task->log("Found " . count($hosts) . " monitored hosts.");
+//        $task->setVolume(count($hosts));
+//    }
+//
+//
     /**
      * WARNING: change the index order with very much care ... the display of the
      * hosts table is using some fixed index values!

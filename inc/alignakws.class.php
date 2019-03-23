@@ -209,6 +209,10 @@ class PluginMonitoringAlignakWS extends CommonDBTM
         foreach ($a_tags as $data) {
             PluginMonitoringToolbox::logIfDebug("ReloadRequest, tag data: " . print_r($data, true));
             $pmTag->getFromDB($data['id']);
+            if (!$force and $pmTag->fields['auto_restart'] != '1') {
+                PluginMonitoringToolbox::log("no framework reloading because auto restart is not set" );
+                continue;
+            }
 
             $result = $this->sendCommand($pmTag, $command, [], '');
             if ($result) {

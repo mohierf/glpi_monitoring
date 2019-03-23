@@ -34,7 +34,7 @@ include ("../../../inc/includes.php");
 Session::checkRight("plugin_monitoring_server", READ);
 
 Html::header(
-    __('Monitoring - tags', 'monitoring'),
+    __('Monitoring - monitoring servers', 'monitoring'),
     '', 'config', 'pluginmonitoringmenu', 'tag');
 
 $dropdown = new PluginMonitoringServer();

@@ -486,6 +486,17 @@ class PluginMonitoringInstall
                 'logs_lifetime' => 30
             ]
         );
+
+//        CronTask::Register('PluginMonitoringHost', 'hostsCount',
+//            MINUTE_TIMESTAMP * 5,
+//            [
+//                'comment' => __('Count the monitored hosts.', 'monitoring'),
+//                'mode' => CronTask::MODE_EXTERNAL,
+//                'allowmode' => CronTask::MODE_EXTERNAL | CronTask::MODE_INTERNAL,
+//                'hourmin' => 0, 'hourmax' => 24,
+//                'logs_lifetime' => 30
+//            ]
+//        );
     }
 
     /**
