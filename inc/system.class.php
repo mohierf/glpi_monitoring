@@ -69,7 +69,7 @@ class PluginMonitoringSystem extends CommonDBTM
                 echo "<tr class='tab_bg_1'>";
                 echo "<th height='80'>";
 
-                PluginMonitoringTag::getServersStatus(true, true);
+                PluginMonitoringServer::getServersStatus(true, true);
 
                 echo "</th>";
                 echo "</tr>";

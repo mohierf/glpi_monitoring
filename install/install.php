@@ -49,9 +49,10 @@ class PluginMonitoringInstall
      *
      * @var array
      */
+    // Fred: commented the old upgrades, they will never be used again!
     private $upgradeSteps = [
-        '9_3_0_1_dev'    => '9.3+0.1',
-        '9_3_0_1'    => '9.3+0.2'
+//        '9_3_0_1_dev'    => '9.3+0.1',
+//        '9_3_0_1'    => '9.3+0.2'
     ];
 
     /**
@@ -97,7 +98,8 @@ class PluginMonitoringInstall
      *
      * @return bool
      */
-    public function upgrade(Migration $migration) {
+    public function upgrade(Migration $migration)
+    {
         $_SESSION['plugin_monitoring']['installation'] = true;
 
         $this->migration = $migration;
@@ -135,7 +137,8 @@ class PluginMonitoringInstall
      *
      * @param string $toVersion
      */
-    protected function upgradeOneStep($toVersion) {
+    protected function upgradeOneStep($toVersion)
+    {
         ini_set("max_execution_time", "0");
         ini_set("memory_limit", "-1");
 
@@ -144,7 +147,7 @@ class PluginMonitoringInstall
         $toVersion = str_replace('.', '_', $toVersion);
         $toVersion = str_replace('-', '_', $toVersion);
         $includeFile = __DIR__ . "/upgrade_to_$toVersion.php";
-        $this->migration->displayMessage("Include file: ". $includeFile);
+        $this->migration->displayMessage("Include file: " . $includeFile);
         if (is_readable($includeFile) && is_file($includeFile)) {
             include_once $includeFile;
             $updateClass = "PluginMonitoringUpgradeTo$toVersion";
@@ -473,7 +476,7 @@ class PluginMonitoringInstall
             ]
         );
 
-        CronTask::Register('PluginMonitoringTag', 'frameworkStatus',
+        CronTask::Register('PluginMonitoringServer', 'frameworkStatus',
             MINUTE_TIMESTAMP * 5,
             [
                 'comment' => __('Check the monitoring framework status.', 'monitoring'),

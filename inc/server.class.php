@@ -34,14 +34,14 @@ if (!defined('GLPI_ROOT')) {
     die("Sorry. You can't access directly to this file");
 }
 
-class PluginMonitoringTag extends CommonDropdown
+class PluginMonitoringServer extends CommonDropdown
 {
     const URL_PING = "/ping";
     const URL_STATUS = "/status";
 
     public $display_dropdowntitle = false;
 
-    static $rightname = 'plugin_monitoring_tag';
+    static $rightname = 'plugin_monitoring_server';
 
     /**
      * Get name of this type
@@ -53,7 +53,7 @@ class PluginMonitoringTag extends CommonDropdown
      */
     static function getTypeName($nb = 0)
     {
-        return __('Tag', 'monitoring');
+        return __('Server', 'monitoring');
     }
 
 
@@ -90,7 +90,7 @@ class PluginMonitoringTag extends CommonDropdown
             $_SESSION['plugin_monitoring']['reduced_interface'] = false;
         }
 
-        PluginMonitoringToolbox::logIfDebug("PluginMonitoringTag::get servers status");
+        PluginMonitoringToolbox::logIfDebug("PluginMonitoringServer::get servers status");
 
         $pmTag = new self();
         $pmAlignakWS = new PluginMonitoringAlignakWS();
@@ -109,7 +109,7 @@ class PluginMonitoringTag extends CommonDropdown
                     $ok = false;
                 }
                 PluginMonitoringLog::logEvent(
-                    "status", $result, "", "PluginMonitoringTag", $pmTag->getID());
+                    "status", $result, "", "PluginMonitoringServer", $pmTag->getID());
             } else {
                 $ok = false;
                 $task->log($pmTag->getName() . " is not responding.");
@@ -130,7 +130,7 @@ class PluginMonitoringTag extends CommonDropdown
 
         $tab[] = [
             'id' => 'common',
-            'name' => __('Tags', 'monitoring')
+            'name' => __('Monitoring servers', 'monitoring')
         ];
 
         $index = 1;

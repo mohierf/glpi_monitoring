@@ -39,7 +39,7 @@ class PluginMonitoringAlignakWS extends CommonDBTM
 
     function getStatus($tag)
     {
-        $pmTag = new PluginMonitoringTag();
+        $pmTag = new PluginMonitoringServer();
         if (!$pmTag->getFromDB($tag)) {
             return false;
         }
@@ -101,7 +101,7 @@ class PluginMonitoringAlignakWS extends CommonDBTM
 
 //      PluginMonitoringToolbox::log("acknowledge, sendAcknowledge, host : $host_id / $service_id\n");
 
-        $pmTag = new PluginMonitoringTag();
+        $pmTag = new PluginMonitoringServer();
         $pmService = new PluginMonitoringService();
         $pmService->getFromDB($service_id);
         $service_description = $pmService->getName(['monitoring' => '1']);
@@ -148,7 +148,7 @@ class PluginMonitoringAlignakWS extends CommonDBTM
 
         if (($host_id == -1) && ($service_id == -1)) return false;
 
-        $pmTag = new PluginMonitoringTag();
+        $pmTag = new PluginMonitoringServer();
         $pmService = new PluginMonitoringService();
         $pmService->getFromDB($service_id);
         $service_description = $pmService->getName(['monitoring' => '1']);
@@ -197,7 +197,7 @@ class PluginMonitoringAlignakWS extends CommonDBTM
         }
 
         $a_tags = [];
-        $pmTag = new PluginMonitoringTag();
+        $pmTag = new PluginMonitoringServer();
         if (!empty($tag)) {
             if ($pmTag->getFromDB($tag)) {
                 $a_tags[] = $pmTag->fields;
@@ -226,7 +226,7 @@ class PluginMonitoringAlignakWS extends CommonDBTM
                 }
 
                 PluginMonitoringLog::logEvent(
-                    $command . "_planned", $data['tag'], "", "PluginMonitoringTag", $pmTag->getID());
+                    $command . "_planned", $data['tag'], "", "PluginMonitoringServer", $pmTag->getID());
             } else {
                 PluginMonitoringToolbox::log(
                     "ReloadRequest, failed sending '$command' to the monitoring framework: " . $pmTag->getName() . " (" . $pmTag->getUrl() . ")");
@@ -238,7 +238,8 @@ class PluginMonitoringAlignakWS extends CommonDBTM
     /**
      * Alignak WS function
      * -------------------
-     * @param PluginMonitoringTag $tag
+     *
+     * @param PluginMonitoringServer $tag
      * @param string $action
      * @param array $a_fields
      * @param string $fields_string
@@ -284,7 +285,8 @@ class PluginMonitoringAlignakWS extends CommonDBTM
     /**
      * The original Shinken post function
      * ----------------------------------
-     * @param PluginMonitoringTag $tag
+     *
+     * @param PluginMonitoringServer $tag
      * @param string $action
      * @param array $a_fields
      * @param string $fields_string

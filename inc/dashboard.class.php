@@ -101,7 +101,7 @@ class PluginMonitoringDashboard extends CommonDBTM {
             if (Session::haveRight("plugin_monitoring_system_status",
                 PluginMonitoringProfile::DASHBOARD)) {
                 // Do not display nor get the servers status (use the last known)
-                $status = PluginMonitoringTag::getServersStatus();
+                $status = PluginMonitoringServer::getServersStatus();
                 echo "<th colspan='2'>";
                 $class = "dashboard-part";
                 if ($this->includePartMarker('system')) {
@@ -1007,7 +1007,7 @@ class PluginMonitoringDashboard extends CommonDBTM {
     {
         global $CFG_GLPI;
 
-        $pmTag = new PluginMonitoringTag();
+        $pmTag = new PluginMonitoringServer();
         $a_raw_tags = $pmTag->find();
 
         $a_tags = [];

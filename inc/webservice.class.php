@@ -54,7 +54,7 @@ class PluginMonitoringWebservice
         }
 
         // Update server with connection parameters
-        $pmTag = new PluginMonitoringTag();
+        $pmTag = new PluginMonitoringServer();
         $pmTag->setIP($_SERVER['REMOTE_ADDR'], isset($params['tag']) ? $params['tag'] : '', isset($params['name']) ? $params['name'] : '');
 
         PluginMonitoringToolbox::logIfDebug("Manage connection from $fmwk_instance: ". print_r($params, true));

@@ -72,7 +72,7 @@ class PluginMonitoringMenu extends CommonGLPI
         $elements = [
             'config' => 'PluginMonitoringConfig',
             'realm' => 'PluginMonitoringRealm',
-            'tag' => 'PluginMonitoringTag',
+            'tag' => 'PluginMonitoringServer',
             'check' => 'PluginMonitoringCheck',
             'command' => 'PluginMonitoringCommand',
             'eventhandler' => 'PluginMonitoringEventhandler',

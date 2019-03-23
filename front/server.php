@@ -1,4 +1,5 @@
 <?php
+
 /**
  *    ------------------------------------------------------------------------
  *    Copyright notice:
@@ -31,11 +32,12 @@
 
 include ("../../../inc/includes.php");
 
-Session::checkRight("plugin_monitoring_tag", READ);
+// Check if current user have the appropriate right
+Session::checkRight("plugin_monitoring_server", READ);
 
 Html::header(
     __('Monitoring - tags', 'monitoring'),
     '', 'config', 'pluginmonitoringmenu', 'tag');
 
-$dropdown = new PluginMonitoringTag();
-include (GLPI_ROOT . "/front/dropdown.common.form.php");
+$dropdown = new PluginMonitoringServer();
+include (GLPI_ROOT . "/front/dropdown.common.php");

@@ -203,7 +203,7 @@ if (Session::haveRight("plugin_monitoring_configuration", READ)) {
     echo '</th>';
 
     echo '<th width="15%">';
-    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/tag.php">' . __("Tags", "monitoring") . '</a>';
+    echo '<a href="' . $CFG_GLPI["root_doc"] . '/plugins/monitoring/front/server.php">' . __("Monitoring servers", "monitoring") . '</a>';
     echo '</th>';
     echo '</tr>';
 

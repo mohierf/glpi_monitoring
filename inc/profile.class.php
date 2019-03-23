@@ -206,9 +206,9 @@ class PluginMonitoringProfile extends Profile
                 'label' => __('Reamls', 'monitoring'),
                 'field' => 'plugin_monitoring_realm'
             ],
-            ['itemtype' => 'PluginMonitoringTag',
-                'label' => __('Tag', 'monitoring'),
-                'field' => 'plugin_monitoring_tag'
+            ['itemtype' => 'PluginMonitoringServer',
+                'label' => __('Monitoring server', 'monitoring'),
+                'field' => 'plugin_monitoring_server'
             ],
             ['rights' => [UPDATE => __('Update'), CREATE => __('Create')],
                 'label' => __('Hosts', 'monitoring'),
