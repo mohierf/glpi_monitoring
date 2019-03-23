@@ -156,10 +156,10 @@ function plugin_monitoring_MassiveActions($type)
             ];
             break;
 
-        case "User":
-            return [
-                'PluginMonitoringUser' . MassiveAction::CLASS_ACTION_SEPARATOR . 'createalignakuser' => __('Create alignak backend account', 'monitoring')
-            ];
+//        case "User":
+//            return [
+//                'PluginMonitoringUser' . MassiveAction::CLASS_ACTION_SEPARATOR . 'createalignakuser' => __('Create alignak backend account', 'monitoring')
+//            ];
     }
 
     return [];

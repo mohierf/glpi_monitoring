@@ -47,6 +47,13 @@ class PluginMonitoringShinken extends CommonDBTM
     // Comment to remove custom variable from host/service configuration
     public static $default = [
         // GLPI root entity name
+        'behaviour' => [
+            // Use computer model as an host template
+            'useModel' => true,
+            // Use computer type as an host template
+            'useType' => true,
+        ],
+        // GLPI root entity name
         'glpi' => [
             // Root entity name
             'rootEntity' => '',
@@ -85,41 +92,6 @@ class PluginMonitoringShinken extends CommonDBTM
         ],
         // Shinken configuration
         'shinken' => [
-            // Build fake hosts for business rules
-            'fake_bp_hosts' => [
-                // Default values
-                'build' => false,
-                // Hostname
-                'hostname' => 'BP_host'
-            ],
-            // Build fake hosts for parents relationship
-            'fake_hosts' => [
-                // Default values
-                'build' => false,
-                // Default check command
-                'check_command' => 'check_dummy!0!Fake host is up',
-                // Default check_period
-                'check_period' => '24x7',
-                // Fake hosts tag
-                'use' => 'fake',
-                // Fake hosts name prefix
-                'name_prefix' => '_fake_',
-                // Hostgroup name
-                'hostgroup_name' => 'fake_hosts',
-                // Hostgroup alias
-                'hostgroup_alias' => 'Fake hosts',
-                // Main root parent
-                'root_parent' => 'Root',
-                // Main root parent
-                'bp_host' => 'BP_host'
-            ],
-            // Build fake contacts for fake hosts
-            'fake_contacts' => [
-                // Default values
-                'build' => false,
-                // Contact name
-                'contact_name' => 'monitoring',
-            ],
             'hosts' => [
                 // Default check_period
                 'check_period' => '24x7',
@@ -142,7 +114,6 @@ class PluginMonitoringShinken extends CommonDBTM
 
                 'failure_prediction_enabled' => '0',
                 // Set as 'entity' to use hostgroupname else use the defined value ...
-                // When fake_hosts are built (see upper), use 'entity' !
                 'parents' => 'entity',
 
                 'notes_url' => '',
@@ -518,16 +489,26 @@ class PluginMonitoringShinken extends CommonDBTM
                     $this->set_value('0', 'register', $my_template);
                     PluginMonitoringToolbox::log("adding host template: " . $my_template['name']);
                 }
-                //  Host using the template
+
+                //  Set host name with an id if globally configured for this
                 $this->set_value(self::monitoringFilter($my_host_item->getName()), 'host_name', $my_host);
                 if ($PM_CONFIG['append_id_hostname'] == 1) {
                     $this->set_value(self::monitoringFilter($my_host_item->getName() . '-' . $my_host_item->getID()), 'host_name', $my_host);
                 }
+
                 // Set host templates as CC name and its additional templates if any are defined
                 $this->set_value(self::monitoringFilter($pmCC->getName()), 'use', $my_host);
                 if (!empty($pmCC->getField('additional_templates'))) {
                     $this->set_value($pmCC->getField('additional_templates'), 'use', $my_host);
                 }
+
+                if (self::$default['behaviour']['useType']) {
+                    $this->set_value($data['typeName'], 'use', $my_host);
+                }
+                if (self::$default['behaviour']['useModel']) {
+                    $this->set_value($data['modelName'], 'use', $my_host);
+                }
+
                 PluginMonitoringToolbox::log("adding host " . $my_host['host_name'] . ", using: " . implode(',', $my_host['use']));
 
                 $a_hosts_found[$my_host_item->getName()] = false;
@@ -988,11 +969,6 @@ class PluginMonitoringShinken extends CommonDBTM
                             $this->set_value($user->fields['name'], 'contacts', $my_template);
                         } else if ($data_contact['groups_id'] > 0) {
                             // todo: Get contacts from the contact group
-                        }
-                    }
-                    if (count($my_host['contacts']) == 0) {
-                        if (self::$default['shinken']['fake_contacts']['build']) {
-                            $this->set_value(self::$default['shinken']['fake_contacts']['contact_name'], 'contacts', $my_template);
                         }
                     }
                 }
@@ -1670,12 +1646,6 @@ class PluginMonitoringShinken extends CommonDBTM
                 $a_hostgroups[] = $my_group;
             }
         }
-
-//        // Add an hostgroup for fake hosts
-//        if (self::$default['shinken']['fake_hosts']['build']) {
-//            $my_group['hostgroup_name'] = self::$default['shinken']['fake_hosts']['hostgroup_name'];
-//            $my_group['alias'] = self::$default['shinken']['fake_hosts']['hostgroup_alias'];
-//        }
 
         PluginMonitoringToolbox::logIfDebug("End generateHostgroupsCfg");
 
